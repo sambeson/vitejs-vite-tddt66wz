@@ -1,4 +1,3 @@
-import * as MLBIcons from 'react-mlb-logos';
 import React, { useState, useEffect } from 'react';
 import './styles.css';
 
@@ -33,11 +32,6 @@ const teamAbbreviations = {
   'Texas Rangers': 'TEX',
   'Toronto Blue Jays': 'TOR',
   'Washington Nationals': 'WAS',
-};
-const TeamLogo = ({ name, size = 32 }) => {
-  const abbr = teamAbbreviations[name];
-  const Logo = MLBIcons[abbr];
-  return Logo ? <Logo size={size} /> : null;
 };
 
 // New HomerEntry component for HR entries in supplemental stats
@@ -723,8 +717,7 @@ function App() {
                 return <div key="spacer" className="notebook-line empty" />;
               const entry = currentEntries[i - 1];
               if (entry) {
-                const [playerId, { playerName, hrCount, teamName }] = entry;
-
+                const [playerId, { playerName, homeRuns, teamName }] = entry;
                 const normalizeName = (name: string) =>
                   Object.keys(teamAbbreviations).find(
                     (key) => key.toLowerCase() === name.toLowerCase()
@@ -734,8 +727,6 @@ function App() {
                 const teamAbbr = matchedKey
                   ? teamAbbreviations[matchedKey]
                   : 'UNK';
-
-                const TeamLogoComponent = MLBIcons[teamAbbr];
 
                 return (
                   <div
@@ -747,12 +738,6 @@ function App() {
                     key={playerId}
                   >
                     <div className="notebook-left">
-                      {TeamLogoComponent && (
-                        <TeamLogoComponent
-                          className="notebook-logo"
-                          size={24}
-                        />
-                      )}
                       <span className="notebook-abbr">{teamAbbr}</span>
                     </div>
                     <div className="player-name">
@@ -764,7 +749,7 @@ function App() {
                             : ''
                         }
                       >
-                        {hrCount}
+                        {homeRuns[homeRuns.length - 1]},
                       </span>
                     </div>
 
@@ -853,12 +838,10 @@ function App() {
                   >
                     <div className="game-matchup">
                       <div className="team-block">
-                        <TeamLogo name={awayName} size={48} />
                         <div className="team-name">{awayName}</div>
                       </div>
                       <div className="vs-text">vs</div>
                       <div className="team-block">
-                        <TeamLogo name={homeName} size={48} />
                         <div className="team-name">{homeName}</div>
                       </div>
                     </div>
@@ -893,12 +876,8 @@ function App() {
                 >
                   {(() => {
                     const teamName = boxScore.teams?.away?.team?.name;
-                    const TeamLogo = MLBIcons[teamAbbreviations[teamName]];
                     return (
                       <>
-                        {TeamLogo && (
-                          <TeamLogo size={24} style={{ marginRight: 6 }} />
-                        )}
                         {teamName}
                       </>
                     );
@@ -910,12 +889,8 @@ function App() {
                 >
                   {(() => {
                     const teamName = boxScore.teams?.home?.team?.name;
-                    const TeamLogo = MLBIcons[teamAbbreviations[teamName]];
                     return (
                       <>
-                        {TeamLogo && (
-                          <TeamLogo size={24} style={{ marginRight: 6 }} />
-                        )}
                         {teamName}
                       </>
                     );
