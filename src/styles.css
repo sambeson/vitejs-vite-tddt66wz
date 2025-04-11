@@ -1,0 +1,598 @@
+/* Import handwritten font */
+@import url('https://fonts.googleapis.com/css2?family=Shadows+Into+Light&display=swap');
+
+.app {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f8f9fa;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* backdrop */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+.mentaculous-button {
+  margin-left: 8px;
+  padding: 4px 8px;
+  background: url('path/to/crumpled-paper-texture.jpg') no-repeat center center;
+  background-size: cover;
+  border: none;
+  font-family: 'Calibri', cursive; /* Ensure this font is imported */
+  font-size: 1em;
+  color: #333;
+  cursor: pointer;
+  transition: opacity 0.5s ease, transform 0.2s ease;
+}
+
+.mentaculous-button:hover {
+  transform: scale(1.05);
+}
+
+.fade-out {
+  opacity: 0;
+}
+
+.modal-content {
+  background: white;
+  max-height: 90vh; /* limit height */
+  overflow-y: auto; /* allow scroll */
+  padding: 1.5rem;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #041e42;
+}
+
+.error {
+  color: red;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.player-name {
+  background: none;
+  border: none;
+  color: #041e42;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0;
+}
+
+.player-name:hover {
+  text-decoration: underline;
+}
+
+.hr-line {
+  font-weight: bold;
+  color: #d00000;
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+.added-indicator {
+  margin-left: 8px;
+  color: green;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+}
+
+.date-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.date-selector input[type='date'] {
+  padding: 8px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.games-list {
+  display: grid;
+  gap: 12px;
+}
+
+.game-item {
+  cursor: pointer;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.game-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.game-item {
+  border: 1px solid #ccc;
+  padding: 12px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.game-matchup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.team-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.team-name {
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+.vs-text {
+  margin: 8px 0;
+  font-size: 14px;
+  font-weight: bold;
+  color: #666;
+}
+
+.game-status {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #888;
+}
+
+.game-status {
+  font-size: 13px;
+  color: #666;
+  margin-top: 8px;
+}
+
+.box-score {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.view-toggle button {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.view-toggle button.active {
+  background-color: #041e42;
+  color: white;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 14px;
+}
+
+.stats-table th {
+  background-color: #f1f3f5;
+  color: #495057;
+  font-weight: 600;
+  text-align: left;
+  padding: 12px;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.stats-table td {
+  padding: 12px;
+  border-bottom: 1px solid #e9ecef;
+  color: #212529;
+}
+
+.stats-table tr:hover {
+  background-color: #f8f9fa;
+}
+
+.batting-line {
+  font-size: 13px;
+  color: #666;
+  background-color: #f8f9fa;
+}
+
+.batting-line td {
+  padding: 4px 12px 8px;
+  font-family: 'SF Mono', Monaco, Menlo, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+}
+
+.position {
+  color: #666;
+  font-size: 13px;
+  margin-left: 4px;
+}
+
+.team-stats {
+  margin-bottom: 30px;
+}
+
+.team-stats h4 {
+  color: #041e42;
+  font-size: 18px;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #041e42;
+}
+
+.supplemental-stats {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 6px;
+  margin-top: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.stat-section {
+  margin-bottom: 20px;
+}
+
+.stat-section:last-child {
+  margin-bottom: 0;
+}
+
+.supplemental-stats h5 {
+  color: #041e42;
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  font-weight: 600;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 5px;
+}
+
+.stat-line {
+  margin-bottom: 8px;
+  color: #212529;
+  padding-left: 12px;
+  text-indent: -12px;
+}
+
+.stat-line:last-child {
+  margin-bottom: 0;
+}
+
+.game-info {
+  margin-top: 30px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+}
+
+.game-info h4 {
+  color: #041e42;
+  margin: 0 0 15px 0;
+}
+
+.game-info p {
+  margin: 8px 0;
+  color: #495057;
+  font-size: 14px;
+}
+
+button {
+  background-color: #041e42;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  background-color: #0a2d5c;
+}
+
+button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(4, 30, 66, 0.3);
+}
+
+.add-mentaculous {
+  padding: 2px 8px;
+  margin-left: 8px;
+  font-size: 12px;
+  background-color: #28a745;
+}
+
+.add-mentaculous:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+.notebook {
+  position: relative;
+  background-color: #fdfaf5; /* paper tone */
+  border: 1px solid #ccc;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+  padding: 20px 10px;
+  font-family: 'Courier New', Courier, monospace;
+  max-width: 700px;
+  margin: 40px auto;
+  overflow: hidden;
+}
+
+
+/* Red vertical margin line */
+.notebook::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 70px;
+  bottom: 0;
+  width: 3px;
+  background-color: #e20000;
+  z-index: 0;
+}
+
+/* Blue horizontal lines */
+.notebook-line {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 32px;
+  border-bottom: 1px solid #aad;
+  font-family: 'Courier New', Courier, monospace;
+  z-index: 1;
+  padding-left: 0;
+  padding-right: 16px;
+}
+.notebook-left {
+  width: 70px; /* width to red line */
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 8px;
+  gap: 4px;
+  position: relative;
+  z-index: 2;
+}
+
+.notebook-logo {
+  width: 20px;
+  height: 20px;
+}
+.notebook-abbr {
+  font-size: 12px;
+  color: #444;
+  font-weight: bold;
+}
+
+.notebook-line::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background-color: #aad;
+  z-index: -1;
+}
+.notebook-line.empty {
+  color: transparent;
+}
+
+.notebook-line.filled {
+  color: #111;
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-right: 16px;
+}
+
+.player-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60%;
+}
+
+.player-count {
+  color: #555;
+  margin-left: auto;
+}
+
+.view-button {
+  background: none;
+  border: none;
+  color: #0077cc;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 12px;
+}
+
+.view-button:hover {
+  text-decoration: underline;
+}
+
+.notebook-title-line h2 {
+  margin: 0;
+  padding: 0;
+  font-size: 24px;
+  font-weight: bold;
+  color: #5f5757;
+  font-family:'Courier New', Courier, monospace, serif;
+  position: relative;
+  top: 18px;
+  width: calc(100%-100px);
+  padding-left: 70px;
+  text-align: center;
+}
+
+
+.player-name {
+  flex: 1;
+  color: #333;
+}
+
+.player-count {
+  margin-right: 16px;
+  color: #555;
+}
+
+.view-button {
+  background: none;
+  border: none;
+  color: #0077cc;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 8px;
+}
+
+.view-button:hover {
+  text-decoration: underline;
+}
+
+.player-stats {
+  font-size: 14px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.tab-header {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tab-header button {
+  flex: 1;
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+}
+
+.tab-header button.active {
+  background-color: #041e42;
+  color: white;
+  border-color: #041e42;
+}
+/* === Player Profile: Season-by-Season Table === */
+.profile-stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  background-color: #f9f9f9;
+}
+
+.profile-stats-table th,
+.profile-stats-table td {
+  border: 1px solid #ddd;
+  padding: 6px 8px;
+  text-align: center;
+}
+
+.profile-stats-table th {
+  background-color: #eee;
+  font-weight: bold;
+}
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 16px;
+  gap: 24px;
+  font-family: 'Courier New', Courier, monospace;
+  color: #444;
+}
+
+.pagination-controls button {
+  background: none;
+  border: 1px solid #ccc;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #222;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+.pagination-controls button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.page-info {
+  font-size: 14px;
+}
+@keyframes eraseNumber {
+  0% {
+    background-color: #fff8e1;
+    color: #111;
+  }
+  100% {
+    color: transparent;
+    text-shadow: 0 0 2px #000;
+  }
+}
+
+@keyframes drawNumber {
+  0% {
+    color: transparent;
+    text-shadow: 0 0 2px #000;
+  }
+  100% {
+    color: #111;
+    text-shadow: none;
+  }
+}
+
+.update-animate .player-name span {
+  animation: eraseNumber 0.5s ease-out forwards, drawNumber 0.8s ease-in forwards;
+  animation-delay: 0s, 0.5s;
+}
