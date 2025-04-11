@@ -35,7 +35,20 @@ const teamAbbreviations = {
 };
 
 // New HomerEntry component for HR entries in supplemental stats
-function HomerEntry({ player, getLastName, onAdd, alreadyLogged }) {
+interface HomerEntryProps {
+  player: any; // Replace `any` with a more specific type if possible
+  getLastName: (person: any) => string;
+  onAdd: (player: any) => void;
+  onRemove: (playerId: number, homeRun: number) => void; // Add the correct type for `onRemove`
+  alreadyLogged: boolean;
+}
+function HomerEntry({
+  player,
+  getLastName,
+  onAdd,
+  onRemove,
+  alreadyLogged,
+}: HomerEntryProps) {
   const [fading, setFading] = useState(false);
 
   const handleClick = (e) => {
@@ -43,13 +56,24 @@ function HomerEntry({ player, getLastName, onAdd, alreadyLogged }) {
     onAdd(player);
     setFading(true);
   };
-
+  const handleRemove = (e, homeRun) => {
+    e.stopPropagation();
+    onRemove(player.person.id, homeRun);
+  };
   return (
     <span className="homer-entry">
       {getLastName(player.person)} ({player.stats.batting.homeRuns} Season,{' '}
       {player.stats.career?.homeRuns || 'N/A'} Career)
       {alreadyLogged ? (
-        <span className="added-indicator"> Added! </span>
+        <>
+          <span className="added-indicator"> Added! </span>
+          <button
+            className="remove-button"
+            onClick={(e) => handleRemove(e, player.stats.batting.homeRuns)}
+          >
+            Remove HR
+          </button>
+        </>
       ) : (
         <button
           className={`mentaculous-button ${fading ? 'fade-out' : ''}`}
@@ -61,7 +85,7 @@ function HomerEntry({ player, getLastName, onAdd, alreadyLogged }) {
     </span>
   );
 }
-
+export {HomerEntry};
 
 function PlayerProfile({ playerId, onClose }) {
   const [profile, setProfile] = useState(null);
@@ -234,19 +258,42 @@ function App() {
   const [mentaculousPage, setMentaculousPage] = useState(0)
   const [updatedPlayerId, setUpdatedPlayerId] = useState(null);
 ;
-
+const handleRemoveHomeRun = (playerId, homeRun) => {
+  setMentaculous((prev) => {
+    const player = prev[playerId];
+    if (!player) return prev; // No player, nothing to do.
+  
+    // Filter out the home run
+    const updatedHomeRuns = player.homeRuns.filter((hr) => hr !== homeRun);
+  
+    // If the player has no more home runs, we can remove the player entirely from the state
+    if (updatedHomeRuns.length === 0) {
+      const { [playerId]: _, ...remainingPlayers } = prev; // Remove player
+      return remainingPlayers;
+    }
+  
+    // Otherwise, update the home runs for the player
+    return {
+      ...prev,
+      [playerId]: {
+         ...player,
+         homeRuns: updatedHomeRuns,
+        },
+      };
+    });
+  };
+  
   // Function to add a player to mentaculous state
   const handleAddToMentaculous = (player, teamName) => {
     const playerId = Number(player.person.id);
     const currentHr = player.stats?.batting?.homeRuns;
-  
     if (!currentHr) return;
-  
     setMentaculous((prev) => {
       const existing = prev[playerId] || {
         playerName: player.person.fullName,
         teamName: teamName || 'Unknown',
         homeRuns: [],
+        addedAt: Date.now(),
       };
   
       if (existing.homeRuns.includes(currentHr)) return prev;
@@ -259,7 +306,7 @@ function App() {
         },
       };
     });
-  
+
     setActiveTab('mentaculous');
     setUpdatedPlayerId(playerId);
     setTimeout(() => setUpdatedPlayerId(null), 1000);
@@ -396,6 +443,7 @@ function App() {
           player={p}
           getLastName={getLastName}
           onAdd={(player) => handleAddToMentaculous(player, team.team.name)}
+          onRemove={handleRemoveHomeRun}
           alreadyLogged={alreadyLogged}
         />
       );
@@ -699,7 +747,8 @@ function App() {
   };
 
   const renderMentaculous = () => {
-    const entries = Object.entries(mentaculous);
+    const entries = Object.entries(mentaculous).sort((a, b) => (a[1].addedAt ?? 0) - (b[1].addedAt ?? 0)
+    );
     const totalPages = Math.ceil(entries.length / 32) || 1;
 
     const start = mentaculousPage * 32;
@@ -738,27 +787,38 @@ function App() {
                     key={playerId}
                   >
                     <div className="notebook-left">
-                      <span className="notebook-abbr">{teamAbbr}</span>
-                    </div>
-                    <div className="player-name">
-                      {playerName} –{' '}
-                      <span
-                        className={
-                          updatedPlayerId === parseInt(playerId)
-                            ? 'update-animate'
-                            : ''
-                        }
-                      >
-                        {homeRuns[homeRuns.length - 1]},
-                      </span>
-                    </div>
+  <span className="notebook-abbr">{teamAbbr}</span>
+</div>
+<div className="player-info">
+  <div className="player-name">
+    {playerName} –{' '}
+    <span
+      className={
+        updatedPlayerId === parseInt(playerId) ? 'update-animate' : ''
+      }
+    >
+      {homeRuns[homeRuns.length - 1]}
+    </span>
+  </div>
+  <div className="player-buttons">
+    <button
+      className="view-button"
+      onClick={() => setSelectedPlayerId(parseInt(playerId))}
+    >
+      View
+    </button>
+    <button
+      className="remove-button"
+      onClick={() => {
+        const homeRunToRemove = homeRuns[homeRuns.length - 1];
+        handleRemoveHomeRun(playerId, homeRunToRemove);
+      }}
+    >
+      Remove
+    </button>
+  </div>
+</div>
 
-                    <button
-                      className="view-button"
-                      onClick={() => setSelectedPlayerId(parseInt(playerId))}
-                    >
-                      View
-                    </button>
                   </div>
                 );
               } else {

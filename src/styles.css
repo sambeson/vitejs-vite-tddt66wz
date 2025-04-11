@@ -76,12 +76,9 @@
   border: none;
   color: #041e42;
   cursor: pointer;
+  font-size: 12px;
   font-weight: 600;
   padding: 0;
-}
-
-.player-name:hover {
-  text-decoration: underline;
 }
 
 .hr-line {
@@ -374,21 +371,22 @@ button:focus {
 /* Blue horizontal lines */
 .notebook-line {
   position: relative;
+  flex-wrap: wrap;
   display: flex;
   align-items: center;
-  height: 32px;
+  min-height: 32px;
+  height: auto;
   border-bottom: 1px solid #aad;
   font-family: 'Courier New', Courier, monospace;
   z-index: 1;
-  padding-left: 0;
-  padding-right: 16px;
+  padding: 4px 16px;
 }
 .notebook-left {
-  width: 70px; /* width to red line */
+  width: 50px; /* width to red line */
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding-left: 8px;
+  padding-left: 0px;
   gap: 4px;
   position: relative;
   z-index: 2;
@@ -399,7 +397,7 @@ button:focus {
   height: 20px;
 }
 .notebook-abbr {
-  font-size: 12px;
+  font-size: 15px;
   color: #444;
   font-weight: bold;
 }
@@ -417,21 +415,39 @@ button:focus {
 .notebook-line.empty {
   color: transparent;
 }
+.player-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex: 1;
+  gap: 8px;
+  min-width: 0;
+}
+
+.player-name {
+  flex: 1 1 100%;
+  margin-top: 4px;
+  word-break: break-word;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: initial;
+}
+
+
+.player-buttons {
+  display: flex;
+  gap: 6px;
+}
 
 .notebook-line.filled {
   color: #111;
   font-weight: 500;
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   justify-content: space-between;
-  align-items: center;
-  padding-right: 16px;
-}
-
-.player-name {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 60%;
+  align-items: left;
+  padding-right: 1px;
 }
 
 .player-count {
@@ -444,8 +460,8 @@ button:focus {
   border: none;
   color: #0077cc;
   cursor: pointer;
-  font-size: 14px;
-  margin-left: 12px;
+  font-size: 10px;
+  margin-left: 1px;
 }
 
 .view-button:hover {
@@ -482,7 +498,7 @@ button:focus {
   border: none;
   color: #0077cc;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 10px;
   padding: 0 8px;
 }
 
@@ -596,3 +612,19 @@ button:focus {
   animation: eraseNumber 0.5s ease-out forwards, drawNumber 0.8s ease-in forwards;
   animation-delay: 0s, 0.5s;
 }
+
+.remove-button {
+  background-color: crimson;
+  color: white;
+  font-size: 10px;
+  padding: 1px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+ 
+}
+
+.remove-button:hover {
+  background-color: darkred;
+}
+
