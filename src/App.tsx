@@ -33,58 +33,87 @@ const teamAbbreviations = {
   'Toronto Blue Jays': 'TOR',
   'Washington Nationals': 'WAS',
 };
+const teamAbbreviationMap = Object.entries(teamAbbreviations).reduce(
+  (map, [name, abbr]) => {
+    map[name.toLowerCase()] = abbr;
+    return map;
+  },
+  {} as Record<string, string>
+);
+
+function getTeamAbbreviation(name: string = ''): string {
+  return teamAbbreviationMap[name.trim().toLowerCase()] || 'UNK';
+}
 
 // New HomerEntry component for HR entries in supplemental stats
 interface HomerEntryProps {
   player: any; // Replace `any` with a more specific type if possible
   getLastName: (person: any) => string;
-  onAdd: (player: any) => void;
+  onAdd: (player: any, hr: any, teamName: any) => void;
   onRemove: (playerId: number, homeRun: number) => void; // Add the correct type for `onRemove`
-  alreadyLogged: boolean;
+  mentaculous: any;
 }
 function HomerEntry({
   player,
   getLastName,
   onAdd,
   onRemove,
-  alreadyLogged,
+  mentaculous,
 }: HomerEntryProps) {
-  const [fading, setFading] = useState(false);
+  const [fadingIndex, setFadingIndex] = useState<number | null>(null);
 
-  const handleClick = (e) => {
-    e.stopPropagation();
-    onAdd(player);
-    setFading(true);
-  };
-  const handleRemove = (e, homeRun) => {
-    e.stopPropagation();
-    onRemove(player.person.id, homeRun);
-  };
+  if (!player.homeRunProgress || player.homeRunProgress.length === 0) {
+    return (
+      <span className="homer-entry">
+        <strong>{getLastName(player.person)}</strong>{' '}
+        {`${player.stats.seasonTotalHR ?? '??'} Season, ${player.stats.career?.homeRuns || 'N/A'} Career`}
+      </span>
+    );
+  }
+  
+
   return (
-    <span className="homer-entry">
-      {getLastName(player.person)} ({player.stats.batting.homeRuns} Season,{' '}
-      {player.stats.career?.homeRuns || 'N/A'} Career)
-      {alreadyLogged ? (
-        <>
-          <span className="added-indicator"> Added! </span>
-          <button
-            className="remove-button"
-            onClick={(e) => handleRemove(e, player.stats.batting.homeRuns)}
-          >
-            Remove HR
-          </button>
-        </>
-      ) : (
-        <button
-          className={`mentaculous-button ${fading ? 'fade-out' : ''}`}
-          onClick={handleClick}
-        >
-          Add
-        </button>
-      )}
-    </span>
+    <>
+      {player.homeRunProgress.map((hr, index) => {
+        const alreadyLoggedForThis = mentaculous[player.person.id]?.homeRuns?.includes(hr.hrId);
+
+        return (
+          <span key={index} className="homer-entry">
+            <strong>{getLastName(player.person)}</strong>{' '}
+            {`${hr.seasonHRNumber} Season, ${hr.careerHRNumber} Career`}
+
+            {alreadyLoggedForThis ? (
+              <>
+                <span className="added-indicator"> Added! </span>
+                <button
+                  className="remove-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove(player.person.id, hr.seasonHRNumber);
+                  }}
+                >
+                  Remove HR
+                </button>
+              </>
+            ) : (
+              <button
+                className={`mentaculous-button ${fadingIndex === index ? 'fade-out' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAdd(player, hr, player.team?.name ?? 'Unknown');
+                  setFadingIndex(index);
+                }}
+              >
+                Add
+              </button>
+            )}
+          </span>
+        );
+      })}
+    </>
   );
 }
+
 export {HomerEntry};
 
 function PlayerProfile({ playerId, onClose }) {
@@ -258,36 +287,33 @@ function App() {
   const [mentaculousPage, setMentaculousPage] = useState(0)
   const [updatedPlayerId, setUpdatedPlayerId] = useState(null);
 ;
-const handleRemoveHomeRun = (playerId, homeRun) => {
+const handleRemoveHomeRun = (playerId, hrId) => {
   setMentaculous((prev) => {
     const player = prev[playerId];
-    if (!player) return prev; // No player, nothing to do.
-  
-    // Filter out the home run
-    const updatedHomeRuns = player.homeRuns.filter((hr) => hr !== homeRun);
-  
-    // If the player has no more home runs, we can remove the player entirely from the state
+    if (!player) return prev;
+
+    const updatedHomeRuns = player.homeRuns.filter((hr) => hr !== hrId);
     if (updatedHomeRuns.length === 0) {
-      const { [playerId]: _, ...remainingPlayers } = prev; // Remove player
+      const { [playerId]: _, ...remainingPlayers } = prev;
       return remainingPlayers;
     }
-  
-    // Otherwise, update the home runs for the player
+
     return {
       ...prev,
       [playerId]: {
-         ...player,
-         homeRuns: updatedHomeRuns,
-        },
-      };
-    });
-  };
+        ...player,
+        homeRuns: updatedHomeRuns,
+      },
+    };
+  });
+};
+
   
   // Function to add a player to mentaculous state
-  const handleAddToMentaculous = (player, teamName) => {
+  const handleAddToMentaculous = (player, hr, teamName) => {
     const playerId = Number(player.person.id);
-    const currentHr = player.stats?.batting?.homeRuns;
-    if (!currentHr) return;
+    if (!hr?.hrId) return;
+  
     setMentaculous((prev) => {
       const existing = prev[playerId] || {
         playerName: player.person.fullName,
@@ -296,21 +322,23 @@ const handleRemoveHomeRun = (playerId, homeRun) => {
         addedAt: Date.now(),
       };
   
-      if (existing.homeRuns.includes(currentHr)) return prev;
+      if (existing.homeRuns.includes(hr.hrId)) return prev;
   
       return {
         ...prev,
         [playerId]: {
           ...existing,
-          homeRuns: [...existing.homeRuns, currentHr],
+          homeRuns: [...existing.homeRuns, hr.hrId],
         },
       };
     });
-
+  
     setActiveTab('mentaculous');
     setUpdatedPlayerId(playerId);
     setTimeout(() => setUpdatedPlayerId(null), 1000);
   };
+  
+  
   
   useEffect(() => {
     const stored = localStorage.getItem('mentaculous');
@@ -332,68 +360,83 @@ const handleRemoveHomeRun = (playerId, homeRun) => {
 
   const loadBoxScore = async (gamePk) => {
     try {
-      // Fetch both boxscore and playByPlay concurrently
-      const [boxScoreRes, playRes] = await Promise.all([
-        fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/boxscore`),
-        fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/playByPlay`),
-      ]);
-      // Convert responses to JSON
-      const boxScore = await boxScoreRes.json();
-      const playByPlay = await playRes.json();
-
-      // Build the pitching order map using a composite metric
-      const pitchingOrderMap = {};
-      if (playByPlay.allPlays) {
-        playByPlay.allPlays.forEach((play, index) => {
-          const pitcher = play.pitcher;
-          if (pitcher) {
-            const pid = String(pitcher.id);
-            if (!(pid in pitchingOrderMap)) {
-              pitchingOrderMap[pid] = index;
-            }
-          }
-        });
-      }
-
-      // Get all players from the boxScore:
-      const allPlayers = [
-        ...Object.values(boxScore.teams.away.players),
-        ...Object.values(boxScore.teams.home.players),
-      ];
-
-      // Fetch career stats for all players in parallel:
-      const updatedPlayers = await Promise.all(
-        allPlayers.map(async (player) => {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/boxscore`);
+      const boxScore = await res.json();
+  
+      const awayPlayers = boxScore?.teams?.away?.players ?? {};
+      const homePlayers = boxScore?.teams?.home?.players ?? {};
+      const allPlayers = [...Object.values(awayPlayers), ...Object.values(homePlayers)];
+  
+      const today = new Date().toISOString().split('T')[0];
+  
+      // Step 1: Filter players who hit a home run (season total increased)
+      const playersWithHRs = allPlayers.filter((p) => {
+        return p.seasonStats?.batting?.homeRuns > 0;
+      });
+  
+      // Step 2: Fetch career HRs for just those players
+      const careerHRs = {};
+      await Promise.all(
+        playersWithHRs.map(async (p) => {
+          const playerId = p.person.id;
           try {
             const res = await fetch(
-              `https://statsapi.mlb.com/api/v1/people/${player.person.id}/stats?stats=career&group=hitting`
+              `https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=career&group=hitting`
             );
-            const json = await res.json();
-            const stat = json?.stats?.[0]?.splits?.[0]?.stat;
-            if (stat) {
-              player.stats.career = stat;
-            }
+            const data = await res.json();
+            const hr = data?.stats?.[0]?.splits?.[0]?.stat?.homeRuns ?? 0;
+            careerHRs[playerId] = hr;
           } catch (err) {
-            console.error(
-              `Error fetching career stats for ${player.person.fullName}`,
-              err
-            );
+            console.warn(`Career HR fetch failed for player ${playerId}`, err);
           }
-          return player;
         })
       );
-
-      // Build a player map (using string IDs for consistency)
-      const playerMap = {};
-      updatedPlayers.forEach((p) => {
-        playerMap[String(p.person.id)] = p;
+  
+      // Step 3: Enrich players with HR progress
+      const updatedPlayers = allPlayers.map((player) => {
+        if (!player.stats) return player;
+  
+        if (player.seasonStats?.batting?.homeRuns != null) {
+          player.stats.seasonTotalHR = player.seasonStats.batting.homeRuns;
+        }
+  
+        const seasonHR = player.stats.seasonTotalHR;
+        const careerHR = careerHRs[player.person.id];
+  
+        if (
+          typeof player.stats?.batting?.homeRuns === 'number' &&
+          typeof player.seasonStats?.batting?.homeRuns === 'number' &&
+          typeof careerHR === 'number'
+        ) {
+          const hrToday = player.stats.batting.homeRuns;
+          const seasonHRTotal = player.seasonStats.batting.homeRuns;
+        
+          // Build one HR entry per HR hit today
+          const homeRunProgress = [];
+          for (let i = 0; i < hrToday; i++) {
+            const seasonHRNumber = seasonHRTotal - i;
+            const careerHRNumber = careerHR - i;
+        
+            homeRunProgress.unshift({
+              seasonHRNumber,
+              careerHRNumber,
+              hrId: `${player.person.id}_${today}_${seasonHRNumber}`,
+            });
+          }
+        
+          player.homeRunProgress = homeRunProgress;
+        }
+        
+  
+        return player;
       });
-      // Attach appearanceIndex to each updated player using the pitching order map:
-      updatedPlayers.forEach((p) => {
-        p.appearanceIndex = pitchingOrderMap[String(p.person.id)] ?? Infinity;
-      });
-
-      // Update both home and away team players in the boxScore:
+  
+      // Step 4: Rebuild player map and merge back
+      const playerMap = updatedPlayers.reduce((map, p) => {
+        map[String(p.person.id)] = p;
+        return map;
+      }, {});
+  
       ['home', 'away'].forEach((teamKey) => {
         const team = boxScore.teams[teamKey];
         const updated = {};
@@ -403,27 +446,62 @@ const handleRemoveHomeRun = (playerId, homeRun) => {
         }
         boxScore.teams[teamKey].players = updated;
       });
-
+  
       setBoxScore(boxScore);
     } catch (error) {
-      console.error('Error fetching box score:', error);
+      console.error('Error loading box score:', error);
     }
   };
-
+  
+  
   const changeDate = (days) => {
     const currentDate = new Date(date);
     currentDate.setDate(currentDate.getDate() + days);
     setDate(currentDate.toISOString().split('T')[0]);
   };
 
+  function trackHomeRunProgression(playByPlay, careerTotalsMap = {}) {
+    const seasonTracker = {};
+    const careerTracker = {};
+    const results = [];
+  
+    for (const play of playByPlay.allPlays || []) {
+      const { batter, result, about } = play;
+      if (!batter || result.eventType !== 'home_run') continue;
+  
+      const playerId = String(batter.id);
+      const date = about?.startTime?.split('T')[0];
+      const seasonHR = (seasonTracker[playerId] = (seasonTracker[playerId] || 0) + 1);
+      const careerHR = (careerTracker[playerId] = (careerTracker[playerId] || (careerTotalsMap[playerId] || 0)) + 1);
+  
+      results.push({
+        playerId,
+        playerName: batter.fullName,
+        seasonHRNumber: seasonHR,
+        careerHRNumber: careerHR,
+        date,
+        inning: about?.inning,
+        hrId: `${playerId}_${date}_${seasonHR}`,
+      });
+    }
+  
+    return results;
+  }
+  
+  
   const getLastName = (person) => {
+    // Prefer explicit lastName if available
     if (person.lastName) return person.lastName;
+    // Otherwise, if a boxscoreName is provided, use it
+    if (person.boxscoreName) return person.boxscoreName;
+    // Otherwise, split the fullName and use the last portion
     if (person.fullName) {
       const parts = person.fullName.split(' ');
       return parts[parts.length - 1];
     }
     return '';
   };
+  
 
   const formatSupplementalStats = (team) => {
     const allPlayers = team.players || {};
@@ -431,23 +509,18 @@ const handleRemoveHomeRun = (playerId, homeRun) => {
 
     // Use HomerEntry for players with home runs
     const homers = Object.entries(allPlayers)
-    .filter(([_, p]) => p.stats?.batting?.homeRuns > 0)
-    .map(([key, p]) => {
-      const playerId = Number(p.person.id);
-      const currentHr = p.stats?.batting?.homeRuns;
-      const alreadyLogged = mentaculous[playerId]?.homeRuns?.includes(currentHr);
-  
-      return (
-        <HomerEntry
-          key={key}
-          player={p}
-          getLastName={getLastName}
-          onAdd={(player) => handleAddToMentaculous(player, team.team.name)}
-          onRemove={handleRemoveHomeRun}
-          alreadyLogged={alreadyLogged}
-        />
-      );
-    });
+  .filter(([_, p]) => p.stats?.batting?.homeRuns > 0)
+  .map(([key, p]) => (
+    <HomerEntry
+      key={key}
+      player={p}
+      getLastName={getLastName}
+      onAdd={(player, hr) => handleAddToMentaculous(player, hr, team.team?.name)}
+      onRemove={handleRemoveHomeRun}
+      mentaculous={mentaculous} // ✅ required for per-HR tracking
+    />
+  ));
+
 
     // Format doubles
     const doubles = Object.entries(allPlayers)
@@ -767,15 +840,7 @@ const handleRemoveHomeRun = (playerId, homeRun) => {
               const entry = currentEntries[i - 1];
               if (entry) {
                 const [playerId, { playerName, homeRuns, teamName }] = entry;
-                const normalizeName = (name: string) =>
-                  Object.keys(teamAbbreviations).find(
-                    (key) => key.toLowerCase() === name.toLowerCase()
-                  );
-
-                const matchedKey = normalizeName(teamName);
-                const teamAbbr = matchedKey
-                  ? teamAbbreviations[matchedKey]
-                  : 'UNK';
+                const teamAbbr = getTeamAbbreviation(teamName);
 
                 return (
                   <div
@@ -797,7 +862,7 @@ const handleRemoveHomeRun = (playerId, homeRun) => {
         updatedPlayerId === parseInt(playerId) ? 'update-animate' : ''
       }
     >
-      {homeRuns[homeRuns.length - 1]}
+      {homeRuns.length}
     </span>
   </div>
   <div className="player-buttons">
