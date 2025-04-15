@@ -45,6 +45,19 @@ function getTeamAbbreviation(name: string = ''): string {
   return teamAbbreviationMap[name.trim().toLowerCase()] || 'UNK';
 }
 
+function parseHrId(hrId: string) {
+  const [, dateStr, hrNum] = hrId.split('_');
+  return {
+    date: dateStr, // '2024-04-15'
+    seasonHRNumber: Number(hrNum),
+  };
+}
+
+function findGameByDate(games, dateStr) {
+  return games.find((game) => game.gameDate.startsWith(dateStr));
+}
+
+
 // New HomerEntry component for HR entries in supplemental stats
 interface HomerEntryProps {
   player: any; // Replace `any` with a more specific type if possible
@@ -189,6 +202,11 @@ function PlayerProfile({ playerId, onClose }) {
         </button>
         {profile ? (
           <div className="player-profile">
+             <img
+            src={`https://img.mlbstatic.com/mlb-photos/image/upload/v1/people/${profile.id}/headshot/67/current.png`}
+            alt={`${profile.fullName} headshot`}
+             className="player-headshot"
+             />
             <h2>{profile.fullName}</h2>
             <p>
               <strong>Position:</strong> {profile.primaryPosition.name}
@@ -286,7 +304,9 @@ function App() {
   const [mentaculous, setMentaculous] = useState({});
   const [mentaculousPage, setMentaculousPage] = useState(0)
   const [updatedPlayerId, setUpdatedPlayerId] = useState(null);
-;
+  const [tooltipOpenId, setTooltipOpenId] = useState<number | null>(null);
+
+  ;
 const handleRemoveHomeRun = (playerId, hrId) => {
   setMentaculous((prev) => {
     const player = prev[playerId];
@@ -310,9 +330,41 @@ const handleRemoveHomeRun = (playerId, hrId) => {
 
   
   // Function to add a player to mentaculous state
-  const handleAddToMentaculous = (player, hr, teamName) => {
+  const handleAddToMentaculous = async (player, hr, teamName) => {
     const playerId = Number(player.person.id);
     if (!hr?.hrId) return;
+  
+    const hrDate = hr.hrId.split('_')[1];
+  
+    // Try to find in existing games first
+    let matchingGame = games.find((g) => g.gameDate.startsWith(hrDate));
+  
+    if (!matchingGame) {
+      try {
+        const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${hrDate}`);
+        const data = await res.json();
+    
+        // Try to match the player's team to find the correct game
+        const gamesOnDate = data.dates?.[0]?.games ?? [];
+        matchingGame = gamesOnDate.find(
+          (g) =>
+            g.teams.away.team.name === teamName ||
+            g.teams.home.team.name === teamName
+            
+        ) || null;
+      } catch (err) {
+        console.error('Failed to fetch game for HR date', hrDate, err);
+      }
+    }
+    
+  
+    let opponent = 'Unknown';
+    if (matchingGame) {
+      const isAway = matchingGame.teams.away.team.name === teamName;
+      opponent = isAway
+        ? `@ ${matchingGame.teams.home.team.name}`
+        : `vs ${matchingGame.teams.away.team.name}`;
+    }
   
     setMentaculous((prev) => {
       const existing = prev[playerId] || {
@@ -322,13 +374,23 @@ const handleRemoveHomeRun = (playerId, hrId) => {
         addedAt: Date.now(),
       };
   
-      if (existing.homeRuns.includes(hr.hrId)) return prev;
+      // Prevent duplicates
+      const alreadyExists = existing.homeRuns.some(
+        (h) => (typeof h === 'object' ? h.hrId : h) === hr.hrId
+      );
+      if (alreadyExists) return prev;
   
       return {
         ...prev,
         [playerId]: {
           ...existing,
-          homeRuns: [...existing.homeRuns, hr.hrId],
+          homeRuns: [
+            ...existing.homeRuns,
+            {
+              hrId: hr.hrId,
+              opponent,
+            },
+          ],
         },
       };
     });
@@ -357,6 +419,8 @@ const handleRemoveHomeRun = (playerId, hrId) => {
       .then((data) => setGames(data.dates[0]?.games || []))
       .catch((error) => console.error('Error fetching schedule:', error));
   }, [date]);
+
+
 
   const loadBoxScore = async (gamePk) => {
     try {
@@ -858,12 +922,36 @@ const handleRemoveHomeRun = (playerId, hrId) => {
   <div className="player-name">
     {playerName} –{' '}
     <span
-      className={
-        updatedPlayerId === parseInt(playerId) ? 'update-animate' : ''
-      }
-    >
-      {homeRuns.length}
-    </span>
+  className="hr-count-wrapper"
+  onClick={() =>
+    setTooltipOpenId((prev) =>
+      prev === parseInt(playerId) ? null : parseInt(playerId)
+    )
+  }
+>
+  {homeRuns.length}
+  {tooltipOpenId === parseInt(playerId) && (
+    <div className="tooltip-box">
+      {homeRuns.map((hr, i) => {
+  const { date } = parseHrId(hr.hrId ?? hr);
+  const formattedDate = new Date(date).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
+
+  const opponent = hr.opponent || 'Unknown';
+
+  return (
+    <div key={i} className="tooltip-line">
+      {formattedDate} {opponent}
+    </div>
+  );
+})}
+
+    </div>
+  )}
+</span>
+
   </div>
   <div className="player-buttons">
     <button

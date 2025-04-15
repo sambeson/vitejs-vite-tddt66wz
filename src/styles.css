@@ -73,6 +73,7 @@
 
 .player-name {
   background: none;
+  z-index: 0;
   border: none;
   color: #041e42;
   cursor: pointer;
@@ -533,6 +534,47 @@ button:focus {
   color: white;
   border-color: #041e42;
 }
+
+.player-headshot {
+  width: 120px;
+  height: 190px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.hr-count-wrapper {
+  position: relative;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.tooltip-box {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  background: white;
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  font-size: 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  white-space: nowrap;
+  margin-top: 6px;
+}
+
+.tooltip-line {
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.tooltip-line:last-child {
+  margin-bottom: 0;
+}
+
+
 /* === Player Profile: Season-by-Season Table === */
 .profile-stats-table {
   width: 100%;
