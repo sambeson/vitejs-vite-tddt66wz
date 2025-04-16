@@ -41,6 +41,11 @@ const teamAbbreviationMap = Object.entries(teamAbbreviations).reduce(
   {} as Record<string, string>
 );
 
+function getTeamLogoUrl(teamId: number) {
+  return `https://www.mlbstatic.com/team-logos/${teamId}.svg`;
+}
+
+
 function getTeamAbbreviation(name: string = ''): string {
   return teamAbbreviationMap[name.trim().toLowerCase()] || 'UNK';
 }
@@ -330,9 +335,10 @@ const handleRemoveHomeRun = (playerId, hrId) => {
 
   
   // Function to add a player to mentaculous state
-  const handleAddToMentaculous = async (player, hr, teamName) => {
+  const handleAddToMentaculous = async (player, hr, teamName, teamId) => {
     const playerId = Number(player.person.id);
     if (!hr?.hrId) return;
+    
   
     const hrDate = hr.hrId.split('_')[1];
   
@@ -356,7 +362,7 @@ const handleRemoveHomeRun = (playerId, hrId) => {
         console.error('Failed to fetch game for HR date', hrDate, err);
       }
     }
-    
+
   
     let opponent = 'Unknown';
     if (matchingGame) {
@@ -370,6 +376,7 @@ const handleRemoveHomeRun = (playerId, hrId) => {
       const existing = prev[playerId] || {
         playerName: player.person.fullName,
         teamName: teamName || 'Unknown',
+        teamId: teamId ?? null,
         homeRuns: [],
         addedAt: Date.now(),
       };
@@ -384,6 +391,7 @@ const handleRemoveHomeRun = (playerId, hrId) => {
         ...prev,
         [playerId]: {
           ...existing,
+          teamId: existing.teamId ?? teamId,
           homeRuns: [
             ...existing.homeRuns,
             {
@@ -579,7 +587,8 @@ const handleRemoveHomeRun = (playerId, hrId) => {
       key={key}
       player={p}
       getLastName={getLastName}
-      onAdd={(player, hr) => handleAddToMentaculous(player, hr, team.team?.name)}
+      onAdd={(player, hr) => handleAddToMentaculous(player, hr, team.team?.name, team.team?.id)}
+
       onRemove={handleRemoveHomeRun}
       mentaculous={mentaculous} // ✅ required for per-HR tracking
     />
@@ -903,7 +912,7 @@ const handleRemoveHomeRun = (playerId, hrId) => {
                 return <div key="spacer" className="notebook-line empty" />;
               const entry = currentEntries[i - 1];
               if (entry) {
-                const [playerId, { playerName, homeRuns, teamName }] = entry;
+                const [playerId, { playerName, homeRuns, teamName, teamId }] = entry;
                 const teamAbbr = getTeamAbbreviation(teamName);
 
                 return (
@@ -916,7 +925,17 @@ const handleRemoveHomeRun = (playerId, hrId) => {
                     key={playerId}
                   >
                     <div className="notebook-left">
-  <span className="notebook-abbr">{teamAbbr}</span>
+                    {teamId && (
+                    <img
+                      className="team-logo"
+                      src={getTeamLogoUrl(teamId)}
+                      alt={teamAbbr}
+                      width={24}
+                      height={24}
+                    />
+                  )}
+                  <span className="notebook-abbr">{teamAbbr}</span>
+
 </div>
 <div className="player-info">
   <div className="player-name">
@@ -1036,35 +1055,61 @@ const handleRemoveHomeRun = (playerId, hrId) => {
 
           {!selectedGame && (
             <div className="games-list">
-              {games.map((game) => {
-                const awayName = game.teams.away.team.name;
-                const homeName = game.teams.home.team.name;
+            {games.map((game) => {
+              const awayName = game.teams.away.team.name;
+              const homeName = game.teams.home.team.name;
+          
+              return (
+                <div
+                  key={game.gamePk}
+                  className="game-item"
+                  onClick={() => {
+                    setSelectedGame(game);
+                    loadBoxScore(game.gamePk);
+                  }}
+                >
+                <div className="game-item" key={game.gamePk} onClick={() => {
+  setSelectedGame(game);
+  loadBoxScore(game.gamePk);
+}}>
+  <div className="team-score-row">
+    <div className="team-row">
+      <img className="team-logo" src={getTeamLogoUrl(game.teams.away.team.id)} alt={awayName} />
+      <div className="team-details">
+        <div className="team-name">{awayName}</div>
+        <div className="team-record">
+          ({game.teams.away.leagueRecord.wins}–{game.teams.away.leagueRecord.losses})
+        </div>
+      </div>
+    </div>
+    <div className="team-score">
+      {game.status.detailedState === 'Final' ? game.teams.away.score : ''}
+    </div>
+  </div>
 
-                return (
-                  <div
-                    key={game.gamePk}
-                    className="game-item"
-                    onClick={() => {
-                      setSelectedGame(game);
-                      loadBoxScore(game.gamePk);
-                    }}
-                  >
-                    <div className="game-matchup">
-                      <div className="team-block">
-                        <div className="team-name">{awayName}</div>
-                      </div>
-                      <div className="vs-text">vs</div>
-                      <div className="team-block">
-                        <div className="team-name">{homeName}</div>
-                      </div>
-                    </div>
-                    <div className="game-status">
-                      {game.status.detailedState}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+  <div className="team-score-row">
+    <div className="team-row">
+      <img className="team-logo" src={getTeamLogoUrl(game.teams.home.team.id)} alt={homeName} />
+      <div className="team-details">
+        <div className="team-name">{homeName}</div>
+        <div className="team-record">
+          ({game.teams.home.leagueRecord.wins}–{game.teams.home.leagueRecord.losses})
+        </div>
+      </div>
+    </div>
+    <div className="team-score">
+      {game.status.detailedState === 'Final' ? game.teams.home.score : ''}
+    </div>
+  </div>
+
+  <div className="game-status">{game.status.detailedState}</div>
+</div>
+
+                </div>
+              );
+            })}
+          </div>
+        
           )}
 
           {selectedGame && !boxScore && (

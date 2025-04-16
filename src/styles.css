@@ -43,6 +43,60 @@
   opacity: 0;
 }
 
+.team-logo {
+  margin-right: 4px;
+  height: 30px;
+  display: block;
+}
+
+.team-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.team-name {
+  font-weight: bold;
+  font-size: 16px;
+  color: #111;
+}
+.team-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+}
+.team-record {
+  font-size: 12px;
+  align-items: left;
+  color: #666;
+}
+.team-text {
+  font-weight: 750;
+  font-size: 16px;
+  color: #222;
+}
+
+.score-block {
+  font-weight: bold;
+  font-size: 18px;
+  text-align: center;
+  min-width: 60px;
+}
+.score-line {
+  font-size: 14px;
+  margin-top: 6px;
+  margin-left: 36px; /* aligns with text after logo */
+  color: #555;
+}
+
+.vs-text {
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin: 0 12px;
+  white-space: nowrap;
+}
+
 .modal-content {
   background: white;
   max-height: 90vh; /* limit height */
@@ -71,16 +125,7 @@
   margin-bottom: 1rem;
 }
 
-.player-name {
-  background: none;
-  z-index: 0;
-  border: none;
-  color: #041e42;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 0;
-}
+
 
 .hr-line {
   font-weight: bold;
@@ -120,6 +165,10 @@
 
 .game-item {
   cursor: pointer;
+  display:flex;
+  flex-direction: column;
+  border: 1px solid #ddd;
+  text-align: left;
   padding: 16px;
   background: white;
   border-radius: 8px;
@@ -129,27 +178,23 @@
 
 .game-item:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
-.game-item {
-  border: 1px solid #ccc;
-  padding: 12px;
-  margin-bottom: 12px;
-  cursor: pointer;
-  text-align: center;
-}
+
+
 
 .game-matchup {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .team-block {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  margin-bottom: 4px;
+  gap: 10px;
+  flex: 1;
 }
 
 .team-name {
@@ -157,6 +202,19 @@
   margin-top: 4px;
 }
 
+.team-score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.team-score {
+  font-weight: bold;
+  font-size: 25px;
+  color: #222;
+  min-width: 30px;
+  text-align: right;
+}
 .vs-text {
   margin: 8px 0;
   font-size: 14px;
@@ -388,15 +446,13 @@ button:focus {
   align-items: center;
   justify-content: flex-start;
   padding-left: 0px;
-  gap: 4px;
+  gap: 0px;
   position: relative;
+  margin-left: -14px;
   z-index: 2;
 }
 
-.notebook-logo {
-  width: 20px;
-  height: 20px;
-}
+
 .notebook-abbr {
   font-size: 15px;
   color: #444;
@@ -425,14 +481,6 @@ button:focus {
   min-width: 0;
 }
 
-.player-name {
-  flex: 1 1 100%;
-  margin-top: 4px;
-  word-break: break-word;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: initial;
-}
 
 
 .player-buttons {
@@ -445,7 +493,7 @@ button:focus {
   font-weight: 500;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 18px;
   justify-content: space-between;
   align-items: left;
   padding-right: 1px;
@@ -483,11 +531,22 @@ button:focus {
   text-align: center;
 }
 
-
 .player-name {
   flex: 1;
   color: #333;
+  background: none;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+  padding: 0;
+  cursor: pointer;
+  word-break: break-word;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: initial;
 }
+
 
 .player-count {
   margin-right: 16px;
