@@ -383,21 +383,19 @@ const handleRemoveHomeRun = (playerId, hrId) => {
         : `vs ${matchingGame.teams.away.team.name}`;
     }
   
-    setMentaculous((prev) => {
+    setMentaculous(prev => {
       const existing = prev[playerId] || {
         playerName: player.person.fullName,
-        teamName: teamName || 'Unknown',
-        teamId: teamId ?? null,
+        teamName: teamName || "Unknown",
+        teamId,
         homeRuns: [],
         addedAt: Date.now(),
       };
-  
-      // Prevent duplicates
-      const alreadyExists = existing.homeRuns.some(
-        (h) => (typeof h === 'object' ? h.hrId : h) === hr.hrId
-      );
-      if (alreadyExists) return prev;
-  
+    
+      if (existing.homeRuns.some(h => h.hrId === hr.hrId)) {
+        return prev; 
+      }
+    
       return {
         ...prev,
         [playerId]: {
@@ -405,14 +403,14 @@ const handleRemoveHomeRun = (playerId, hrId) => {
           teamId: existing.teamId ?? teamId,
           homeRuns: [
             ...existing.homeRuns,
-            {
-              hrId: hr.hrId,
-              opponent,
-            },
+            { hrId: hr.hrId, opponent },
           ],
+          addedAt: Date.now(),
         },
       };
     });
+    
+     
   
     setActiveTab('mentaculous');
     setUpdatedPlayerId(playerId);
@@ -438,6 +436,19 @@ const handleRemoveHomeRun = (playerId, hrId) => {
       .then((data) => setGames(data.dates[0]?.games || []))
       .catch((error) => console.error('Error fetching schedule:', error));
   }, [date]);
+
+  // whenever the map updates and we're on Mentaculous, recalc which page holds the new entry
+useEffect(() => {
+  if (activeTab !== "mentaculous" || updatedPlayerId == null) return;
+
+  const entries = Object.entries(mentaculous)
+    .sort((a, b) => (a[1].addedAt ?? 0) - (b[1].addedAt ?? 0));
+
+  const idx = entries.findIndex(([id]) => Number(id) === updatedPlayerId);
+  if (idx >= 0) {
+    setMentaculousPage(Math.floor(idx / 32));
+  }
+}, [mentaculous, activeTab, updatedPlayerId]);
 
   const loadBoxScore = async (gamePk) => {
     try {
