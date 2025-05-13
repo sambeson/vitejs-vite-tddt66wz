@@ -313,8 +313,12 @@ function App() {
   const [mentaculousPage, setMentaculousPage] = useState(0)
   const [updatedPlayerId, setUpdatedPlayerId] = useState(null);
   const [tooltipOpenId, setTooltipOpenId] = useState<number | null>(null);
-
+  const [order, setOrder] = useState<string[]>([]);
   const lineRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const linesContainerRef = useRef<HTMLDivElement>(null);
+  const [manualOverride, setManualOverride] = useState(false);
+
+
   useEffect(() => {
   if (activeTab === 'mentaculous' && updatedPlayerId != null) {
     const el = lineRefs.current[String(updatedPlayerId)];
@@ -327,6 +331,7 @@ const handleRemoveHomeRun = (playerId, hrId) => {
   setMentaculous((prev) => {
     const player = prev[playerId];
     if (!player) return prev;
+  setOrder(prev => prev.filter(id => id !== String(playerId)));
 
     const updatedHomeRuns = player.homeRuns.filter((hr) => hr !== hrId);
     if (updatedHomeRuns.length === 0) {
@@ -344,7 +349,17 @@ const handleRemoveHomeRun = (playerId, hrId) => {
   });
 };
 
-  
+function move(id: string, delta: -1 | 1) {
+  setOrder(o => {
+    const idx = o.indexOf(id);
+    if (idx === -1) return o;
+    const copy = [...o];
+    const newIdx = idx + delta;
+    if (newIdx < 0 || newIdx >= copy.length) return copy;
+    [copy[idx], copy[newIdx]] = [copy[newIdx], copy[idx]];
+    return copy;
+  });
+}
   // Function to add a player to mentaculous state
   const handleAddToMentaculous = async (player, hr, teamName, teamId) => {
     const playerId = Number(player.person.id);
@@ -414,13 +429,28 @@ const handleRemoveHomeRun = (playerId, hrId) => {
       };
     });
     
+    setOrder(prev => {
+      // only append if it wasn’t already in the list
+      return prev.includes(playerId)
+        ? prev
+        : [...prev, playerId];
+    });
+  
   
     setActiveTab('mentaculous');
     setUpdatedPlayerId(playerId);
     setTimeout(() => setUpdatedPlayerId(null), 1000);
   };
   
-  
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem('mentaculous') || "{}");
+    setMentaculous(stored);
+    // initialize order from keys sorted by addedAt
+    const initial = Object.entries(stored)
+      .sort(([,a], [,b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
+      .map(([id]) => id);
+    setOrder(initial);
+  }, []);
   
   useEffect(() => {
     const stored = localStorage.getItem('mentaculous');
@@ -950,12 +980,13 @@ const handleRemoveHomeRun = (playerId, hrId) => {
   };
 
   const renderMentaculous = () => {
-    const entries = Object.entries(mentaculous).sort(
-      (a, b) => (a[1].addedAt ?? 0) - (b[1].addedAt ?? 0)
-    );
-    const totalPages = Math.ceil(entries.length / 32) || 1;
-    const start = mentaculousPage * 32;
-    const currentEntries = entries.slice(start, start + 32);
+    const entries = order
+    .filter(id => mentaculous[id])              // only still-present
+    .map(id => [id, mentaculous[id]] as const);
+
+  const totalPages = Math.ceil(entries.length / 32) || 1;
+  const start = mentaculousPage * 32;
+  const currentEntries = entries.slice(start, start + 32);
   
     return (
       <div className="mentaculous-container">
@@ -965,6 +996,7 @@ const handleRemoveHomeRun = (playerId, hrId) => {
           <div className="notebook-title-line">
             <h2>Mentaculous</h2>
           </div>
+          <div className="notebook-lines" ref={linesContainerRef}>
           {Array.from({ length: 33 }).map((_, i) => {
             if (i === 0) {
               return (
@@ -980,9 +1012,17 @@ const handleRemoveHomeRun = (playerId, hrId) => {
             }
   
             const [playerId, { playerName, homeRuns, teamName, teamId }] = entry;
-            const teamAbbr = getTeamAbbreviation(teamName);
+          const teamAbbr = getTeamAbbreviation(teamName);
   
             return (
+              <div key={playerId} className="notebook-line.filled">
+               {manualOverride && (
+                 <>
+                  {/* ↑↓ arrows */}
+                  <button className="arrow-btn" onClick={() => move(playerId, -1)}>↑</button>
+                 <button className="arrow-btn" onClick={() => move(playerId, +1)}>↓</button>
+                 </>
+                 )}
               <div
                 key={playerId}
                 ref={(r) => { lineRefs.current[playerId] = r; }}
@@ -1052,13 +1092,21 @@ const handleRemoveHomeRun = (playerId, hrId) => {
                       Remove
                     </button>
                   </div>
+                 </div>
                 </div>
               </div>
             );
           })}
+          </div>
         </div>
   
         {renderPagination()}
+        <div className="manual-override-toggle">
+      <button onClick={() => setManualOverride(o => !o)}>
+        {manualOverride ? 'Disable Manual Override' : 'Enable Manual Override'}
+      </button>
+    </div>
+
       </div>
     );
   };

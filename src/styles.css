@@ -513,8 +513,23 @@ button:focus {
   margin-left: 1px;
 }
 
+
 .view-button:hover {
   text-decoration: underline;
+}
+
+.arrow-btn {
+  display: inline-flexbox;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-right: 4px;
+  color: #666;
+  transition: color 0.15s ease;
+}
+.arrow-btn:hover {
+  color: #007bff;
 }
 
 .notebook-title-line h2 {
