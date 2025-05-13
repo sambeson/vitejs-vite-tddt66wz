@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './styles.css';
 
 const teamAbbreviations = {
@@ -40,6 +40,7 @@ const teamAbbreviationMap = Object.entries(teamAbbreviations).reduce(
   },
   {} as Record<string, string>
 );
+
 
 function getTeamLogoUrl(teamId: number) {
   return `https://www.mlbstatic.com/team-logos/${teamId}.svg`;
@@ -218,7 +219,7 @@ function PlayerProfile({ playerId, onClose }) {
             </p>
             <p>
               <strong>Birth:</strong> {profile.birthDate} in {profile.birthCity}
-              , {profile.birthCountry}
+              , {profile.birthStateProvince ?? ''} {profile.birthCountry}
             </p>
             <p>
               <strong>Debut:</strong> {profile.mlbDebutDate}
@@ -265,6 +266,7 @@ function PlayerProfile({ playerId, onClose }) {
                       <th>H</th>
                       <th>HR</th>
                       <th>RBI</th>
+                      <th>SB</th> 
                       <th>AVG</th>
                       <th>OPS</th>
                     </tr>
@@ -281,6 +283,7 @@ function PlayerProfile({ playerId, onClose }) {
                           <td>{s.stat?.hits ?? '-'}</td>
                           <td>{s.stat?.homeRuns ?? '-'} </td>
                           <td>{s.stat?.rbi ?? '-'}</td>
+                          <td>{s.stat?.stolenBases ?? '-'}</td>
                           <td>{s.stat?.avg ?? '-'}</td>
                           <td>{s.stat?.ops ?? '-'}</td>
                         </tr>
@@ -310,6 +313,14 @@ function App() {
   const [mentaculousPage, setMentaculousPage] = useState(0)
   const [updatedPlayerId, setUpdatedPlayerId] = useState(null);
   const [tooltipOpenId, setTooltipOpenId] = useState<number | null>(null);
+
+  const lineRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  useEffect(() => {
+  if (activeTab === 'mentaculous' && updatedPlayerId != null) {
+    const el = lineRefs.current[String(updatedPlayerId)];
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  }, [activeTab, updatedPlayerId]);
 
   ;
 const handleRemoveHomeRun = (playerId, hrId) => {
@@ -428,8 +439,6 @@ const handleRemoveHomeRun = (playerId, hrId) => {
       .catch((error) => console.error('Error fetching schedule:', error));
   }, [date]);
 
-
-
   const loadBoxScore = async (gamePk) => {
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/boxscore`);
@@ -518,7 +527,52 @@ const handleRemoveHomeRun = (playerId, hrId) => {
         }
         boxScore.teams[teamKey].players = updated;
       });
-  
+  // right before `setBoxScore(boxScore);` add:
+
+        const currentYear = new Date().getFullYear().toString();
+
+        await Promise.all(
+          updatedPlayers.map(async (player) => {
+            const id = player.person.id;
+            try {
+              const res = await fetch(
+                `https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=yearByYear&group=hitting`
+              );
+              const data = await res.json();
+              const split = data.stats[0].splits.find(
+                (s) => s.season === currentYear
+              );
+              if (split && split.stat) {
+                // stash into your player object
+                player.stats.batting.seasonAvg = split.stat.avg;
+                player.stats.batting.seasonOps = split.stat.ops;
+              } else {
+                player.stats.batting.seasonAvg = '-';
+                player.stats.batting.seasonOps = '-';
+              }
+            } catch (err) {
+              console.warn(`Failed season stats for ${id}`, err);
+              player.stats.batting.seasonAvg = '-';
+              player.stats.batting.seasonOps = '-';
+            }
+          })
+        );
+          await Promise.all(
+            updatedPlayers
+              .filter(p => p.stats?.pitching)   // only for pitchers
+              .map(async (player) => {
+                try {
+                  const res = await fetch(
+                    `https://statsapi.mlb.com/api/v1/people/${player.person.id}/stats?stats=yearByYear&group=pitching`
+                  );
+                  const data = await res.json();
+                  const pitSplit = data.stats[0].splits.find(s => s.season === currentYear);
+                  player.stats.pitching.seasonEra = pitSplit?.stat?.era ?? '-';
+                } catch {
+                  player.stats.pitching.seasonEra = '-';
+                }
+              })
+          );
       setBoxScore(boxScore);
     } catch (error) {
       console.error('Error loading box score:', error);
@@ -574,6 +628,28 @@ const handleRemoveHomeRun = (playerId, hrId) => {
     return '';
   };
   
+  const renderPagination = () => {
+    const totalPages = Math.ceil(Object.keys(mentaculous).length / 32) || 1;
+    return (
+      <div className="pagination-controls">
+        <button
+          onClick={() => setMentaculousPage(p => Math.max(0, p - 1))}
+          disabled={mentaculousPage === 0}
+        >
+          ← Prev
+        </button>
+        <span className="page-info">
+          Page {mentaculousPage + 1} of {totalPages}
+        </span>
+        <button
+          onClick={() => setMentaculousPage(p => Math.min(totalPages - 1, p + 1))}
+          disabled={mentaculousPage === totalPages - 1}
+        >
+          Next →
+        </button>
+      </div>
+    );
+  };
 
   const formatSupplementalStats = (team) => {
     const allPlayers = team.players || {};
@@ -619,20 +695,21 @@ const handleRemoveHomeRun = (playerId, hrId) => {
       .filter(([_, p]) => p.stats?.batting?.rbi > 0)
       .map(([_, p]) => {
         const breakdown = p.gameEvents?.rbiBreakdown;
-        return ` ${getLastName(p.person)} ${p.stats.batting.rbi}${
-          breakdown ? `, ${breakdown}` : ''
-        }`;
+        const seasonRBI = p.seasonStats?.batting?.rbi ?? 'N/A';
+        return ` ${getLastName(p.person)} ${p.stats.batting.rbi} (${seasonRBI})
+        `;
       });
 
-    // Format 2-out RBIs
-    const twoOutRbis = Object.entries(allPlayers)
-      .filter(([_, p]) => p.stats?.batting?.rbiWithTwoOuts > 0)
-      .map(([_, p]) => getLastName(p.person));
-
-    // Format RISP LOB
-    const rispLob = Object.entries(allPlayers)
-      .filter(([_, p]) => p.stats?.batting?.leftOnBaseInScoringPosition > 0)
-      .map(([_, p]) => getLastName(p.person));
+    const steals = Object.entries(allPlayers)
+      .filter(([_, p]) => p.stats?.batting?.stolenBases > 0)
+      .map(([_, p]) => {
+        const name = getLastName(p.person);
+        const gameSB = p.stats.batting.stolenBases;
+        // If you’ve fetched season-by-season, p.seasonStats.batting?.stolenBases should exist
+        const seasonSB = p.seasonStats?.batting?.stolenBases ?? 'N/A';
+        return `${name} ${gameSB} (${seasonSB})`;
+      });
+    
 
     return (
       <div className="supplemental-stats">
@@ -643,26 +720,19 @@ const handleRemoveHomeRun = (playerId, hrId) => {
             </div>
           )}
           {doubles.length > 0 && (
-            <div className="stat-line">2B—{doubles.join('; ')}.</div>
+            <div className="stat-line">2B—{doubles.join('; ')}</div>
           )}
           {totalBases.length > 0 && (
-            <div className="stat-line">TB—{totalBases.join('; ')}.</div>
+            <div className="stat-line">TB—{totalBases.join('; ')}</div>
           )}
           {rbis.length > 0 && (
-            <div className="stat-line">RBI—{rbis.join('; ')}.</div>
+            <div className="stat-line">RBI—{rbis.join('; ')}</div>
           )}
-          {twoOutRbis.length > 0 && (
-            <div className="stat-line">2-out RBI—{twoOutRbis.join('; ')}.</div>
-          )}
-          {rispLob.length > 0 && (
+           {steals.length > 0 && (
             <div className="stat-line">
-              Runners left in scoring position, 2 out—{rispLob.join('; ')}.
-            </div>
+            SB— {steals.join('; ')}
+         </div>
           )}
-          <div className="stat-line">
-            Team RISP—{stats.runnersScoringPosition || '0-0'}.
-          </div>
-          <div className="stat-line">Team LOB—{stats.leftOnBase || 0}.</div>
         </div>
 
         {team.baserunning && (
@@ -737,7 +807,7 @@ const handleRemoveHomeRun = (playerId, hrId) => {
               <th>BB</th>
               <th>K</th>
               <th>HR</th>
-              <th>P-S</th>
+              <th>P</th>
               <th>ERA</th>
             </tr>
           </thead>
@@ -754,27 +824,14 @@ const handleRemoveHomeRun = (playerId, hrId) => {
                   <td>{stats.baseOnBalls}</td>
                   <td>{stats.strikeOuts}</td>
                   <td>{stats.homeRuns}</td>
-                  <td>{`${stats.pitchesThrown}-${stats.strikes}`}</td>
-                  <td>{stats.era}</td>
+                  <td>{`${stats.pitchesThrown}`}</td>
+                  <td>{stats.seasonEra}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-        <div className="supplemental-stats">
-          <div className="stat-line">
-            WP—{teamPitchingStats.wildPitches || 0}.
-          </div>
-          <div className="stat-line">BK—{teamPitchingStats.balks || 0}.</div>
-          <div className="stat-line">
-            HBP—{teamPitchingStats.hitBatsmen || 0}.
-          </div>
-          <div className="stat-line">
-            Pitches-Strikes—{teamPitchingStats.pitchesThrown || 0}-
-            {teamPitchingStats.strikes || 0}.
-          </div>
         </div>
-      </div>
     );
   };
 
@@ -839,7 +896,6 @@ const handleRemoveHomeRun = (playerId, hrId) => {
               <th>RBI</th>
               <th>BB</th>
               <th>SO</th>
-              <th>LOB</th>
               <th>AVG</th>
               <th>OPS</th>
             </tr>
@@ -873,13 +929,12 @@ const handleRemoveHomeRun = (playerId, hrId) => {
                     <td>{stats.rbi}</td>
                     <td>{stats.baseOnBalls}</td>
                     <td>{stats.strikeOuts}</td>
-                    <td>{stats.leftOnBase}</td>
-                    <td>{stats.avg}</td>
-                    <td>{stats.ops}</td>
+                    <td>{stats.seasonAvg}</td>
+                    <td>{stats.seasonOps}</td>
                   </tr>
                   {battingLine && (
                     <tr className="batting-line">
-                      <td colSpan="10">{battingLine}</td>
+                      <td colSpan="9">{battingLine}</td>
                     </tr>
                   )}
                 </React.Fragment>
@@ -893,39 +948,48 @@ const handleRemoveHomeRun = (playerId, hrId) => {
   };
 
   const renderMentaculous = () => {
-    const entries = Object.entries(mentaculous).sort((a, b) => (a[1].addedAt ?? 0) - (b[1].addedAt ?? 0)
+    const entries = Object.entries(mentaculous).sort(
+      (a, b) => (a[1].addedAt ?? 0) - (b[1].addedAt ?? 0)
     );
     const totalPages = Math.ceil(entries.length / 32) || 1;
-
     const start = mentaculousPage * 32;
     const currentEntries = entries.slice(start, start + 32);
-
+  
     return (
       <div className="mentaculous-container">
+        {renderPagination()}
+  
         <div className="mentaculous-page notebook">
           <div className="notebook-title-line">
             <h2>Mentaculous</h2>
           </div>
-          <div className="notebook-lines">
-            {Array.from({ length: 33 }).map((_, i) => {
-              if (i === 0)
-                return <div key="spacer" className="notebook-line empty" />;
-              const entry = currentEntries[i - 1];
-              if (entry) {
-                const [playerId, { playerName, homeRuns, teamName, teamId }] = entry;
-                const teamAbbr = getTeamAbbreviation(teamName);
-
-                return (
-                  <div
-                    className={`notebook-line filled ${
-                      updatedPlayerId === parseInt(playerId)
-                        ? 'update-animate'
-                        : ''
-                    }`}
-                    key={playerId}
-                  >
-                    <div className="notebook-left">
-                    {teamId && (
+          {Array.from({ length: 33 }).map((_, i) => {
+            if (i === 0) {
+              return (
+                <div key="spacer" className="notebook-line empty" />
+              );
+            }
+  
+            const entry = currentEntries[i - 1];
+            if (!entry) {
+              return (
+                <div key={i} className="notebook-line empty" />
+              );
+            }
+  
+            const [playerId, { playerName, homeRuns, teamName, teamId }] = entry;
+            const teamAbbr = getTeamAbbreviation(teamName);
+  
+            return (
+              <div
+                key={playerId}
+                ref={(r) => { lineRefs.current[playerId] = r; }}
+                className={`notebook-line filled ${
+                  updatedPlayerId === parseInt(playerId) ? 'update-animate' : ''
+                }`}
+              >
+                <div className="notebook-left">
+                  {teamId && (
                     <img
                       className="team-logo"
                       src={getTeamLogoUrl(teamId)}
@@ -935,94 +999,69 @@ const handleRemoveHomeRun = (playerId, hrId) => {
                     />
                   )}
                   <span className="notebook-abbr">{teamAbbr}</span>
-
-</div>
-<div className="player-info">
-  <div className="player-name">
-    {playerName} –{' '}
-    <span
-  className="hr-count-wrapper"
-  onClick={() =>
-    setTooltipOpenId((prev) =>
-      prev === parseInt(playerId) ? null : parseInt(playerId)
-    )
-  }
->
-  {homeRuns.length}
-  {tooltipOpenId === parseInt(playerId) && (
-    <div className="tooltip-box">
-      {homeRuns.map((hr, i) => {
-  const { date } = parseHrId(hr.hrId ?? hr);
-  const formattedDate = new Date(date).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-  });
-
-  const opponent = hr.opponent || 'Unknown';
-
-  return (
-    <div key={i} className="tooltip-line">
-      {formattedDate} {opponent}
-    </div>
-  );
-})}
-
-    </div>
-  )}
-</span>
-
-  </div>
-  <div className="player-buttons">
-    <button
-      className="view-button"
-      onClick={() => setSelectedPlayerId(parseInt(playerId))}
-    >
-      View
-    </button>
-    <button
-      className="remove-button"
-      onClick={() => {
-        const homeRunToRemove = homeRuns[homeRuns.length - 1];
-        handleRemoveHomeRun(playerId, homeRunToRemove);
-      }}
-    >
-      Remove
-    </button>
-  </div>
-</div>
-
+                </div>
+  
+                <div className="player-info">
+                  <div className="player-name">
+                    {playerName} –{' '}
+                    <span
+                      className="hr-count-wrapper"
+                      onClick={() =>
+                        setTooltipOpenId((prev) =>
+                          prev === parseInt(playerId) ? null : parseInt(playerId)
+                        )
+                      }
+                    >
+                      {homeRuns.length}
+                      {tooltipOpenId === parseInt(playerId) && (
+                        <div className="tooltip-box">
+                          {homeRuns.map((hr, idx) => {
+                            const { date } = parseHrId(hr.hrId ?? hr);
+                            const formatted = new Date(date).toLocaleDateString(
+                              undefined,
+                              { month: 'short', day: 'numeric' }
+                            );
+                            const opponent = hr.opponent || 'Unknown';
+                            return (
+                              <div key={idx} className="tooltip-line">
+                                {formatted} {opponent}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </span>
                   </div>
-                );
-              } else {
-                return <div key={i} className="notebook-line empty" />;
-              }
-            })}
-          </div>
+  
+                  <div className="player-buttons">
+                    <button
+                      className="view-button"
+                      onClick={() => setSelectedPlayerId(parseInt(playerId))}
+                    >
+                      View
+                    </button>
+                    <button
+                      className="remove-button"
+                      onClick={() => {
+                        const lastHr = homeRuns[homeRuns.length - 1];
+                        handleRemoveHomeRun(playerId, lastHr);
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
-
-        {/* Pagination Controls */}
-        <div className="pagination-controls">
-          <button
-            onClick={() => setMentaculousPage((prev) => Math.max(0, prev - 1))}
-            disabled={mentaculousPage === 0}
-          >
-            ← Prev
-          </button>
-          <span className="page-info">
-            Page {mentaculousPage + 1} of {totalPages}
-          </span>
-          <button
-            onClick={() =>
-              setMentaculousPage((prev) => Math.min(totalPages - 1, prev + 1))
-            }
-            disabled={mentaculousPage === totalPages - 1}
-          >
-            Next →
-          </button>
-        </div>
+  
+        {renderPagination()}
       </div>
     );
   };
+  
+
 
   return (
     <div className="app">
@@ -1043,6 +1082,8 @@ const handleRemoveHomeRun = (playerId, hrId) => {
 
       {activeTab === 'games' && (
         <>
+        {!selectedGame && (
+          <>
           <div className="date-selector">
             <button onClick={() => changeDate(-1)}>←</button>
             <input
@@ -1053,7 +1094,6 @@ const handleRemoveHomeRun = (playerId, hrId) => {
             <button onClick={() => changeDate(1)}>→</button>
           </div>
 
-          {!selectedGame && (
             <div className="games-list">
             {games.map((game) => {
               const awayName = game.teams.away.team.name;
@@ -1068,10 +1108,7 @@ const handleRemoveHomeRun = (playerId, hrId) => {
                     loadBoxScore(game.gamePk);
                   }}
                 >
-                <div className="game-item" key={game.gamePk} onClick={() => {
-  setSelectedGame(game);
-  loadBoxScore(game.gamePk);
-}}>
+                
   <div className="team-score-row">
     <div className="team-row">
       <img className="team-logo" src={getTeamLogoUrl(game.teams.away.team.id)} alt={awayName} />
@@ -1105,11 +1142,10 @@ const handleRemoveHomeRun = (playerId, hrId) => {
   <div className="game-status">{game.status.detailedState}</div>
 </div>
 
-                </div>
               );
             })}
           </div>
-        
+        </>
           )}
 
           {selectedGame && !boxScore && (

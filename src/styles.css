@@ -263,7 +263,7 @@
   width: 100%;
   border-collapse: collapse;
   margin: 20px 0;
-  font-size: 14px;
+  font-size: 11px;
 }
 
 .stats-table th {
@@ -286,20 +286,20 @@
 }
 
 .batting-line {
-  font-size: 13px;
+  font-size: 11px;
   color: #666;
   background-color: #f8f9fa;
 }
 
 .batting-line td {
-  padding: 4px 12px 8px;
+  padding: 1px 12px 7px;
   font-family: 'SF Mono', Monaco, Menlo, Consolas, 'Liberation Mono',
     'Courier New', monospace;
 }
 
 .position {
   color: #666;
-  font-size: 13px;
+  font-size: 11px;
   margin-left: 4px;
 }
 
