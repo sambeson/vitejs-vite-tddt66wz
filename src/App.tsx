@@ -1159,38 +1159,38 @@ function move(id: string, delta: -1 | 1) {
                   }}
                 >
                 
-  <div className="team-score-row">
-    <div className="team-row">
-      <img className="team-logo" src={getTeamLogoUrl(game.teams.away.team.id)} alt={awayName} />
-      <div className="team-details">
-        <div className="team-name">{awayName}</div>
-        <div className="team-record">
-          ({game.teams.away.leagueRecord.wins}–{game.teams.away.leagueRecord.losses})
-        </div>
-      </div>
-    </div>
-    <div className="team-score">
-      {game.status.detailedState === 'Final' ? game.teams.away.score : ''}
-    </div>
-  </div>
+                <div className="team-score-row">
+                  <div className="team-row">
+                    <img className="team-logo" src={getTeamLogoUrl(game.teams.away.team.id)} alt={awayName} />
+                    <div className="team-details">
+                      <div className="team-name">{awayName}</div>
+                      <div className="team-record">
+                        ({game.teams.away.leagueRecord.wins}–{game.teams.away.leagueRecord.losses})
+                      </div>
+                    </div>
+                  </div>
+                  <div className="team-score">
+                    {game.status.detailedState === 'Final' ? game.teams.away.score : ''}
+                  </div>
+                </div>
 
-  <div className="team-score-row">
-    <div className="team-row">
-      <img className="team-logo" src={getTeamLogoUrl(game.teams.home.team.id)} alt={homeName} />
-      <div className="team-details">
-        <div className="team-name">{homeName}</div>
-        <div className="team-record">
-          ({game.teams.home.leagueRecord.wins}–{game.teams.home.leagueRecord.losses})
-        </div>
-      </div>
-    </div>
-    <div className="team-score">
-      {game.status.detailedState === 'Final' ? game.teams.home.score : ''}
-    </div>
-  </div>
+                <div className="team-score-row">
+                  <div className="team-row">
+                    <img className="team-logo" src={getTeamLogoUrl(game.teams.home.team.id)} alt={homeName} />
+                    <div className="team-details">
+                      <div className="team-name">{homeName}</div>
+                      <div className="team-record">
+                        ({game.teams.home.leagueRecord.wins}–{game.teams.home.leagueRecord.losses})
+                      </div>
+                    </div>
+                  </div>
+                  <div className="team-score">
+                    {game.status.detailedState === 'Final' ? game.teams.home.score : ''}
+                  </div>
+                </div>
 
-  <div className="game-status">{game.status.detailedState}</div>
-</div>
+                <div className="game-status">{game.status.detailedState}</div>
+              </div>
 
               );
             })}
