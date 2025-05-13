@@ -997,7 +997,7 @@ function move(id: string, delta: -1 | 1) {
             <h2>Mentaculous</h2>
           </div>
           <div className="notebook-lines" ref={linesContainerRef}>
-          {Array.from({ length: 33 }).map((_, i) => {
+            {Array.from({ length: 33 }).map((_, i) => {
             if (i === 0) {
               return (
                 <div key="spacer" className="notebook-line empty" />
@@ -1102,12 +1102,11 @@ function move(id: string, delta: -1 | 1) {
   
         {renderPagination()}
         <div className="manual-override-toggle">
-      <button onClick={() => setManualOverride(o => !o)}>
-        {manualOverride ? 'Disable Manual Override' : 'Enable Manual Override'}
+          <button onClick={() => setManualOverride(o => !o)}>
+            {manualOverride ? 'Disable Manual Override' : 'Enable Manual Override'}
       </button>
     </div>
-
-      </div>
+  </div>
     );
   };
   
