@@ -384,33 +384,36 @@ const handleRemoveHomeRun = (playerId, hrId) => {
     }
   
     setMentaculous(prev => {
-      const existing = prev[playerId] || {
+      // first grab whatever was there
+      const existing = prev[playerId];
+    
+      // determine the base entry (either the old one, or a brand‐new one)
+      const base = existing ?? {
         playerName: player.person.fullName,
-        teamName: teamName || "Unknown",
+        teamName:  teamName || "Unknown",
         teamId,
         homeRuns: [],
+        // only stamp here when there is no existing entry
         addedAt: Date.now(),
       };
     
-      if (existing.homeRuns.some(h => h.hrId === hr.hrId)) {
-        return prev; 
+      // prevent duplicates
+      if (base.homeRuns.some(h => h.hrId === hr.hrId)) {
+        return prev;
       }
     
+      // now return a new object, preserving base.addedAt
       return {
         ...prev,
         [playerId]: {
-          ...existing,
-          teamId: existing.teamId ?? teamId,
-          homeRuns: [
-            ...existing.homeRuns,
-            { hrId: hr.hrId, opponent },
-          ],
-          addedAt: Date.now(),
-        },
+          ...base,
+          teamId:    base.teamId    ?? teamId,
+          homeRuns: [...base.homeRuns, { hrId: hr.hrId, opponent }],
+          addedAt:  base.addedAt,        // <-- keep the original
+        }
       };
     });
     
-     
   
     setActiveTab('mentaculous');
     setUpdatedPlayerId(playerId);
@@ -437,19 +440,7 @@ const handleRemoveHomeRun = (playerId, hrId) => {
       .catch((error) => console.error('Error fetching schedule:', error));
   }, [date]);
 
-  // whenever the map updates and we're on Mentaculous, recalc which page holds the new entry
-useEffect(() => {
-  if (activeTab !== "mentaculous" || updatedPlayerId == null) return;
-
-  const entries = Object.entries(mentaculous)
-    .sort((a, b) => (a[1].addedAt ?? 0) - (b[1].addedAt ?? 0));
-
-  const idx = entries.findIndex(([id]) => Number(id) === updatedPlayerId);
-  if (idx >= 0) {
-    setMentaculousPage(Math.floor(idx / 32));
-  }
-}, [mentaculous, activeTab, updatedPlayerId]);
-
+  
   const loadBoxScore = async (gamePk) => {
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/boxscore`);
