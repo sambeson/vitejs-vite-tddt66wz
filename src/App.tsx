@@ -69,7 +69,7 @@ interface HomerEntryProps {
   player: any; // Replace `any` with a more specific type if possible
   getLastName: (person: any) => string;
   onAdd: (player: any, hr: any, teamName: any) => void;
-  onRemove: (playerId: number, homeRun: number) => void; // Add the correct type for `onRemove`
+  onRemove: (playerId: string, hrId: string) => void; // Add the correct type for `onRemove`
   mentaculous: any;
 }
 function HomerEntry({
@@ -108,7 +108,7 @@ function HomerEntry({
                   className="remove-button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onRemove(player.person.id, hr.seasonHRNumber);
+                    onRemove(String(player.person.id), hr.hrId);
                   }}
                 >
                   Remove HR
@@ -327,15 +327,16 @@ function App() {
   }, [activeTab, updatedPlayerId]);
 
   ;
-const handleRemoveHomeRun = (playerId, hrId) => {
+const handleRemoveHomeRun = (playerId: string, hrId: string) => {
   setMentaculous((prev) => {
     const player = prev[playerId];
     if (!player) return prev;
   setOrder(prev => prev.filter(id => id !== String(playerId)));
 
-    const updatedHomeRuns = player.homeRuns.filter((hr) => hr !== hrId);
+    const updatedHomeRuns = player.homeRuns.filter(h => h.hrId !== hrId);
     if (updatedHomeRuns.length === 0) {
       const { [playerId]: _, ...remainingPlayers } = prev;
+      setOrder(o => o.filter(id => id !== playerId));
       return remainingPlayers;
     }
 
@@ -1083,15 +1084,15 @@ function move(id: string, delta: -1 | 1) {
                     >
                       View
                     </button>
-                    <button
-                      className="remove-button"
-                      onClick={() => {
-                        const lastHr = homeRuns[homeRuns.length - 1];
-                        handleRemoveHomeRun(playerId, lastHr);
-                      }}
-                    >
-                      Remove
-                    </button>
+                  <button
+                   className="remove-button"
+                   onClick={(e) => {
+                     e.stopPropagation();
+                     onRemove(String(player.person.id), hr.hrId);
+                     }}
+                   >
+                     Remove HR
+                  </button>
                   </div>
                  </div>
                 </div>
