@@ -1084,18 +1084,19 @@ function move(id: string, delta: -1 | 1) {
                     >
                       View
                     </button>
-                  {homeRuns.map((hrEntry, idx) => (
+                  {homeRuns.length> 0 && (
                   <button
                    key={idx}
                    className="remove-button"
                    onClick={(e) => {
                      e.stopPropagation();
-                     handleRemoveHomeRun(playerId, hrEntry.hrId);
+                     const lastHr = homeRuns[homeRuns.length - 1].hrId;
+                     handleRemoveHomeRun(playerId, lastHr);
                      }}
                    >
-                     Remove HR {hrEntry.seasonHRNumber}
+                     Remove HR ({homeRuns.length})
                   </button>
-                  ))}
+                  )}
                   </div>
                  </div>
                 </div>
