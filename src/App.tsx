@@ -1086,7 +1086,6 @@ function move(id: string, delta: -1 | 1) {
                     </button>
                   {homeRuns.length> 0 && (
                   <button
-                   key={idx}
                    className="remove-button"
                    onClick={(e) => {
                      e.stopPropagation();
