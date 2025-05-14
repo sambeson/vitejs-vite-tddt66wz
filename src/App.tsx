@@ -106,7 +106,7 @@ function HomerEntry({
                 <span className="added-indicator"> Added! </span>
                 <button
                   className="remove-button"
-                  onClick={(e) => {
+                  onClick={e => {
                     e.stopPropagation();
                     onRemove(String(player.person.id), hr.hrId);
                   }}
@@ -328,22 +328,22 @@ function App() {
 
   ;
 const handleRemoveHomeRun = (playerId: string, hrId: string) => {
-  setMentaculous((prev) => {
-    const player = prev[playerId];
-    if (!player) return prev;
+  setMentaculous(prev => {
+    const existing = prev[playerId];
+    if (!existing) return prev;
   setOrder(prev => prev.filter(id => id !== String(playerId)));
 
-    const updatedHomeRuns = player.homeRuns.filter(h => h.hrId !== hrId);
+    const updatedHomeRuns = existing.homeRuns.filter(h => h.hrId !== hrId);
     if (updatedHomeRuns.length === 0) {
-      const { [playerId]: _, ...remainingPlayers } = prev;
+      const { [playerId]: _, ...rest } = prev;
       setOrder(o => o.filter(id => id !== playerId));
-      return remainingPlayers;
+      return rest;
     }
 
     return {
       ...prev,
       [playerId]: {
-        ...player,
+        ...existing,
         homeRuns: updatedHomeRuns,
       },
     };
@@ -1084,15 +1084,18 @@ function move(id: string, delta: -1 | 1) {
                     >
                       View
                     </button>
+                  {homeRuns.map((hrEntry, idx) => (
                   <button
+                   key={idx}
                    className="remove-button"
                    onClick={(e) => {
                      e.stopPropagation();
-                     onRemove(String(player.person.id), hr.hrId);
+                     handleRemoveHomeRun(playerId, hrEntry.hrId);
                      }}
                    >
-                     Remove HR
+                     Remove HR {hrEntry.seasonHRNumber}
                   </button>
+                  ))}
                   </div>
                  </div>
                 </div>
