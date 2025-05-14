@@ -431,9 +431,10 @@ function move(id: string, delta: -1 | 1) {
     
     setOrder(prev => {
       // only append if it wasn’t already in the list
-      return prev.includes(playerId)
+      const strId = String(playerId);
+      return prev.includes(strId)
         ? prev
-        : [...prev, playerId];
+        : [...prev, strId];
     });
   
   
@@ -1012,7 +1013,7 @@ function move(id: string, delta: -1 | 1) {
             }
   
             const [playerId, { playerName, homeRuns, teamName, teamId }] = entry;
-          const teamAbbr = getTeamAbbreviation(teamName);
+            const teamAbbr = getTeamAbbreviation(teamName);
   
             return (
               <div key={playerId} className="notebook-line.filled">
@@ -1023,13 +1024,13 @@ function move(id: string, delta: -1 | 1) {
                  <button className="arrow-btn" onClick={() => move(playerId, +1)}>↓</button>
                  </>
                  )}
-              <div
+                <div
                 key={playerId}
                 ref={(r) => { lineRefs.current[playerId] = r; }}
                 className={`notebook-line filled ${
                   updatedPlayerId === parseInt(playerId) ? 'update-animate' : ''
                 }`}
-              >
+                >
                 <div className="notebook-left">
                   {teamId && (
                     <img
