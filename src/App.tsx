@@ -1087,11 +1087,12 @@ function move(id: string, delta: -1 | 1) {
                   {homeRuns.length> 0 && (
                   <button
                    className="remove-button"
-                   onClick={(e) => {
+                   onClick={e => {
                      e.stopPropagation();
+                     if (window.confirm('Really remove this home run entry?')){
                      const lastHr = homeRuns[homeRuns.length - 1].hrId;
                      handleRemoveHomeRun(playerId, lastHr);
-                     }}
+                     }}}
                    >
                      Remove HR ({homeRuns.length})
                   </button>
