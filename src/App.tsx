@@ -1279,7 +1279,10 @@ function move(id: string, delta: -1 | 1) {
     {Object.entries(mentaculous).length === 0 ? (
       <p>No entries yet.</p>
     ) : (
-      Object.entries(mentaculous).map(([playerId, { playerName, homeRuns }]) => (
+      Object.entries(mentaculous)
+      .sort(([ , a], [ , b ]) =>
+        a.playerName.localeCompare(b.playerName))
+      .map(([playerId, { playerName, homeRuns }]) => (
         <div key={playerId} className="backend-player-block">
           <h3>{playerName}</h3>
           <ul>
