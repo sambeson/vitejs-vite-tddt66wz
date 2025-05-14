@@ -1094,7 +1094,7 @@ function move(id: string, delta: -1 | 1) {
                      handleRemoveHomeRun(playerId, lastHr);
                      }}}
                    >
-                     Remove HR ({homeRuns.length})
+                     Remove
                   </button>
                   )}
                   </div>
@@ -1133,6 +1133,14 @@ function move(id: string, delta: -1 | 1) {
         >
           Mentaculous
         </button>
+         {manualOverride && (
+          <button
+            className={activeTab === 'backend' ? 'active' : ''}
+            onClick={() => setActiveTab('backend')}
+           >
+             Mentaculous Backend
+           </button>
+           )}
       </div>
 
       {activeTab === 'games' && (
@@ -1265,6 +1273,50 @@ function move(id: string, delta: -1 | 1) {
           )}
         </>
       )}
+     {activeTab === 'backend' && manualOverride && (
+  <div className="backend-tab">
+    <h2>Mentaculous Backend</h2>
+    {Object.entries(mentaculous).length === 0 ? (
+      <p>No entries yet.</p>
+    ) : (
+      Object.entries(mentaculous).map(([playerId, { playerName, homeRuns }]) => (
+        <div key={playerId} className="backend-player-block">
+          <h3>{playerName}</h3>
+          <ul>
+            {homeRuns.map(({ hrId }, i) => (
+              <li key={hrId} className="backend-hr-line">
+                <code>{hrId}</code>
+                <button
+                  className="remove-button"
+                  style={{ marginLeft: '8px' }}
+                  onClick={() => handleRemoveHomeRun(playerId, hrId)}
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+          <button
+            className="remove-button"
+            style={{ marginTop: '4px' }}
+            onClick={() => {
+              if (window.confirm(`Remove all ${playerName} entries?`)) {
+                // remove whole player
+                setMentaculous(prev => {
+                  const { [playerId]: _, ...rest } = prev;
+                  return rest;
+                });
+                setOrder(o => o.filter(id => id !== playerId));
+              }
+            }}
+          >
+            Delete All for {playerName}
+          </button>
+        </div>
+      ))
+    )}
+  </div>
+)}
 
       {activeTab === 'mentaculous' && renderMentaculous()}
 
@@ -1274,6 +1326,9 @@ function move(id: string, delta: -1 | 1) {
           onClose={() => setSelectedPlayerId(null)}
         />
       )}
+
+      
+
     </div>
   );
 }
