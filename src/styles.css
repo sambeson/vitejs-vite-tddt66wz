@@ -1,6 +1,10 @@
 /* Import handwritten font */
 @import url('https://fonts.googleapis.com/css2?family=Shadows+Into+Light&display=swap');
-
+body, html, #root, .app {
+  width: 100vw;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
 .app {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
     Arial, sans-serif;
