@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './styles.css';
+import { backupToSupabase } from './supabase';
 
 const teamAbbreviations = {
   'Arizona Diamondbacks': 'ARI',
@@ -431,19 +432,28 @@ function move(id: string, delta: -1 | 1) {
     });
     
     setOrder(prev => {
-      // only append if it wasn’t already in the list
       const strId = String(playerId);
       return prev.includes(strId)
         ? prev
         : [...prev, strId];
     });
-  
-  
+   // Calculate the new page for the player
+   setTimeout(() => {
     setActiveTab('mentaculous');
     setUpdatedPlayerId(playerId);
+
+    // Find the index of the player in the order
+    const strId = String(playerId);
+    const idx = order.includes(strId)
+      ? order.indexOf(strId)
+      : order.length; // If just added, will be at the end
+
+    const page = Math.floor(idx / 32);
+    setMentaculousPage(page);
+
     setTimeout(() => setUpdatedPlayerId(null), 1000);
-  };
-  
+  }, 0);
+};
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem('mentaculous') || "{}");
     setMentaculous(stored);
@@ -465,6 +475,17 @@ function move(id: string, delta: -1 | 1) {
     localStorage.setItem('mentaculous', JSON.stringify(mentaculous));
   }, [mentaculous]);
 
+  useEffect(() => {
+    localStorage.setItem('mentaculousOrder', JSON.stringify(order));
+  }, [order]);
+  
+  // On mount, load order from localStorage if available
+  useEffect(() => {
+    const storedOrder = localStorage.getItem('mentaculousOrder');
+    if (storedOrder) {
+      setOrder(JSON.parse(storedOrder));
+    }
+  }, []);
   useEffect(() => {
     fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`)
       .then((res) => res.json())
@@ -1329,9 +1350,12 @@ function move(id: string, delta: -1 | 1) {
           onClose={() => setSelectedPlayerId(null)}
         />
       )}
-
-      
-
+      <button onClick={() => {
+        const userId = prompt('Enter a user ID or email for backup:');
+        if (userId) backupToSupabase(userId);
+      }}>
+        Backup Mentaculous to Supabase
+      </button>
     </div>
   );
 }

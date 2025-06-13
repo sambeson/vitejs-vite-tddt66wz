@@ -23,16 +23,12 @@
   z-index: 999;
 }
 .mentaculous-button {
-  margin-left: 8px;
-  padding: 4px 8px;
-  background: url('path/to/crumpled-paper-texture.jpg') no-repeat center center;
-  background-size: cover;
-  border: none;
-  font-family: 'Calibri', cursive; /* Ensure this font is imported */
-  font-size: 1em;
-  color: #333;
-  cursor: pointer;
-  transition: opacity 0.5s ease, transform 0.2s ease;
+  display: block;
+  width: 13%;
+  padding: 5px;
+  font-size: 0.8em;
+  margin-bottom: 8px;
+  box-sizing: border-box;
 }
 
 .mentaculous-button:hover {
@@ -104,12 +100,12 @@
   padding: 1.5rem;
   border-radius: 8px;
   width: 90%;
-  max-width: 600px;
+  max-width: 500px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .close-button {
-  position: absolute;
+  position: relative;
   top: 10px;
   right: 10px;
   background: transparent;
@@ -742,5 +738,77 @@ button:focus {
 
 .remove-button:hover {
   background-color: darkred;
+}
+
+@media (max-width: 600px) {
+  .app {
+    padding: 8px;
+    max-width: 100vw;
+    font-size: 1em;
+  }
+
+  .modal-content {
+    width: 98vw;
+    max-width: 98vw;
+    padding: 0.5em;
+  }
+
+  .games-list {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .game-item {
+    padding: 8px;
+    font-size: 1em;
+  }
+
+  .team-logo {
+    height: 22px;
+    margin-right: 2px;
+  }
+
+  .team-name,
+  .team-text {
+    font-size: 14px;
+  }
+
+  .score-block {
+    font-size: 15px;
+    min-width: 40px;
+  }
+
+  .box-score {
+    padding: 5px;
+  }
+
+  .view-toggle button,
+  button {
+    width: 100%;
+    padding: 10px 0;
+    font-size: 0.8em;
+    margin-bottom: 8px;
+  }
+
+  .tab-header button {
+    font-size: 1em;
+    padding: 8px;
+  }
+
+  .profile-stats-table th,
+  .profile-stats-table td {
+    padding: 4px 2px;
+    font-size: 0.75em;
+  }
+
+  .notebook {
+    padding: 8px 2px;
+    max-width: 100vw;
+  }
+
+  .player-headshot {
+    width: 70px;
+    height: 110px;
+  }
 }
 
