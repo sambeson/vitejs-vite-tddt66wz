@@ -328,6 +328,11 @@ function App() {
   }, [activeTab, updatedPlayerId]);
 
   ;
+  
+useEffect(() => {
+  localStorage.setItem('mentaculousOrder', JSON.stringify(order));
+}, [order]);
+
 const handleRemoveHomeRun = (playerId: string, hrId: string) => {
   setMentaculous(prev => {
     const existing = prev[playerId];
