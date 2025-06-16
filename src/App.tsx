@@ -508,15 +508,21 @@ useEffect(() => {
   setMentaculous(parsed);
 
   const storedOrder = localStorage.getItem('mentaculousOrder');
+  let orderArr: string[] = [];
   if (storedOrder) {
-    setOrder(JSON.parse(storedOrder));
+    orderArr = JSON.parse(storedOrder);
+    // If the order is empty, fallback to mentaculous keys
+    if (!orderArr.length) {
+      orderArr = Object.entries(parsed)
+        .sort(([,a], [,b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
+        .map(([id]) => id);
+    }
   } else {
-    const initial = Object.entries(parsed)
-      .sort(([, a], [, b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
+    orderArr = Object.entries(parsed)
+      .sort(([,a], [,b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
       .map(([id]) => id);
-    setOrder(initial);
-    localStorage.setItem('mentaculousOrder', JSON.stringify(initial));
   }
+  setOrder(orderArr);
 }, []);
   
   useEffect(() => {
