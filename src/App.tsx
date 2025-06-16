@@ -455,17 +455,22 @@ function move(id: string, delta: -1 | 1) {
   }, 0);
 };
 useEffect(() => {
-  // Load mentaculous from localStorage
-  const stored = JSON.parse(localStorage.getItem('mentaculous') || "{}");
-  setMentaculous(stored);
+  let stored = localStorage.getItem('mentaculous');
+  let parsed = {};
+  if (stored) {
+    try {
+      parsed = JSON.parse(stored);
+    } catch {
+      parsed = {};
+    }
+  }
+  setMentaculous(parsed);
 
-  // Load order from localStorage, or derive from mentaculous if missing
   const storedOrder = localStorage.getItem('mentaculousOrder');
   if (storedOrder) {
     setOrder(JSON.parse(storedOrder));
   } else {
-    // Fallback: derive order from mentaculous keys sorted by addedAt (old app logic)
-    const initial = Object.entries(stored)
+    const initial = Object.entries(parsed)
       .sort(([, a], [, b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
       .map(([id]) => id);
     setOrder(initial);
