@@ -473,13 +473,6 @@ function move(id: string, delta: -1 | 1) {
     }
   }, []);
   
-  // On mount, load order from localStorage if available
-  useEffect(() => {
-    const storedOrder = localStorage.getItem('mentaculousOrder');
-    if (storedOrder) {
-      setOrder(JSON.parse(storedOrder));
-    }
-  }, []);
   useEffect(() => {
     fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`)
       .then((res) => res.json())
