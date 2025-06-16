@@ -455,6 +455,47 @@ function move(id: string, delta: -1 | 1) {
   }, 0);
 };
 useEffect(() => {
+  // MIGRATION: If mentaculous is missing, but old keys exist, migrate them
+  let mentaculousRaw = localStorage.getItem('mentaculous');
+  if (!mentaculousRaw || mentaculousRaw === '{}' || mentaculousRaw === 'null') {
+    const newMentaculous = {};
+    let fallbackAddedAt = Date.now();
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      // Example pattern: 12345_416_12
+      const match = key.match(/^(\d+)_(\d+)_([\d]+)$/);
+      if (match) {
+        const [_, playerId, addedAtRaw, hrNumber] = match;
+        const hrId = key;
+        let value;
+        try {
+          value = JSON.parse(localStorage.getItem(key) || '{}');
+        } catch {
+          value = localStorage.getItem(key);
+        }
+        if (!newMentaculous[playerId]) {
+          newMentaculous[playerId] = {
+            playerName: value?.playerName || "Unknown",
+            teamName: value?.teamName || "Unknown",
+            teamId: value?.teamId || null,
+            homeRuns: [],
+            // Use fallbackAddedAt and increment for each new player
+            addedAt: fallbackAddedAt++,
+          };
+        }
+        newMentaculous[playerId].homeRuns.push({
+          hrId,
+          opponent: value?.opponent || "Unknown",
+        });
+      }
+    }
+    if (Object.keys(newMentaculous).length > 0) {
+      localStorage.setItem('mentaculous', JSON.stringify(newMentaculous));
+    }
+  }
+
+  // ...rest of your initialization code...
   let stored = localStorage.getItem('mentaculous');
   let parsed = {};
   if (stored) {
