@@ -454,74 +454,24 @@ function move(id: string, delta: -1 | 1) {
     setTimeout(() => setUpdatedPlayerId(null), 1000);
   }, 0);
 };
-  useEffect(() => {
-    // Load mentaculous from localStorage
-    let stored = localStorage.getItem('mentaculous');
-    let parsed: any = {};
-    let migrated = false;
+useEffect(() => {
+  // Load mentaculous from localStorage
+  const stored = JSON.parse(localStorage.getItem('mentaculous') || "{}");
+  setMentaculous(stored);
 
-    if (stored) {
-      try {
-        parsed = JSON.parse(stored);
-
-        // MIGRATION: If old format is an array, convert to new object format
-        if (Array.isArray(parsed)) {
-          // Example: old format was [{playerId, playerName, homeRuns: [hrId, ...]}, ...]
-          const newObj = {};
-          for (const entry of parsed) {
-            if (entry.playerId && Array.isArray(entry.homeRuns)) {
-              newObj[entry.playerId] = {
-                playerName: entry.playerName || "Unknown",
-                teamName: entry.teamName || "Unknown",
-                teamId: entry.teamId || null,
-                homeRuns: entry.homeRuns.map(hrId => ({ hrId, opponent: "Unknown" })),
-                addedAt: entry.addedAt || Date.now(),
-              };
-            }
-          }
-          parsed = newObj;
-          migrated = true;
-        }
-
-        // MIGRATION: If homeRuns is an array of strings, convert to array of objects
-        for (const key in parsed) {
-          if (
-            parsed[key] &&
-            Array.isArray(parsed[key].homeRuns) &&
-            typeof parsed[key].homeRuns[0] === "string"
-          ) {
-            parsed[key].homeRuns = parsed[key].homeRuns.map(hrId => ({
-              hrId,
-              opponent: "Unknown",
-            }));
-            migrated = true;
-          }
-        }
-      } catch {
-        parsed = {};
-      }
-    }
-
-    setMentaculous(parsed);
-
-    // Load order from localStorage, or derive from mentaculous if missing
-    const storedOrder = localStorage.getItem('mentaculousOrder');
-    if (storedOrder) {
-      setOrder(JSON.parse(storedOrder));
-    } else {
-      // Derive order from mentaculous keys sorted by addedAt
-      const initial = Object.entries(parsed)
-        .sort(([, a], [, b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
-        .map(([id]) => id);
-      setOrder(initial);
-      localStorage.setItem('mentaculousOrder', JSON.stringify(initial));
-    }
-
-    // If we migrated, save the new format back to localStorage
-    if (migrated) {
-      localStorage.setItem('mentaculous', JSON.stringify(parsed));
-    }
-  }, []);
+  // Load order from localStorage, or derive from mentaculous if missing
+  const storedOrder = localStorage.getItem('mentaculousOrder');
+  if (storedOrder) {
+    setOrder(JSON.parse(storedOrder));
+  } else {
+    // Fallback: derive order from mentaculous keys sorted by addedAt (old app logic)
+    const initial = Object.entries(stored)
+      .sort(([, a], [, b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
+      .map(([id]) => id);
+    setOrder(initial);
+    localStorage.setItem('mentaculousOrder', JSON.stringify(initial));
+  }
+}, []);
   
   useEffect(() => {
     fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`)
