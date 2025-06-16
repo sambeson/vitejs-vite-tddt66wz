@@ -455,35 +455,45 @@ function move(id: string, delta: -1 | 1) {
   }, 0);
 };
   useEffect(() => {
+    // Load mentaculous from localStorage
     const stored = JSON.parse(localStorage.getItem('mentaculous') || "{}");
     setMentaculous(stored);
 
-       // Try to load order from localStorage, otherwise derive from mentaculous
-       const storedOrder = localStorage.getItem('mentaculousOrder');
-       if (storedOrder) {
-         setOrder(JSON.parse(storedOrder));
-       } else {
-         // Fallback: derive order from mentaculous keys sorted by addedAt
-         const initial = Object.entries(stored)
-           .sort(([,a], [,b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
-           .map(([id]) => id);
-         setOrder(initial);
-       }
-     }, []);
-  useEffect(() => {
+    // Load order from localStorage, or derive from mentaculous if missing
+    const storedOrder = localStorage.getItem('mentaculousOrder');
+    if (storedOrder) {
+      setOrder(JSON.parse(storedOrder));
+    } else {
+      // Derive order from mentaculous keys sorted by addedAt
+      const initial = Object.entries(stored)
+        .sort(([, a], [, b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
+        .map(([id]) => id);
+      setOrder(initial);
+      localStorage.setItem('mentaculousOrder', JSON.stringify(initial));
+    }
+  }, []);
+
+useEffect(() => {
     const stored = localStorage.getItem('mentaculous');
     if (stored) {
       setMentaculous(JSON.parse(stored));
     }
-  }, []);
+}, []);
 
-  useEffect(() => {
-    localStorage.setItem('mentaculous', JSON.stringify(mentaculous));
-  }, [mentaculous]);
+useEffect(() => {
+  const storedOrder = localStorage.getItem('mentaculousOrder');
+  if (storedOrder) {
+    setOrder(JSON.parse(storedOrder));
+  }
+}, []);
 
-  useEffect(() => {
-    localStorage.setItem('mentaculousOrder', JSON.stringify(order));
-  }, [order]);
+useEffect(() => {
+  localStorage.setItem('mentaculous', JSON.stringify(mentaculous));
+}, [mentaculous]);
+
+useEffect(() => {
+  localStorage.setItem('mentaculousOrder', JSON.stringify(order));
+}, [order]);
   
   // On mount, load order from localStorage if available
   useEffect(() => {
