@@ -472,28 +472,6 @@ function move(id: string, delta: -1 | 1) {
       localStorage.setItem('mentaculousOrder', JSON.stringify(initial));
     }
   }, []);
-
-useEffect(() => {
-    const stored = localStorage.getItem('mentaculous');
-    if (stored) {
-      setMentaculous(JSON.parse(stored));
-    }
-}, []);
-
-useEffect(() => {
-  const storedOrder = localStorage.getItem('mentaculousOrder');
-  if (storedOrder) {
-    setOrder(JSON.parse(storedOrder));
-  }
-}, []);
-
-useEffect(() => {
-  localStorage.setItem('mentaculous', JSON.stringify(mentaculous));
-}, [mentaculous]);
-
-useEffect(() => {
-  localStorage.setItem('mentaculousOrder', JSON.stringify(order));
-}, [order]);
   
   // On mount, load order from localStorage if available
   useEffect(() => {
