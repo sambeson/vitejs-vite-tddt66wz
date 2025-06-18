@@ -333,6 +333,10 @@ useEffect(() => {
   localStorage.setItem('mentaculousOrder', JSON.stringify(order));
 }, [order]);
 
+useEffect(() => {
+  localStorage.setItem('mentaculous', JSON.stringify(mentaculous));
+}, [mentaculous]);
+
 const handleRemoveHomeRun = (playerId: string, hrId: string) => {
   setMentaculous(prev => {
     const existing = prev[playerId];
@@ -500,23 +504,23 @@ useEffect(() => {
     }
   }
 
-  // ...rest of your initialization code...
-  let stored = localStorage.getItem('mentaculous');
+  // Load mentaculous
+  mentaculousRaw = localStorage.getItem('mentaculous');
   let parsed = {};
-  if (stored) {
+  if (mentaculousRaw) {
     try {
-      parsed = JSON.parse(stored);
+      parsed = JSON.parse(mentaculousRaw);
     } catch {
       parsed = {};
     }
   }
   setMentaculous(parsed);
 
+  // Load order
+  let orderArr = [];
   const storedOrder = localStorage.getItem('mentaculousOrder');
-  let orderArr: string[] = [];
   if (storedOrder) {
     orderArr = JSON.parse(storedOrder);
-    // If the order is empty, fallback to mentaculous keys
     if (!orderArr.length) {
       orderArr = Object.entries(parsed)
         .sort(([,a], [,b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
@@ -529,7 +533,7 @@ useEffect(() => {
   }
   setOrder(orderArr);
 }, []);
-  
+
   useEffect(() => {
     fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`)
       .then((res) => res.json())
@@ -1277,7 +1281,7 @@ useEffect(() => {
           )}
 
           {selectedGame && !boxScore && (
-            <div className="loading">Loading box score...</div>
+            <div className="loading">Loading box score....</div>
           )}
 
           {selectedGame && boxScore && (
@@ -1385,7 +1389,6 @@ useEffect(() => {
     )}
   </div>
 )}
-
       {activeTab === 'mentaculous' && renderMentaculous()}
 
       {selectedPlayerId && (
@@ -1403,5 +1406,4 @@ useEffect(() => {
     </div>
   );
 }
-
 export default App;
