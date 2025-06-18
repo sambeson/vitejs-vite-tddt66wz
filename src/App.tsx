@@ -141,13 +141,17 @@ function HomerEntry({
       </span>
     );
   }
-  
+
+  // Get mentaculous HR count for this player
+  const mentaculousHRCount = mentaculous[player.person.id]?.homeRuns?.length || 0;
+  const seasonTotalHR = player.stats.seasonTotalHR ?? 0;
 
   return (
     <>
       {player.homeRunProgress.map((hr, index) => {
-        const alreadyLoggedForThis = mentaculous[player.person.id]?.homeRuns?.includes(hr.hrId);
-
+        const alreadyLoggedForThis = mentaculous[player.person.id]?.homeRuns?.some(h => h.hrId === hr.hrId);
+        // Only allow add if mentaculous HR count < season total
+        const canAdd = !alreadyLoggedForThis && mentaculousHRCount < seasonTotalHR;
         return (
           <span key={index} className="homer-entry">
             <strong>{getLastName(player.person)}</strong>{' '}
@@ -167,16 +171,18 @@ function HomerEntry({
                 </button>
               </>
             ) : (
-              <button
-                className={`mentaculous-button ${fadingIndex === index ? 'fade-out' : ''}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAdd(player, hr, player.team?.name ?? 'Unknown');
-                  setFadingIndex(index);
-                }}
-              >
-                Add
-              </button>
+              canAdd && (
+                <button
+                  className={`mentaculous-button ${fadingIndex === index ? 'fade-out' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAdd(player, hr, player.team?.name ?? 'Unknown');
+                    setFadingIndex(index);
+                  }}
+                >
+                  Add
+                </button>
+              )
             )}
           </span>
         );
@@ -392,15 +398,14 @@ const handleRemoveHomeRun = (playerId: string, hrId: string) => {
   setMentaculous(prev => {
     const existing = prev[playerId];
     if (!existing) return prev;
-    setOrder(prev => prev.filter(id => id !== String(playerId)));
-
     const updatedHomeRuns = existing.homeRuns.filter(h => h.hrId !== hrId);
     if (updatedHomeRuns.length === 0) {
-      const { [playerId]: _, ...rest } = prev;
+      // Remove player from mentaculous and order if no HRs left
       setOrder(o => o.filter(id => id !== playerId));
+      const { [playerId]: _, ...rest } = prev;
       return rest;
     }
-
+    // Only update mentaculous, keep player in order
     return {
       ...prev,
       [playerId]: {
@@ -411,14 +416,16 @@ const handleRemoveHomeRun = (playerId: string, hrId: string) => {
   });
 };
 
-function move(id: string, delta: -1 | 1) {
+function move(id: string, delta: number) {
   setOrder(o => {
     const idx = o.indexOf(id);
     if (idx === -1) return o;
     const copy = [...o];
-    const newIdx = idx + delta;
-    if (newIdx < 0 || newIdx >= copy.length) return copy;
-    [copy[idx], copy[newIdx]] = [copy[newIdx], copy[idx]];
+    let newIdx = idx + delta;
+    if (newIdx < 0) newIdx = 0;
+    if (newIdx >= copy.length) newIdx = copy.length - 1;
+    copy.splice(idx, 1);
+    copy.splice(newIdx, 0, id);
     return copy;
   });
 }
@@ -1158,8 +1165,10 @@ useEffect(() => {
                {manualOverride && (
                  <>
                   {/* ↑↓ arrows */}
-                  <button className="arrow-btn" onClick={() => move(playerId, -1)}>↑</button>
-                 <button className="arrow-btn" onClick={() => move(playerId, +1)}>↓</button>
+                  <button className="arrow-btn" onClick={() => move(playerId, -10)} title="Move up 10">«</button>
+                 <button className="arrow-btn" onClick={() => move(playerId, -1)} title="Move up 1">↑</button>
+                 <button className="arrow-btn" onClick={() => move(playerId, +1)} title="Move down 1">↓</button>
+                 <button className="arrow-btn" onClick={() => move(playerId, +10)} title="Move down 10">»</button>
                  </>
                  )}
                 <div
@@ -1221,19 +1230,6 @@ useEffect(() => {
                     >
                       View
                     </button>
-                  {homeRuns.length> 0 && (
-                  <button
-                   className="remove-button"
-                   onClick={e => {
-                     e.stopPropagation();
-                     if (window.confirm('Really remove this home run entry?')){
-                     const lastHr = homeRuns[homeRuns.length - 1].hrId;
-                     handleRemoveHomeRun(playerId, lastHr);
-                     }}}
-                   >
-                     Remove
-                  </button>
-                  )}
                   </div>
                  </div>
                 </div>
