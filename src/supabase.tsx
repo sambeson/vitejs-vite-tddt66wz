@@ -9,13 +9,16 @@ export async function backupToSupabase(userId: string) {
   const mentorder = localStorage.getItem('mentaculousOrder');
   const { data, error } = await supabase
     .from('mentaculous_backups')
-    .insert([
-      {
-        user_id: userId,
-        mentaculous: mentaculous || '',
-        mentorder: mentorder || '', // <-- updated column name
-      }
-    ]);
+    .upsert(
+      [
+        {
+          user_id: userId,
+          mentaculous: mentaculous || '',
+          mentorder: mentorder || '',
+        }
+      ],
+      { onConflict: 'user_id' }
+    );
   if (error) {
     console.error('Backup failed:', error);
     return false;

@@ -52,6 +52,7 @@ async function fetchMentaculousFromSupabase(userId) {
   return mentaculousObj;
 }
 
+
 const teamAbbreviations = {
   'Arizona Diamondbacks': 'ARI',
   'Atlanta Braves': 'ATL',
@@ -377,21 +378,21 @@ function App() {
   }
   }, [activeTab, updatedPlayerId]);
 
-  ;
-  
+  // Autosave to Supabase after mentaculous or order changes
 useEffect(() => {
-  localStorage.setItem('mentaculousOrder', JSON.stringify(order));
-}, [order]);
-
-useEffect(() => {
-  localStorage.setItem('mentaculous', JSON.stringify(mentaculous));
-}, [mentaculous]);
+  if (Object.keys(mentaculous).length > 0) {
+    // Save to localStorage first, then backup
+    localStorage.setItem('mentaculous', JSON.stringify(mentaculous));
+    localStorage.setItem('mentaculousOrder', JSON.stringify(order));
+    backupToSupabase('Sam beson');
+  }
+}, [mentaculous, order]);
 
 const handleRemoveHomeRun = (playerId: string, hrId: string) => {
   setMentaculous(prev => {
     const existing = prev[playerId];
     if (!existing) return prev;
-  setOrder(prev => prev.filter(id => id !== String(playerId)));
+    setOrder(prev => prev.filter(id => id !== String(playerId)));
 
     const updatedHomeRuns = existing.homeRuns.filter(h => h.hrId !== hrId);
     if (updatedHomeRuns.length === 0) {
@@ -421,83 +422,80 @@ function move(id: string, delta: -1 | 1) {
     return copy;
   });
 }
-  // Function to add a player to mentaculous state
-  const handleAddToMentaculous = async (player, hr, teamName, teamId) => {
-    const playerId = Number(player.person.id);
-    if (!hr?.hrId) return;
-    
-  
-    const hrDate = hr.hrId.split('_')[1];
-  
-    // Try to find in existing games first
-    let matchingGame = games.find((g) => g.gameDate.startsWith(hrDate));
-  
-    if (!matchingGame) {
-      try {
-        const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${hrDate}`);
-        const data = await res.json();
-    
-        // Try to match the player's team to find the correct game
-        const gamesOnDate = data.dates?.[0]?.games ?? [];
-        matchingGame = gamesOnDate.find(
-          (g) =>
-            g.teams.away.team.name === teamName ||
-            g.teams.home.team.name === teamName
-            
-        ) || null;
-      } catch (err) {
-        console.error('Failed to fetch game for HR date', hrDate, err);
-      }
+// Function to add a player to mentaculous state
+const handleAddToMentaculous = async (player, hr, teamName, teamId) => {
+  const playerId = Number(player.person.id);
+  if (!hr?.hrId) return;
+
+  const hrDate = hr.hrId.split('_')[1];
+
+  // Try to find in existing games first
+  let matchingGame = games.find((g) => g.gameDate.startsWith(hrDate));
+
+  if (!matchingGame) {
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${hrDate}`);
+      const data = await res.json();
+
+      // Try to match the player's team to find the correct game
+      const gamesOnDate = data.dates?.[0]?.games ?? [];
+      matchingGame = gamesOnDate.find(
+        (g) =>
+          g.teams.away.team.name === teamName ||
+          g.teams.home.team.name === teamName
+      ) || null;
+    } catch (err) {
+      console.error('Failed to fetch game for HR date', hrDate, err);
+    }
+  }
+
+  let opponent = 'Unknown';
+  if (matchingGame) {
+    const isAway = matchingGame.teams.away.team.name === teamName;
+    opponent = isAway
+      ? `@ ${matchingGame.teams.home.team.name}`
+      : `vs ${matchingGame.teams.away.team.name}`;
+  }
+
+  setMentaculous(prev => {
+    // first grab whatever was there
+    const existing = prev[playerId];
+
+    // determine the base entry (either the old one, or a brand‐new one)
+    const base = existing ?? {
+      playerName: player.person.fullName,
+      teamName:  teamName || "Unknown",
+      teamId,
+      homeRuns: [],
+      // only stamp here when there is no existing entry
+      addedAt: Date.now(),
+    };
+
+    // prevent duplicates
+    if (base.homeRuns.some(h => h.hrId === hr.hrId)) {
+      return prev;
     }
 
-  
-    let opponent = 'Unknown';
-    if (matchingGame) {
-      const isAway = matchingGame.teams.away.team.name === teamName;
-      opponent = isAway
-        ? `@ ${matchingGame.teams.home.team.name}`
-        : `vs ${matchingGame.teams.away.team.name}`;
-    }
-  
-    setMentaculous(prev => {
-      // first grab whatever was there
-      const existing = prev[playerId];
-    
-      // determine the base entry (either the old one, or a brand‐new one)
-      const base = existing ?? {
-        playerName: player.person.fullName,
-        teamName:  teamName || "Unknown",
-        teamId,
-        homeRuns: [],
-        // only stamp here when there is no existing entry
-        addedAt: Date.now(),
-      };
-    
-      // prevent duplicates
-      if (base.homeRuns.some(h => h.hrId === hr.hrId)) {
-        return prev;
+    // now return a new object, preserving base.addedAt
+    return {
+      ...prev,
+      [playerId]: {
+        ...base,
+        teamId:    base.teamId    ?? teamId,
+        homeRuns: [...base.homeRuns, { hrId: hr.hrId, opponent }],
+        addedAt:  base.addedAt,        // <-- keep the original
       }
-    
-      // now return a new object, preserving base.addedAt
-      return {
-        ...prev,
-        [playerId]: {
-          ...base,
-          teamId:    base.teamId    ?? teamId,
-          homeRuns: [...base.homeRuns, { hrId: hr.hrId, opponent }],
-          addedAt:  base.addedAt,        // <-- keep the original
-        }
-      };
-    });
-    
-    setOrder(prev => {
-      const strId = String(playerId);
-      return prev.includes(strId)
-        ? prev
-        : [...prev, strId];
-    });
-   // Calculate the new page for the player
-   setTimeout(() => {
+    };
+  });
+
+  setOrder(prev => {
+    const strId = String(playerId);
+    return prev.includes(strId)
+      ? prev
+      : [...prev, strId];
+  });
+  // Calculate the new page for the player
+  setTimeout(() => {
     setActiveTab('mentaculous');
     setUpdatedPlayerId(playerId);
 
@@ -512,6 +510,7 @@ function move(id: string, delta: -1 | 1) {
 
     setTimeout(() => setUpdatedPlayerId(null), 1000);
   }, 0);
+  // REMOVE direct call to backupToSupabase here
 };
 useEffect(() => {
   async function loadInitialData() {
@@ -1119,9 +1118,10 @@ useEffect(() => {
   };
 
   const renderMentaculous = () => {
-    const entries = order
-    .filter(id => mentaculous[id])              // only still-present
-    .map(id => [id, mentaculous[id]] as const);
+  // Use the order array to sort mentaculous entries
+  const entries = order
+    .map(id => [id, mentaculous[id]])
+    .filter(([, entry]) => entry);
 
   const totalPages = Math.ceil(entries.length / 32) || 1;
   const start = mentaculousPage * 32;
@@ -1477,4 +1477,6 @@ useEffect(() => {
 }
 
 export default App;
+
+
 
