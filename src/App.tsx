@@ -1,6 +1,56 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './styles.css';
-import { backupToSupabase } from './supabase';
+import { backupToSupabase, supabase } from './supabase';
+
+async function fetchOrderFromSupabase(userId) {
+  const { data, error } = await supabase
+    .from('mentaculous_backups')
+    .select('mentorder')
+    .eq('user_id', userId);
+
+  if (error) {
+    console.warn('Supabase mentorder fetch error:', error);
+    return null;
+  }
+
+  console.log('Supabase mentorder fetch data:', data);
+
+  let orderArr = [];
+  if (data && data.length && data[0].mentorder) {
+    if (typeof data[0].mentorder === 'string') {
+      try {
+        orderArr = JSON.parse(data[0].mentorder);
+      } catch {
+        orderArr = [];
+      }
+    } else if (Array.isArray(data[0].mentorder)) {
+      orderArr = data[0].mentorder;
+    }
+  }
+  return orderArr;
+}
+
+async function fetchMentaculousFromSupabase(userId) {
+  const { data, error } = await supabase
+    .from('mentaculous_backups')
+    .select('mentaculous')
+    .eq('user_id', userId);
+
+  if (error) {
+    console.warn('Supabase mentaculous fetch error:', error);
+    return null;
+  }
+
+  let mentaculousObj = {};
+  if (data && data.length && data[0].mentaculous) {
+    try {
+      mentaculousObj = JSON.parse(data[0].mentaculous);
+    } catch {
+      mentaculousObj = {};
+    }
+  }
+  return mentaculousObj;
+}
 
 const teamAbbreviations = {
   'Arizona Diamondbacks': 'ARI',
@@ -464,76 +514,94 @@ function move(id: string, delta: -1 | 1) {
   }, 0);
 };
 useEffect(() => {
-  // MIGRATION: If mentaculous is missing, but old keys exist, migrate them
-  let mentaculousRaw = localStorage.getItem('mentaculous');
-  if (!mentaculousRaw || mentaculousRaw === '{}' || mentaculousRaw === 'null') {
-    const newMentaculous = {};
-    let fallbackAddedAt = Date.now();
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key) continue;
-      // Example pattern: 12345_416_12
-      const match = key.match(/^(\d+)_(\d+)_([\d]+)$/);
-      if (match) {
-        const [_, playerId, addedAtRaw, hrNumber] = match;
-        const hrId = key;
-        let value;
-        try {
-          value = JSON.parse(localStorage.getItem(key) || '{}');
-        } catch {
-          value = localStorage.getItem(key);
+  async function loadInitialData() {
+    // MIGRATION: If mentaculous is missing, but old keys exist, migrate them
+    let mentaculousRaw = localStorage.getItem('mentaculous');
+    if (!mentaculousRaw || mentaculousRaw === '{}' || mentaculousRaw === 'null') {
+      const newMentaculous = {};
+      let fallbackAddedAt = Date.now();
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key) continue;
+        // Example pattern: 12345_416_12
+        const match = key.match(/^(\d+)_(\d+)_([\d]+)$/);
+        if (match) {
+          const [_, playerId, addedAtRaw, hrNumber] = match;
+          const hrId = key;
+          let value;
+          try {
+            value = JSON.parse(localStorage.getItem(key) || '{}');
+          } catch {
+            value = localStorage.getItem(key);
+          }
+          if (!newMentaculous[playerId]) {
+            newMentaculous[playerId] = {
+              playerName: value?.playerName || "Unknown",
+              teamName: value?.teamName || "Unknown",
+              teamId: value?.teamId || null,
+              homeRuns: [],
+              // Use fallbackAddedAt and increment for each new player
+              addedAt: fallbackAddedAt++,
+            };
+          }
+          newMentaculous[playerId].homeRuns.push({
+            hrId,
+            opponent: value?.opponent || "Unknown",
+          });
         }
-        if (!newMentaculous[playerId]) {
-          newMentaculous[playerId] = {
-            playerName: value?.playerName || "Unknown",
-            teamName: value?.teamName || "Unknown",
-            teamId: value?.teamId || null,
-            homeRuns: [],
-            // Use fallbackAddedAt and increment for each new player
-            addedAt: fallbackAddedAt++,
-          };
-        }
-        newMentaculous[playerId].homeRuns.push({
-          hrId,
-          opponent: value?.opponent || "Unknown",
-        });
+      }
+      if (Object.keys(newMentaculous).length > 0) {
+        localStorage.setItem('mentaculous', JSON.stringify(newMentaculous));
       }
     }
-    if (Object.keys(newMentaculous).length > 0) {
-      localStorage.setItem('mentaculous', JSON.stringify(newMentaculous));
+
+    // --- SUPABASE MENTACULOUS LOAD STARTS HERE ---
+    // Try to load mentaculous from Supabase
+    let parsed = {};
+    const supabaseMentaculous = await fetchMentaculousFromSupabase("Sam beson");
+    if (supabaseMentaculous && Object.keys(supabaseMentaculous).length) {
+      parsed = supabaseMentaculous;
+      localStorage.setItem('mentaculous', JSON.stringify(parsed));
+    } else {
+      mentaculousRaw = localStorage.getItem('mentaculous');
+      if (mentaculousRaw) {
+        try {
+          parsed = JSON.parse(mentaculousRaw);
+        } catch {
+          parsed = {};
+        }
+      }
     }
+    setMentaculous(parsed);
+
+    // --- SUPABASE ORDER LOAD (as before) ---
+    // Try to load order from Supabase
+    const supabaseOrder = await fetchOrderFromSupabase("Sam beson");
+    let orderArr = [];
+    if (supabaseOrder && supabaseOrder.length) {
+      orderArr = supabaseOrder;
+      localStorage.setItem('mentaculousOrder', JSON.stringify(orderArr));
+    } else {
+      const storedOrder = localStorage.getItem('mentaculousOrder');
+      if (storedOrder) {
+        orderArr = JSON.parse(storedOrder);
+        if (!orderArr.length) {
+          orderArr = Object.entries(parsed)
+            .sort(([,a], [,b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
+            .map(([id]) => id);
+        }
+      } else {
+        orderArr = Object.entries(parsed)
+          .sort(([,a], [,b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
+          .map(([id]) => id);
+      }
+    }
+    setOrder(orderArr);
   }
 
-  // Load mentaculous
-  mentaculousRaw = localStorage.getItem('mentaculous');
-  let parsed = {};
-  if (mentaculousRaw) {
-    try {
-      parsed = JSON.parse(mentaculousRaw);
-    } catch {
-      parsed = {};
-    }
-  }
-  setMentaculous(parsed);
-
-  // Load order
-  let orderArr = [];
-  const storedOrder = localStorage.getItem('mentaculousOrder');
-  if (storedOrder) {
-    orderArr = JSON.parse(storedOrder);
-    if (!orderArr.length) {
-      orderArr = Object.entries(parsed)
-        .sort(([,a], [,b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
-        .map(([id]) => id);
-    }
-  } else {
-    orderArr = Object.entries(parsed)
-      .sort(([,a], [,b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
-      .map(([id]) => id);
-  }
-  setOrder(orderArr);
+  loadInitialData();
 }, []);
-
+  
   useEffect(() => {
     fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`)
       .then((res) => res.json())
@@ -1281,7 +1349,7 @@ useEffect(() => {
           )}
 
           {selectedGame && !boxScore && (
-            <div className="loading">Loading box score....</div>
+            <div className="loading">Loading box score...</div>
           )}
 
           {selectedGame && boxScore && (
@@ -1389,6 +1457,7 @@ useEffect(() => {
     )}
   </div>
 )}
+
       {activeTab === 'mentaculous' && renderMentaculous()}
 
       {selectedPlayerId && (
@@ -1406,4 +1475,6 @@ useEffect(() => {
     </div>
   );
 }
+
 export default App;
+

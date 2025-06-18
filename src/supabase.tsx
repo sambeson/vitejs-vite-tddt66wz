@@ -6,14 +6,14 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function backupToSupabase(userId: string) {
   const mentaculous = localStorage.getItem('mentaculous');
-  const order = localStorage.getItem('mentaculousOrder');
+  const mentorder = localStorage.getItem('mentaculousOrder');
   const { data, error } = await supabase
     .from('mentaculous_backups')
     .insert([
       {
         user_id: userId,
         mentaculous: mentaculous || '',
-        order: order || '',
+        mentorder: mentorder || '', // <-- updated column name
       }
     ]);
   if (error) {
