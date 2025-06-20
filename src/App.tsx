@@ -359,6 +359,20 @@ function PlayerProfile({ playerId, onClose }) {
   );
 }
 
+type HomeRun = {
+  hrId: string;
+  opponent?: string;
+  seasonTotalHR?: number;
+};
+
+type MentaculousPlayer = {
+  playerName: string;
+  teamName: string;
+  teamId: string;
+  homeRuns: HomeRun[];
+  addedAt?: number;
+};
+
 function App() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [games, setGames] = useState([]);
@@ -367,7 +381,7 @@ function App() {
   const [selectedTeam, setSelectedTeam] = useState('away');
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
   const [activeTab, setActiveTab] = useState('games');
-  const [mentaculous, setMentaculous] = useState({});
+  const [mentaculous, setMentaculous] = React.useState<Record<string, MentaculousPlayer>>({});
   const [mentaculousPage, setMentaculousPage] = useState(0)
   const [updatedPlayerId, setUpdatedPlayerId] = useState(null);
   const [tooltipOpenId, setTooltipOpenId] = useState<number | null>(null);
@@ -375,239 +389,129 @@ function App() {
   const lineRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const linesContainerRef = useRef<HTMLDivElement>(null);
   const [manualOverride, setManualOverride] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false); // New state to track data loading
+  const [liveInfo, setLiveInfo] = useState<Record<string, any>>({}); // Add this state
 
+  // Manual HR add state for backend tab, keyed by playerId
+  const [manualHRAdd, setManualHRAdd] = useState<Record<string, { num: string; date: string }>>({});
 
   useEffect(() => {
-  if (activeTab === 'mentaculous' && updatedPlayerId != null) {
-    const el = lineRefs.current[String(updatedPlayerId)];
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-  }, [activeTab, updatedPlayerId]);
-
-  // Autosave to Supabase after mentaculous or order changes
-useEffect(() => {
-  if (Object.keys(mentaculous).length > 0) {
-    // Save to localStorage first, then backup
-    localStorage.setItem('mentaculous', JSON.stringify(mentaculous));
-    localStorage.setItem('mentaculousOrder', JSON.stringify(order));
-    backupToSupabase('Sam beson');
-  }
-}, [mentaculous, order]);
-
-const handleRemoveHomeRun = (playerId: string, hrId: string) => {
-  setMentaculous(prev => {
-    const existing = prev[playerId];
-    if (!existing) return prev;
-    const updatedHomeRuns = existing.homeRuns.filter(h => h.hrId !== hrId);
-    if (updatedHomeRuns.length === 0) {
-      // Remove player from mentaculous and order if no HRs left
-      setOrder(o => o.filter(id => id !== playerId));
-      const { [playerId]: _, ...rest } = prev;
-      return rest;
-    }
-    // Only update mentaculous, keep player in order
-    return {
-      ...prev,
-      [playerId]: {
-        ...existing,
-        homeRuns: updatedHomeRuns,
-      },
-    };
-  });
-};
-
-function move(id: string, delta: number) {
-  setOrder(o => {
-    const idx = o.indexOf(id);
-    if (idx === -1) return o;
-    const copy = [...o];
-    let newIdx = idx + delta;
-    if (newIdx < 0) newIdx = 0;
-    if (newIdx >= copy.length) newIdx = copy.length - 1;
-    copy.splice(idx, 1);
-    copy.splice(newIdx, 0, id);
-    return copy;
-  });
-}
-// Function to add a player to mentaculous state
-const handleAddToMentaculous = async (player, hr, teamName, teamId) => {
-  const playerId = Number(player.person.id);
-  if (!hr?.hrId) return;
-
-  const hrDate = hr.hrId.split('_')[1];
-
-  // Try to find in existing games first
-  let matchingGame = games.find((g) => g.gameDate.startsWith(hrDate));
-
-  if (!matchingGame) {
-    try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${hrDate}`);
-      const data = await res.json();
-
-      // Try to match the player's team to find the correct game
-      const gamesOnDate = data.dates?.[0]?.games ?? [];
-      matchingGame = gamesOnDate.find(
-        (g) =>
-          g.teams.away.team.name === teamName ||
-          g.teams.home.team.name === teamName
-      ) || null;
-    } catch (err) {
-      console.error('Failed to fetch game for HR date', hrDate, err);
-    }
-  }
-
-  let opponent = 'Unknown';
-  if (matchingGame) {
-    const isAway = matchingGame.teams.away.team.name === teamName;
-    opponent = isAway
-      ? `@ ${matchingGame.teams.home.team.name}`
-      : `vs ${matchingGame.teams.away.team.name}`;
-  }
-
-  setMentaculous(prev => {
-    // first grab whatever was there
-    const existing = prev[playerId];
-
-    // determine the base entry (either the old one, or a brand‐new one)
-    const base = existing ?? {
-      playerName: player.person.fullName,
-      teamName:  teamName || "Unknown",
-      teamId,
-      homeRuns: [],
-      // only stamp here when there is no existing entry
-      addedAt: Date.now(),
-    };
-
-    // prevent duplicates
-    if (base.homeRuns.some(h => h.hrId === hr.hrId)) {
-      return prev;
-    }
-
-    // now return a new object, preserving base.addedAt
-    return {
-      ...prev,
-      [playerId]: {
-        ...base,
-        teamId:    base.teamId    ?? teamId,
-        homeRuns: [...base.homeRuns, { hrId: hr.hrId, opponent }],
-        addedAt:  base.addedAt,        // <-- keep the original
+    setDataLoaded(false); // Reset to false before loading
+    async function loadInitialData() {
+      // MIGRATION: If mentaculous is missing, but old keys exist, migrate them
+      let mentaculousRaw = localStorage.getItem('mentaculous');
+      if (!mentaculousRaw || mentaculousRaw === '{}' || mentaculousRaw === 'null') {
+        const newMentaculous = {};
+        let fallbackAddedAt = Date.now();
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key) continue;
+          // Example pattern: 12345_416_12
+          const match = key.match(/^(\d+)_(\d+)_([\d]+)$/);
+          if (match) {
+            const [_, playerId, addedAtRaw, hrNumber] = match;
+            const hrId = key;
+            let value;
+            try {
+              value = JSON.parse(localStorage.getItem(key) || '{}');
+            } catch {
+              value = localStorage.getItem(key);
+            }
+            if (!newMentaculous[playerId]) {
+              newMentaculous[playerId] = {
+                playerName: value?.playerName || "Unknown",
+                teamName: value?.teamName || "Unknown",
+                teamId: value?.teamId || null,
+                homeRuns: [],
+                // Use fallbackAddedAt and increment for each new player
+                addedAt: fallbackAddedAt++,
+              };
+            }
+            newMentaculous[playerId].homeRuns.push({
+              hrId,
+              opponent: value?.opponent || "Unknown",
+            });
+          }
+        }
+        if (Object.keys(newMentaculous).length > 0) {
+          localStorage.setItem('mentaculous', JSON.stringify(newMentaculous));
+        }
       }
-    };
-  });
 
-  setOrder(prev => {
-    const strId = String(playerId);
-    return prev.includes(strId)
-      ? prev
-      : [...prev, strId];
-  });
-  // Calculate the new page for the player
-  setTimeout(() => {
-    setActiveTab('mentaculous');
-    setUpdatedPlayerId(playerId);
-
-    // Find the index of the player in the order
-    const strId = String(playerId);
-    const idx = order.includes(strId)
-      ? order.indexOf(strId)
-      : order.length; // If just added, will be at the end
-
-    const page = Math.floor(idx / 32);
-    setMentaculousPage(page);
-
-    setTimeout(() => setUpdatedPlayerId(null), 1000);
-  }, 0);
-  // REMOVE direct call to backupToSupabase here
-};
-useEffect(() => {
-  async function loadInitialData() {
-    // MIGRATION: If mentaculous is missing, but old keys exist, migrate them
-    let mentaculousRaw = localStorage.getItem('mentaculous');
-    if (!mentaculousRaw || mentaculousRaw === '{}' || mentaculousRaw === 'null') {
-      const newMentaculous = {};
-      let fallbackAddedAt = Date.now();
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!key) continue;
-        // Example pattern: 12345_416_12
-        const match = key.match(/^(\d+)_(\d+)_([\d]+)$/);
-        if (match) {
-          const [_, playerId, addedAtRaw, hrNumber] = match;
-          const hrId = key;
-          let value;
+      // --- SUPABASE MENTACULOUS LOAD STARTS HERE ---
+      // Try to load mentaculous from Supabase
+      let parsed = {};
+      const supabaseMentaculous = await fetchMentaculousFromSupabase("Sam beson");
+      if (supabaseMentaculous && Object.keys(supabaseMentaculous).length) {
+        parsed = supabaseMentaculous;
+        localStorage.setItem('mentaculous', JSON.stringify(parsed));
+      } else {
+        mentaculousRaw = localStorage.getItem('mentaculous');
+        if (mentaculousRaw) {
           try {
-            value = JSON.parse(localStorage.getItem(key) || '{}');
+            parsed = JSON.parse(mentaculousRaw);
           } catch {
-            value = localStorage.getItem(key);
+            parsed = {};
           }
-          if (!newMentaculous[playerId]) {
-            newMentaculous[playerId] = {
-              playerName: value?.playerName || "Unknown",
-              teamName: value?.teamName || "Unknown",
-              teamId: value?.teamId || null,
-              homeRuns: [],
-              // Use fallbackAddedAt and increment for each new player
-              addedAt: fallbackAddedAt++,
-            };
-          }
-          newMentaculous[playerId].homeRuns.push({
-            hrId,
-            opponent: value?.opponent || "Unknown",
-          });
         }
       }
-      if (Object.keys(newMentaculous).length > 0) {
-        localStorage.setItem('mentaculous', JSON.stringify(newMentaculous));
-      }
-    }
+      setMentaculous(parsed);
 
-    // --- SUPABASE MENTACULOUS LOAD STARTS HERE ---
-    // Try to load mentaculous from Supabase
-    let parsed = {};
-    const supabaseMentaculous = await fetchMentaculousFromSupabase("Sam beson");
-    if (supabaseMentaculous && Object.keys(supabaseMentaculous).length) {
-      parsed = supabaseMentaculous;
-      localStorage.setItem('mentaculous', JSON.stringify(parsed));
-    } else {
-      mentaculousRaw = localStorage.getItem('mentaculous');
-      if (mentaculousRaw) {
-        try {
-          parsed = JSON.parse(mentaculousRaw);
-        } catch {
-          parsed = {};
-        }
-      }
-    }
-    setMentaculous(parsed);
-
-    // --- SUPABASE ORDER LOAD (as before) ---
-    // Try to load order from Supabase
-    const supabaseOrder = await fetchOrderFromSupabase("Sam beson");
-    let orderArr = [];
-    if (supabaseOrder && supabaseOrder.length) {
-      orderArr = supabaseOrder;
-      localStorage.setItem('mentaculousOrder', JSON.stringify(orderArr));
-    } else {
-      const storedOrder = localStorage.getItem('mentaculousOrder');
-      if (storedOrder) {
-        orderArr = JSON.parse(storedOrder);
-        if (!orderArr.length) {
+      // --- SUPABASE ORDER LOAD (as before) ---
+      // Try to load order from Supabase
+      const supabaseOrder = await fetchOrderFromSupabase("Sam beson");
+      let orderArr = [];
+      if (supabaseOrder && supabaseOrder.length) {
+        orderArr = supabaseOrder;
+        localStorage.setItem('mentaculousOrder', JSON.stringify(orderArr));
+      } else {
+        const storedOrder = localStorage.getItem('mentaculousOrder');
+        if (storedOrder) {
+          orderArr = JSON.parse(storedOrder);
+          if (!orderArr.length) {
+            orderArr = Object.entries(parsed)
+              .sort(([,a], [,b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
+              .map(([id]) => id);
+          }
+        } else {
           orderArr = Object.entries(parsed)
             .sort(([,a], [,b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
             .map(([id]) => id);
         }
-      } else {
-        orderArr = Object.entries(parsed)
-          .sort(([,a], [,b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
-          .map(([id]) => id);
       }
+      setOrder(orderArr);
+      setDataLoaded(true); // Set to true after data is loaded
     }
-    setOrder(orderArr);
+
+    loadInitialData();
+  }, []);
+  
+  // Move function for manual override (must be defined before autosave effect)
+  function move(playerId: string, delta: number) {
+    setOrder((prevOrder) => {
+      const idx = prevOrder.indexOf(playerId);
+      if (idx === -1) return prevOrder;
+      let newIdx = idx + delta;
+      if (newIdx < 0) newIdx = 0;
+      if (newIdx >= prevOrder.length) newIdx = prevOrder.length - 1;
+      if (newIdx === idx) return prevOrder;
+      const newOrder = [...prevOrder];
+      newOrder.splice(idx, 1);
+      newOrder.splice(newIdx, 0, playerId);
+      return newOrder;
+    });
   }
 
-  loadInitialData();
-}, []);
-  
+  // Autosave to Supabase and localStorage after mentaculous/order changes, but only after dataLoaded
+  useEffect(() => {
+    if (!dataLoaded) return;
+    // Debug: log autosave trigger
+    console.log('[Autosave] Triggered', { mentaculous, order });
+    localStorage.setItem('mentaculous', JSON.stringify(mentaculous));
+    localStorage.setItem('mentaculousOrder', JSON.stringify(order));
+    backupToSupabase('Sam beson', mentaculous, order); // Pass all three arguments for correct backup
+  }, [mentaculous, order, dataLoaded]);
+
   useEffect(() => {
     fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`)
       .then((res) => res.json())
@@ -1251,6 +1155,55 @@ useEffect(() => {
   
 
 
+  const handleRemoveHomeRun = (playerId: string, hrId: string) => {
+    setMentaculous(prev => {
+      const prevPlayer = prev[playerId];
+      if (!prevPlayer) return prev;
+      const newHomeRuns = prevPlayer.homeRuns.filter(hr => hr.hrId !== hrId);
+      // If no HRs left, remove player from mentaculous and order
+      if (newHomeRuns.length === 0) {
+        const newMentaculous = { ...prev };
+        delete newMentaculous[playerId];
+        setOrder(o => o.filter(id => id !== playerId));
+        return newMentaculous;
+      }
+      return {
+        ...prev,
+        [playerId]: {
+          ...prevPlayer,
+          homeRuns: newHomeRuns,
+        },
+      };
+    });
+  };
+
+  // Add this effect after games are loaded
+useEffect(() => {
+  // Only fetch for in-progress games
+  const inProgressGames = games.filter(g => g.status.detailedState === 'In Progress');
+  if (inProgressGames.length === 0) return;
+  inProgressGames.forEach(game => {
+    fetch(`https://statsapi.mlb.com/api/v1.1/game/${game.gamePk}/feed/live`)
+      .then(res => res.json())
+      .then(data => {
+        const linescore = data.liveData?.linescore;
+        const currentPlay = data.liveData?.plays?.currentPlay;
+        setLiveInfo(prev => ({
+          ...prev,
+          [game.gamePk]: {
+            inning: linescore?.currentInning,
+            inningState: linescore?.inningState,
+            outs: linescore?.outs,
+            pitcher: currentPlay?.matchup?.pitcher?.fullName,
+            batter: currentPlay?.matchup?.batter?.fullName,
+            awayScore: linescore?.teams?.away?.runs,
+            homeScore: linescore?.teams?.home?.runs,
+          }
+        }));
+      });
+  });
+}, [games]);
+
   return (
     <div className="app">
       <div className="tab-header">
@@ -1316,7 +1269,7 @@ useEffect(() => {
                     </div>
                   </div>
                   <div className="team-score">
-                    {game.status.detailedState === 'Final' ? game.teams.away.score : ''}
+                    {game.status.detailedState === 'Final' ? game.teams.away.score : (game.status.detailedState === 'In Progress' ? (liveInfo[game.gamePk]?.awayScore ?? '-') : '')}
                   </div>
                 </div>
 
@@ -1331,13 +1284,28 @@ useEffect(() => {
                     </div>
                   </div>
                   <div className="team-score">
-                    {game.status.detailedState === 'Final' ? game.teams.home.score : ''}
+                    {game.status.detailedState === 'Final' ? game.teams.home.score : (game.status.detailedState === 'In Progress' ? (liveInfo[game.gamePk]?.homeScore ?? '-') : '')}
                   </div>
                 </div>
 
                 <div className="game-status">{game.status.detailedState}</div>
+                {game.status.detailedState === 'In Progress' && (
+                  <div className="game-live-info" style={{ marginTop: 8, fontSize: '0.95em', background: '#f3f6fa', borderRadius: 6, padding: 8 }}>
+                    <div>
+                      <strong>Inning:</strong> {liveInfo[game.gamePk]?.inningState ?? '-'} {liveInfo[game.gamePk]?.inning ?? '-'}
+                    </div>
+                    <div>
+                      <strong>Outs:</strong> {liveInfo[game.gamePk]?.outs ?? '-'}
+                    </div>
+                    <div>
+                      <strong>Pitcher:</strong> {liveInfo[game.gamePk]?.pitcher ?? '-'}
+                    </div>
+                    <div>
+                      <strong>Batter:</strong> {liveInfo[game.gamePk]?.batter ?? '-'}
+                    </div>
+                  </div>
+                )}
               </div>
-
               );
             })}
           </div>
@@ -1406,7 +1374,7 @@ useEffect(() => {
           )}
         </>
       )}
-     {activeTab === 'backend' && manualOverride && (
+{activeTab === 'backend' && manualOverride && (
   <div className="backend-tab">
     <h2>Mentaculous Backend</h2>
     {Object.entries(mentaculous).length === 0 ? (
@@ -1415,41 +1383,143 @@ useEffect(() => {
       Object.entries(mentaculous)
       .sort(([ , a], [ , b ]) =>
         a.playerName.localeCompare(b.playerName))
-      .map(([playerId, { playerName, homeRuns }]) => (
-        <div key={playerId} className="backend-player-block">
-          <h3>{playerName}</h3>
-          <ul>
-            {homeRuns.map(({ hrId }, i) => (
-              <li key={hrId} className="backend-hr-line">
-                <code>{hrId}</code>
-                <button
-                  className="remove-button"
-                  style={{ marginLeft: '8px' }}
-                  onClick={() => handleRemoveHomeRun(playerId, hrId)}
-                >
-                  Delete
-                </button>
-              </li>
-            ))}
-          </ul>
-          <button
-            className="remove-button"
-            style={{ marginTop: '4px' }}
-            onClick={() => {
-              if (window.confirm(`Remove all ${playerName} entries?`)) {
-                // remove whole player
-                setMentaculous(prev => {
-                  const { [playerId]: _, ...rest } = prev;
-                  return rest;
-                });
-                setOrder(o => o.filter(id => id !== playerId));
-              }
-            }}
-          >
-            Delete All for {playerName}
-          </button>
-        </div>
-      ))
+      .map(([playerId, { playerName, homeRuns, teamName, teamId }]) => {
+        // Find missing HR numbers
+        const seasonTotal = homeRuns && homeRuns.length > 0 && homeRuns[0].seasonTotalHR
+          ? homeRuns[0].seasonTotalHR
+          : null;
+        let maxMentaculousHR = 0;
+        if (Array.isArray(homeRuns)) {
+          maxMentaculousHR = Math.max(0, ...homeRuns.map((hr: HomeRun) => {
+            if (hr.hrId) {
+              const parts = hr.hrId.split('_');
+              return Number(parts[2]) || 0;
+            }
+            return 0;
+          }));
+        }
+        const seasonHRTotal = Math.max(seasonTotal || 0, maxMentaculousHR);
+        const mentaculousHRNums = new Set(
+          (homeRuns || []).map((hr: HomeRun) => {
+            if (hr.hrId) {
+              const parts = hr.hrId.split('_');
+              return Number(parts[2]);
+            }
+            return null;
+          }).filter((x: number | null): x is number => x != null)
+        );
+        const missingHRs: number[] = [];
+        for (let n = 1; n <= seasonHRTotal; n++) {
+          if (!mentaculousHRNums.has(n)) missingHRs.push(n);
+        }
+        // Use manualHRAdd state for this player
+        const manualHRNum = manualHRAdd[playerId]?.num || '';
+        const manualHRDate = manualHRAdd[playerId]?.date || '';
+        return (
+          <div key={playerId} className="backend-player-block">
+            <h3>{playerName}</h3>
+            <ul>
+              {homeRuns.map((hr: HomeRun) => (
+                <li key={hr.hrId} className="backend-hr-line">
+                  <code>{hr.hrId}</code>
+                  <button
+                    className="remove-button"
+                    style={{ marginLeft: '8px' }}
+                    onClick={() => handleRemoveHomeRun(playerId, hr.hrId)}
+                  >
+                    Delete
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button
+              className="remove-button"
+              style={{ marginTop: '4px' }}
+              onClick={() => {
+                if (window.confirm(`Remove all ${playerName} entries?`)) {
+                  setMentaculous(prev => {
+                    const newMentaculous = { ...prev };
+                    delete newMentaculous[playerId];
+                    return newMentaculous;
+                  });
+                  setOrder(o => o.filter(id => id !== playerId));
+                }
+              }}
+            >
+              Delete All for {playerName}
+            </button>
+            {/* Show missing HRs and manual add UI */}
+            {missingHRs.length > 0 && (
+              <div className="missing-hrs-block">
+                <div style={{ marginTop: 8, fontWeight: 'bold', color: 'red' }}>
+                  Missing HRs: {missingHRs.join(', ')}
+                </div>
+                <div style={{ marginTop: 4 }}>
+                  <label>
+                    HR Number:
+                    <input
+                      type="number"
+                      min="1"
+                      max={seasonHRTotal}
+                      value={manualHRNum}
+                      onChange={e => setManualHRAdd(prev => ({
+                        ...prev,
+                        [playerId]: { ...prev[playerId], num: e.target.value }
+                      }))}
+                      style={{ width: 50, marginLeft: 4 }}
+                    />
+                  </label>
+                  <label style={{ marginLeft: 8 }}>
+                    Date (YYYY-MM-DD):
+                    <input
+                      type="date"
+                      value={manualHRDate}
+                      onChange={e => setManualHRAdd(prev => ({
+                        ...prev,
+                        [playerId]: { ...prev[playerId], date: e.target.value }
+                      }))}
+                      style={{ marginLeft: 4 }}
+                    />
+                  </label>
+                  <button
+                    style={{ marginLeft: 8 }}
+                    disabled={
+                      !manualHRNum ||
+                      !manualHRDate ||
+                      !missingHRs.includes(Number(manualHRNum))
+                    }
+                    onClick={() => {
+                      const hrId = `${playerId}_${manualHRDate}_${manualHRNum}`;
+                      setMentaculous(prev => {
+                        const prevPlayer = prev[playerId] || { homeRuns: [], playerName, teamName, teamId };
+                        return {
+                          ...prev,
+                          [playerId]: {
+                            ...prevPlayer,
+                            homeRuns: [
+                              ...prevPlayer.homeRuns,
+                              { hrId, opponent: 'Manual', seasonTotalHR: seasonHRTotal },
+                            ],
+                            playerName,
+                            teamName,
+                            teamId,
+                          },
+                        };
+                      });
+                      if (!order.includes(playerId)) {
+                        setOrder(o => [...o, playerId]);
+                      }
+                      setManualHRAdd(prev => ({ ...prev, [playerId]: { num: '', date: '' } }));
+                    }}
+                  >
+                    Add Missing HR
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })
     )}
   </div>
 )}
@@ -1473,6 +1543,4 @@ useEffect(() => {
 }
 
 export default App;
-
-
 
