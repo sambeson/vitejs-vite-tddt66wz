@@ -744,8 +744,7 @@ function App() {
       key={key}
       player={p}
       getLastName={getLastName}
-      onAdd={(player, hr) => handleAddToMentaculous(player, hr, team.team?.name, team.team?.id)}
-
+      onAdd={async (player, hr) => await handleAddToMentaculous(player, hr, team.team?.name, team.team?.id)}
       onRemove={handleRemoveHomeRun}
       mentaculous={mentaculous} // ✅ required for per-HR tracking
     />
@@ -1175,6 +1174,96 @@ function App() {
         },
       };
     });
+  };
+
+  // Add a home run to mentaculous for a player (restored async version with opponent lookup and navigation)
+  const handleAddToMentaculous = async (player: any, hr: any, teamName: string, teamId?: string) => {
+    const playerId = Number(player.person.id);
+    if (!hr?.hrId) return;
+
+    const hrDate = hr.hrId.split('_')[1];
+
+    // Try to find in existing games first
+    let matchingGame = games.find((g) => g.gameDate.startsWith(hrDate));
+
+    if (!matchingGame) {
+      try {
+        const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${hrDate}`);
+        const data = await res.json();
+
+        // Try to match the player's team to find the correct game
+        const gamesOnDate = data.dates?.[0]?.games ?? [];
+        matchingGame = gamesOnDate.find(
+          (g: any) =>
+            g.teams.away.team.name === teamName ||
+            g.teams.home.team.name === teamName
+        ) || null;
+      } catch (err) {
+        console.error('Failed to fetch game for HR date', hrDate, err);
+      }
+    }
+
+    let opponent = 'Unknown';
+    if (matchingGame) {
+      const isAway = matchingGame.teams.away.team.name === teamName;
+      opponent = isAway
+        ? `@ ${matchingGame.teams.home.team.name}`
+        : `vs ${matchingGame.teams.away.team.name}`;
+    }
+
+    setMentaculous(prev => {
+      // first grab whatever was there
+      const existing = prev[playerId];
+
+      // determine the base entry (either the old one, or a brand‐new one)
+      const base = existing ?? {
+        playerName: player.person.fullName,
+        teamName:  teamName || "Unknown",
+        teamId,
+        homeRuns: [],
+        // only stamp here when there is no existing entry
+        addedAt: Date.now(),
+      };
+
+      // prevent duplicates
+      if (base.homeRuns.some((h: any) => h.hrId === hr.hrId)) {
+        return prev;
+      }
+
+      // now return a new object, preserving base.addedAt
+      return {
+        ...prev,
+        [playerId]: {
+          ...base,
+          teamId:    base.teamId    ?? teamId,
+          homeRuns: [...base.homeRuns, { hrId: hr.hrId, opponent }],
+          addedAt:  base.addedAt,        // <-- keep the original
+        }
+      };
+    });
+
+    setOrder(prev => {
+      const strId = String(playerId);
+      return prev.includes(strId)
+        ? prev
+        : [...prev, strId];
+    });
+    // Calculate the new page for the player
+    setTimeout(() => {
+      setActiveTab('mentaculous');
+      setUpdatedPlayerId(playerId);
+
+      // Find the index of the player in the order
+      const strId = String(playerId);
+      const idx = order.includes(strId)
+        ? order.indexOf(strId)
+        : order.length; // If just added, will be at the end
+
+      const page = Math.floor(idx / 32);
+      setMentaculousPage(page);
+
+      setTimeout(() => setUpdatedPlayerId(null), 1000);
+    }, 0);
   };
 
   // Add this effect after games are loaded
