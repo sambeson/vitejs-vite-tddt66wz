@@ -17,34 +17,66 @@
 
 .user-selection-modal {
   background: white;
-  padding: 40px;
+  padding: 20px;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   text-align: center;
-  min-width: 400px;
+  min-width: 300px;
+  max-width: 90vw;
+  width: 100%;
+  margin: 0 10px;
 }
 
 .user-selection-modal h2 {
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   color: #333;
-  font-size: 2em;
+  font-size: 1.8em;
 }
 
 .user-buttons {
   display: flex;
-  gap: 20px;
+  gap: 15px;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .user-button {
-  padding: 20px 30px;
-  font-size: 1.2em;
+  padding: 15px 20px;
+  font-size: 1.1em;
   font-weight: bold;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 160px;
+  min-width: 140px;
+  flex: 1;
+  max-width: 200px;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 480px) {
+  .user-selection-modal {
+    padding: 15px;
+    margin: 0 5px;
+    min-width: 280px;
+  }
+  
+  .user-selection-modal h2 {
+    font-size: 1.5em;
+    margin-bottom: 15px;
+  }
+  
+  .user-buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .user-button {
+    padding: 12px 16px;
+    font-size: 1em;
+    min-width: auto;
+    max-width: none;
+  }
 }
 
 .user-button.sam {
