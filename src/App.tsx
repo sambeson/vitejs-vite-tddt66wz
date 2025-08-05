@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './styles.css';
 import { backupToSupabase, supabase } from './supabase';
 
-async function fetchOrderFromSupabase(userId) {
+async function fetchOrderFromSupabase(userId: string) {
   const { data, error } = await supabase
     .from('mentaculous_backups')
     .select('mentorder')
@@ -30,7 +30,7 @@ async function fetchOrderFromSupabase(userId) {
   return orderArr;
 }
 
-async function fetchMentaculousFromSupabase(userId) {
+async function fetchMentaculousFromSupabase(userId: string) {
   const { data, error } = await supabase
     .from('mentaculous_backups')
     .select('mentaculous')
@@ -111,8 +111,8 @@ function parseHrId(hrId: string) {
   };
 }
 
-function findGameByDate(games, dateStr) {
-  return games.find((game) => game.gameDate.startsWith(dateStr));
+function findGameByDate(games: any[], dateStr: string) {
+  return games.find((game: any) => game.gameDate.startsWith(dateStr));
 }
 
 
@@ -148,8 +148,8 @@ function HomerEntry({
 
   return (
     <>
-      {player.homeRunProgress.map((hr, index) => {
-        const alreadyLoggedForThis = mentaculous[player.person.id]?.homeRuns?.some(h => h.hrId === hr.hrId);
+      {player.homeRunProgress.map((hr: any, index: number) => {
+        const alreadyLoggedForThis = mentaculous[player.person.id]?.homeRuns?.some((h: any) => h.hrId === hr.hrId);
         // Only allow add if mentaculous HR count < season total
         const canAdd = !alreadyLoggedForThis && mentaculousHRCount < seasonTotalHR;
         return (
@@ -193,10 +193,10 @@ function HomerEntry({
 
 export {HomerEntry};
 
-function PlayerProfile({ playerId, onClose }) {
-  const [profile, setProfile] = useState(null);
-  const [careerStats, setCareerStats] = useState(null);
-  const [seasonStats, setSeasonStats] = useState([]);
+function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () => void }) {
+  const [profile, setProfile] = useState<any>(null);
+  const [careerStats, setCareerStats] = useState<any>(null);
+  const [seasonStats, setSeasonStats] = useState<any[]>([]);
 
   useEffect(() => {
     // Fetch player bio info
@@ -249,7 +249,7 @@ function PlayerProfile({ playerId, onClose }) {
       );
   }, [playerId]);
 
-  const getLastName = (person) => {
+  const getLastName = (person: any) => {
     if (person.lastName) return person.lastName;
     if (person.fullName) {
       const parts = person.fullName.split(' ');
@@ -373,13 +373,39 @@ type MentaculousPlayer = {
   addedAt?: number;
 };
 
+// User Selection Component
+function UserSelection({ onUserSelect }: { onUserSelect: (userId: string) => void }) {
+  return (
+    <div className="user-selection-overlay">
+      <div className="user-selection-modal">
+        <h2>Select User</h2>
+        <div className="user-buttons">
+          <button 
+            className="user-button sam"
+            onClick={() => onUserSelect('Sam beson')}
+          >
+            Sam's Mentaculous
+          </button>
+          <button 
+            className="user-button jalk"
+            onClick={() => onUserSelect('Jalk McUser')}
+          >
+            Jalk's Mentaculous
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [games, setGames] = useState([]);
+  const [games, setGames] = useState<any[]>([]);
   const [selectedGame, setSelectedGame] = useState(null);
   const [boxScore, setBoxScore] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState('away');
-  const [selectedPlayerId, setSelectedPlayerId] = useState(null);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('games');
   const [mentaculous, setMentaculous] = React.useState<Record<string, MentaculousPlayer>>({});
   const [mentaculousPage, setMentaculousPage] = useState(0)
@@ -396,12 +422,14 @@ function App() {
   const [manualHRAdd, setManualHRAdd] = useState<Record<string, { num: string; date: string }>>({});
 
   useEffect(() => {
+    if (!currentUser) return; // Don't load data until user is selected
+    
     setDataLoaded(false); // Reset to false before loading
     async function loadInitialData() {
       // MIGRATION: If mentaculous is missing, but old keys exist, migrate them
-      let mentaculousRaw = localStorage.getItem('mentaculous');
+      let mentaculousRaw = localStorage.getItem(`mentaculous_${currentUser}`);
       if (!mentaculousRaw || mentaculousRaw === '{}' || mentaculousRaw === 'null') {
-        const newMentaculous = {};
+        const newMentaculous: Record<string, any> = {};
         let fallbackAddedAt = Date.now();
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
@@ -409,7 +437,7 @@ function App() {
           // Example pattern: 12345_416_12
           const match = key.match(/^(\d+)_(\d+)_([\d]+)$/);
           if (match) {
-            const [_, playerId, addedAtRaw, hrNumber] = match;
+            const [, playerId] = match;
             const hrId = key;
             let value;
             try {
@@ -434,24 +462,26 @@ function App() {
           }
         }
         if (Object.keys(newMentaculous).length > 0) {
-          localStorage.setItem('mentaculous', JSON.stringify(newMentaculous));
+          localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(newMentaculous));
         }
       }
 
       // --- SUPABASE MENTACULOUS LOAD STARTS HERE ---
       // Try to load mentaculous from Supabase
       let parsed = {};
-      const supabaseMentaculous = await fetchMentaculousFromSupabase("Sam beson");
-      if (supabaseMentaculous && Object.keys(supabaseMentaculous).length) {
-        parsed = supabaseMentaculous;
-        localStorage.setItem('mentaculous', JSON.stringify(parsed));
-      } else {
-        mentaculousRaw = localStorage.getItem('mentaculous');
-        if (mentaculousRaw) {
-          try {
-            parsed = JSON.parse(mentaculousRaw);
-          } catch {
-            parsed = {};
+      if (currentUser) {
+        const supabaseMentaculous = await fetchMentaculousFromSupabase(currentUser);
+        if (supabaseMentaculous && Object.keys(supabaseMentaculous).length) {
+          parsed = supabaseMentaculous;
+          localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(parsed));
+        } else {
+          mentaculousRaw = localStorage.getItem(`mentaculous_${currentUser}`);
+          if (mentaculousRaw) {
+            try {
+              parsed = JSON.parse(mentaculousRaw);
+            } catch {
+              parsed = {};
+            }
           }
         }
       }
@@ -459,24 +489,26 @@ function App() {
 
       // --- SUPABASE ORDER LOAD (as before) ---
       // Try to load order from Supabase
-      const supabaseOrder = await fetchOrderFromSupabase("Sam beson");
-      let orderArr = [];
-      if (supabaseOrder && supabaseOrder.length) {
-        orderArr = supabaseOrder;
-        localStorage.setItem('mentaculousOrder', JSON.stringify(orderArr));
-      } else {
-        const storedOrder = localStorage.getItem('mentaculousOrder');
-        if (storedOrder) {
-          orderArr = JSON.parse(storedOrder);
-          if (!orderArr.length) {
+      let orderArr: string[] = [];
+      if (currentUser) {
+        const supabaseOrder = await fetchOrderFromSupabase(currentUser);
+        if (supabaseOrder && supabaseOrder.length) {
+          orderArr = supabaseOrder;
+          localStorage.setItem(`mentaculousOrder_${currentUser}`, JSON.stringify(orderArr));
+        } else {
+          const storedOrder = localStorage.getItem(`mentaculousOrder_${currentUser}`);
+          if (storedOrder) {
+            orderArr = JSON.parse(storedOrder);
+            if (!orderArr.length) {
+              orderArr = Object.entries(parsed)
+                .sort(([,a], [,b]) => ((a as any).addedAt ?? 0) - ((b as any).addedAt ?? 0))
+                .map(([id]) => id);
+            }
+          } else {
             orderArr = Object.entries(parsed)
-              .sort(([,a], [,b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
+              .sort(([,a], [,b]) => ((a as any).addedAt ?? 0) - ((b as any).addedAt ?? 0))
               .map(([id]) => id);
           }
-        } else {
-          orderArr = Object.entries(parsed)
-            .sort(([,a], [,b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
-            .map(([id]) => id);
         }
       }
       setOrder(orderArr);
@@ -484,7 +516,7 @@ function App() {
     }
 
     loadInitialData();
-  }, []);
+  }, [currentUser]);
   
   // Move function for manual override (must be defined before autosave effect)
   function move(playerId: string, delta: number) {
@@ -504,13 +536,13 @@ function App() {
 
   // Autosave to Supabase and localStorage after mentaculous/order changes, but only after dataLoaded
   useEffect(() => {
-    if (!dataLoaded) return;
+    if (!dataLoaded || !currentUser) return;
     // Debug: log autosave trigger
-    console.log('[Autosave] Triggered', { mentaculous, order });
-    localStorage.setItem('mentaculous', JSON.stringify(mentaculous));
-    localStorage.setItem('mentaculousOrder', JSON.stringify(order));
-    backupToSupabase('Sam beson', mentaculous, order); // Pass all three arguments for correct backup
-  }, [mentaculous, order, dataLoaded]);
+    console.log('[Autosave] Triggered', { mentaculous, order, currentUser });
+    localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(mentaculous));
+    localStorage.setItem(`mentaculousOrder_${currentUser}`, JSON.stringify(order));
+    backupToSupabase(currentUser, mentaculous, order); // Pass the current data
+  }, [mentaculous, order, dataLoaded, currentUser]);
 
   useEffect(() => {
     fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`)
@@ -520,7 +552,7 @@ function App() {
   }, [date]);
 
   
-  const loadBoxScore = async (gamePk) => {
+  const loadBoxScore = async (gamePk: number) => {
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/boxscore`);
       const boxScore = await res.json();
@@ -661,7 +693,7 @@ function App() {
   };
   
   
-  const changeDate = (days) => {
+  const changeDate = (days: number) => {
     const currentDate = new Date(date);
     currentDate.setDate(currentDate.getDate() + days);
     setDate(currentDate.toISOString().split('T')[0]);
@@ -696,7 +728,7 @@ function App() {
   }
   
   
-  const getLastName = (person) => {
+  const getLastName = (person: any) => {
     // Prefer explicit lastName if available
     if (person.lastName) return person.lastName;
     // Otherwise, if a boxscoreName is provided, use it
@@ -732,7 +764,7 @@ function App() {
     );
   };
 
-  const formatSupplementalStats = (team) => {
+  const formatSupplementalStats = (team: any) => {
     const allPlayers = team.players || {};
     const stats = team.teamStats?.batting || {};
 
@@ -1030,7 +1062,7 @@ function App() {
   const renderMentaculous = () => {
   // Use the order array to sort mentaculous entries
   const entries = order
-    .map(id => [id, mentaculous[id]])
+    .map(id => [id, mentaculous[id]] as [string, MentaculousPlayer])
     .filter(([, entry]) => entry);
 
   const totalPages = Math.ceil(entries.length / 32) || 1;
@@ -1108,7 +1140,7 @@ function App() {
                       {homeRuns.length}
                       {tooltipOpenId === parseInt(playerId) && (
                         <div className="tooltip-box">
-                          {homeRuns.map((hr, idx) => {
+                          {homeRuns.map((hr: any, idx: number) => {
                             const { date } = parseHrId(hr.hrId ?? hr);
                             const formatted = new Date(date).toLocaleDateString(
                               undefined,
@@ -1295,28 +1327,38 @@ useEffect(() => {
 
   return (
     <div className="app">
-      <div className="tab-header">
-        <button
-          className={activeTab === 'games' ? 'active' : ''}
-          onClick={() => setActiveTab('games')}
-        >
-          Games
-        </button>
-        <button
-          className={activeTab === 'mentaculous' ? 'active' : ''}
-          onClick={() => setActiveTab('mentaculous')}
-        >
-          Mentaculous
-        </button>
-         {manualOverride && (
-          <button
-            className={activeTab === 'backend' ? 'active' : ''}
-            onClick={() => setActiveTab('backend')}
-           >
-             Mentaculous Backend
-           </button>
-           )}
-      </div>
+      {!currentUser ? (
+        <UserSelection onUserSelect={setCurrentUser} />
+      ) : (
+        <>
+          <div className="tab-header">
+            <button
+              className={activeTab === 'games' ? 'active' : ''}
+              onClick={() => setActiveTab('games')}
+            >
+              Games
+            </button>
+            <button
+              className={activeTab === 'mentaculous' ? 'active' : ''}
+              onClick={() => setActiveTab('mentaculous')}
+            >
+              Mentaculous ({currentUser})
+            </button>
+             {manualOverride && (
+              <button
+                className={activeTab === 'backend' ? 'active' : ''}
+                onClick={() => setActiveTab('backend')}
+               >
+                 Mentaculous Backend
+               </button>
+               )}
+            <button
+              className="user-switch-btn"
+              onClick={() => setCurrentUser(null)}
+            >
+              Switch User
+            </button>
+          </div>
 
       {activeTab === 'games' && (
         <>
@@ -1613,23 +1655,18 @@ useEffect(() => {
   </div>
 )}
 
-      {activeTab === 'mentaculous' && renderMentaculous()}
+          {activeTab === 'mentaculous' && renderMentaculous()}
 
-      {selectedPlayerId && (
-        <PlayerProfile
-          playerId={selectedPlayerId}
-          onClose={() => setSelectedPlayerId(null)}
-        />
+          {selectedPlayerId && (
+            <PlayerProfile
+              playerId={selectedPlayerId}
+              onClose={() => setSelectedPlayerId(null)}
+            />
+          )}
+        </>
       )}
-      <button onClick={() => {
-        const userId = prompt('Enter a user ID or email for backup:');
-        if (userId) backupToSupabase(userId);
-      }}>
-        Backup Mentaculous to Supabase
-      </button>
     </div>
   );
 }
 
 export default App;
-

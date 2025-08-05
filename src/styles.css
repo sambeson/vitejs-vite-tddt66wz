@@ -1,6 +1,82 @@
 /* Import handwritten font */
 @import url('https://fonts.googleapis.com/css2?family=Shadows+Into+Light&display=swap');
 
+/* User Selection Styles */
+.user-selection-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.user-selection-modal {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  min-width: 400px;
+}
+
+.user-selection-modal h2 {
+  margin-bottom: 30px;
+  color: #333;
+  font-size: 2em;
+}
+
+.user-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.user-button {
+  padding: 20px 30px;
+  font-size: 1.2em;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 160px;
+}
+
+.user-button.sam {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.user-button.jalk {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.user-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.user-switch-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  margin-left: auto;
+}
+
+.user-switch-btn:hover {
+  background: #5a6268;
+}
+
 .app {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
     Arial, sans-serif;
@@ -591,8 +667,11 @@ button:focus {
 
 .tab-header {
   display: flex;
+  align-items: center;
   gap: 10px;
   margin-bottom: 20px;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 10px;
 }
 
 .tab-header button {
