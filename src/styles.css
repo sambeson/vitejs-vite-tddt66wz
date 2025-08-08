@@ -407,6 +407,16 @@
     'Courier New', monospace;
 }
 
+.clickable-name {
+  color: #0077cc;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.clickable-name:hover {
+  text-decoration: underline;
+}
+
 .position {
   color: #666;
   font-size: 11px;

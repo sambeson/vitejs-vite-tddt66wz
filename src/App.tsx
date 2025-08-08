@@ -52,7 +52,6 @@ async function fetchMentaculousFromSupabase(userId: string) {
   return mentaculousObj;
 }
 
-
 const teamAbbreviations = {
   'Arizona Diamondbacks': 'ARI',
   'Atlanta Braves': 'ATL',
@@ -93,11 +92,9 @@ const teamAbbreviationMap = Object.entries(teamAbbreviations).reduce(
   {} as Record<string, string>
 );
 
-
 function getTeamLogoUrl(teamId: number) {
   return `https://www.mlbstatic.com/team-logos/${teamId}.svg`;
 }
-
 
 function getTeamAbbreviation(name: string = ''): string {
   return teamAbbreviationMap[name.trim().toLowerCase()] || 'UNK';
@@ -110,11 +107,6 @@ function parseHrId(hrId: string) {
     seasonHRNumber: Number(hrNum),
   };
 }
-
-function findGameByDate(games: any[], dateStr: string) {
-  return games.find((game: any) => game.gameDate.startsWith(dateStr));
-}
-
 
 // New HomerEntry component for HR entries in supplemental stats
 interface HomerEntryProps {
@@ -191,12 +183,13 @@ function HomerEntry({
   );
 }
 
-export {HomerEntry};
+export { HomerEntry };
 
 function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () => void }) {
   const [profile, setProfile] = useState<any>(null);
   const [careerStats, setCareerStats] = useState<any>(null);
-  const [seasonStats, setSeasonStats] = useState<any[]>([]);
+  const [seasonStats, setSeasonStats] = useState<{ hitting?: any[], pitching?: any[] }>({});
+  const [isPitcher, setIsPitcher] = useState<boolean>(false);
 
   useEffect(() => {
     // Fetch player bio info
@@ -204,13 +197,23 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
       .then((res) => res.json())
       .then((data) => {
         if (data.people && data.people.length > 0) {
-          setProfile(data.people[0]);
+          const player = data.people[0];
+          setProfile(player);
+
+          // Determine if this is a pitcher
+          const position = player.primaryPosition?.name || '';
+          const pitcherCheck = position.toLowerCase().includes('pitcher') ||
+            position.toLowerCase() === 'p';
+          setIsPitcher(pitcherCheck);
+
+          console.log(`Player ${player.fullName} is pitcher: ${pitcherCheck} (position: ${position})`);
         }
       })
       .catch((err) =>
         console.error('Error fetching player bio for', playerId, err)
       );
 
+    // We'll fetch both hitting and pitching stats, then display based on isPitcher
     // Fetch career hitting stats
     fetch(
       `https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=career&group=hitting`
@@ -223,12 +226,38 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
           data.stats[0].splits &&
           data.stats[0].splits.length > 0
         ) {
-          setCareerStats(data.stats[0].splits[0].stat);
+          setCareerStats((prev: any) => ({
+            ...prev,
+            hitting: data.stats[0].splits[0].stat
+          }));
         }
       })
       .catch((err) =>
-        console.error('Error fetching career stats for', playerId, err)
+        console.error('Error fetching career hitting stats for', playerId, err)
       );
+
+    // Fetch career pitching stats
+    fetch(
+      `https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=career&group=pitching`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (
+          data.stats &&
+          data.stats[0] &&
+          data.stats[0].splits &&
+          data.stats[0].splits.length > 0
+        ) {
+          setCareerStats((prev: any) => ({
+            ...prev,
+            pitching: data.stats[0].splits[0].stat
+          }));
+        }
+      })
+      .catch((err) =>
+        console.error('Error fetching career pitching stats for', playerId, err)
+      );
+
     // Fetch year-by-year hitting stats
     fetch(
       `https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=yearByYear&group=hitting`
@@ -241,22 +270,38 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
           data.stats[0].splits &&
           data.stats[0].splits.length > 0
         ) {
-          setSeasonStats(data.stats[0].splits);
+          setSeasonStats(prev => ({
+            ...prev,
+            hitting: data.stats[0].splits
+          }));
         }
       })
       .catch((err) =>
-        console.error('Error fetching year-by-year stats for', playerId, err)
+        console.error('Error fetching year-by-year hitting stats for', playerId, err)
+      );
+
+    // Fetch year-by-year pitching stats
+    fetch(
+      `https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=yearByYear&group=pitching`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (
+          data.stats &&
+          data.stats[0] &&
+          data.stats[0].splits &&
+          data.stats[0].splits.length > 0
+        ) {
+          setSeasonStats(prev => ({
+            ...prev,
+            pitching: data.stats[0].splits
+          }));
+        }
+      })
+      .catch((err) =>
+        console.error('Error fetching year-by-year pitching stats for', playerId, err)
       );
   }, [playerId]);
-
-  const getLastName = (person: any) => {
-    if (person.lastName) return person.lastName;
-    if (person.fullName) {
-      const parts = person.fullName.split(' ');
-      return parts[parts.length - 1];
-    }
-    return '';
-  };
 
   return (
     <div className="modal">
@@ -266,11 +311,11 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
         </button>
         {profile ? (
           <div className="player-profile">
-             <img
-            src={`https://img.mlbstatic.com/mlb-photos/image/upload/v1/people/${profile.id}/headshot/67/current.png`}
-            alt={`${profile.fullName} headshot`}
-             className="player-headshot"
-             />
+            <img
+              src={`https://img.mlbstatic.com/mlb-photos/image/upload/v1/people/${profile.id}/headshot/67/current.png`}
+              alt={`${profile.fullName} headshot`}
+              className="player-headshot"
+            />
             <h2>{profile.fullName}</h2>
             <p>
               <strong>Position:</strong> {profile.primaryPosition.name}
@@ -288,66 +333,146 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
             </p>
             {careerStats ? (
               <div className="career-stats">
-                <h3>Career Hitting Stats</h3>
-                <p>
-                  <strong>Games Played:</strong> {careerStats.gamesPlayed}
-                </p>
-                <p>
-                  <strong>At Bats:</strong> {careerStats.atBats}
-                </p>
-                <p>
-                  <strong>Hits:</strong> {careerStats.hits}
-                </p>
-                <p>
-                  <strong>Home Runs:</strong> {careerStats.homeRuns}
-                </p>
-                <p>
-                  <strong>Average:</strong> {careerStats.avg}
-                </p>
-                <p>
-                  <strong>OPS:</strong> {careerStats.ops}
-                </p>
+                {isPitcher && careerStats.pitching ? (
+                  <>
+                    <h3>Career Pitching Stats</h3>
+                    <p>
+                      <strong>Wins:</strong> {careerStats.pitching.wins}
+                    </p>
+                    <p>
+                      <strong>Losses:</strong> {careerStats.pitching.losses}
+                    </p>
+                    <p>
+                      <strong>ERA:</strong> {careerStats.pitching.era}
+                    </p>
+                    <p>
+                      <strong>Quality Starts:</strong> {careerStats.pitching.qualityStarts || 0}
+                    </p>
+                    <p>
+                      <strong>Innings Pitched:</strong> {careerStats.pitching.inningsPitched}
+                    </p>
+                    <p>
+                      <strong>Strikeouts:</strong> {careerStats.pitching.strikeOuts}
+                    </p>
+                    <p>
+                      <strong>Saves:</strong> {careerStats.pitching.saves}
+                    </p>
+                    <p>
+                      <strong>WHIP:</strong> {careerStats.pitching.whip}
+                    </p>
+                  </>
+                ) : careerStats.hitting ? (
+                  <>
+                    <h3>Career Hitting Stats</h3>
+                    <p>
+                      <strong>Games Played:</strong> {careerStats.hitting.gamesPlayed}
+                    </p>
+                    <p>
+                      <strong>At Bats:</strong> {careerStats.hitting.atBats}
+                    </p>
+                    <p>
+                      <strong>Hits:</strong> {careerStats.hitting.hits}
+                    </p>
+                    <p>
+                      <strong>Home Runs:</strong> {careerStats.hitting.homeRuns}
+                    </p>
+                    <p>
+                      <strong>Average:</strong> {careerStats.hitting.avg}
+                    </p>
+                    <p>
+                      <strong>OPS:</strong> {careerStats.hitting.ops}
+                    </p>
+                  </>
+                ) : null}
               </div>
             ) : (
               <p>Loading career stats...</p>
             )}
-            {Array.isArray(seasonStats) && seasonStats.length > 0 && (
+            {seasonStats && (
               <div className="season-stats">
-                <h3>Season-by-Season Hitting</h3>
-                <table className="profile-stats-table">
-                  <thead>
-                    <tr>
-                      <th>Year</th>
-                      <th>Team</th>
-                      <th>G</th>
-                      <th>AB</th>
-                      <th>H</th>
-                      <th>HR</th>
-                      <th>RBI</th>
-                      <th>SB</th> 
-                      <th>AVG</th>
-                      <th>OPS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {seasonStats
-                      .filter((s) => s?.season && s?.stat?.gamesPlayed > 0)
-                      .map((s, index) => (
-                        <tr key={index}>
-                          <td>{s.season}</td>
-                          <td>{s.team?.name || '—'}</td>
-                          <td>{s.stat?.gamesPlayed ?? '-'}</td>
-                          <td>{s.stat?.atBats ?? '-'}</td>
-                          <td>{s.stat?.hits ?? '-'}</td>
-                          <td>{s.stat?.homeRuns ?? '-'} </td>
-                          <td>{s.stat?.rbi ?? '-'}</td>
-                          <td>{s.stat?.stolenBases ?? '-'}</td>
-                          <td>{s.stat?.avg ?? '-'}</td>
-                          <td>{s.stat?.ops ?? '-'}</td>
+                {isPitcher && seasonStats.pitching && Array.isArray(seasonStats.pitching) && seasonStats.pitching.length > 0 ? (
+                  <>
+                    <h3>Season-by-Season Pitching</h3>
+                    <table className="profile-stats-table">
+                      <thead>
+                        <tr>
+                          <th>Year</th>
+                          <th>Team</th>
+                          <th>W</th>
+                          <th>L</th>
+                          <th>ERA</th>
+                          <th>IP</th>
+                          <th>SO</th>
+                          <th>QS</th>
+                          <th>SV</th>
+                          <th>HLD</th>
+                          <th>WHIP</th>
                         </tr>
-                      ))}
-                  </tbody>
-                </table>
+                      </thead>
+                      <tbody>
+                        {seasonStats.pitching
+                          .filter((s: any) => s?.season && (s?.stat?.gamesPlayed > 0 || s?.stat?.games > 0))
+                          .sort((a: any, b: any) => parseInt(a.season) - parseInt(b.season))
+                          .map((s: any, index: number) => (
+                            <tr key={index}>
+                              <td>{s.season}</td>
+                              <td>{s.team?.name || '—'}</td>
+                              <td>{s.stat?.wins ?? '-'}</td>
+                              <td>{s.stat?.losses ?? '-'}</td>
+                              <td>{s.stat?.era ?? '-'}</td>
+                              <td>{s.stat?.inningsPitched ?? '-'}</td>
+                              <td>{s.stat?.strikeOuts ?? '-'}</td>
+                              <td>{s.stat?.qualityStarts ?? '-'}</td>
+                              <td>{s.stat?.saves ?? '-'}</td>
+                              <td>{s.stat?.holds ?? '-'}</td>
+                              <td>{s.stat?.whip ?? '-'}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </>
+                ) : seasonStats.hitting && Array.isArray(seasonStats.hitting) && seasonStats.hitting.length > 0 ? (
+                  <>
+                    <h3>Season-by-Season Hitting</h3>
+                    <table className="profile-stats-table">
+                      <thead>
+                        <tr>
+                          <th>Year</th>
+                          <th>Team</th>
+                          <th>G</th>
+                          <th>AB</th>
+                          <th>H</th>
+                          <th>HR</th>
+                          <th>RBI</th>
+                          <th>SB</th>
+                          <th>AVG</th>
+                          <th>OBP</th>
+                          <th>OPS</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {seasonStats.hitting
+                          .filter((s: any) => s?.season && (s?.stat?.gamesPlayed > 0 || s?.stat?.games > 0))
+                          .sort((a: any, b: any) => parseInt(a.season) - parseInt(b.season))
+                          .map((s: any, index: number) => (
+                            <tr key={index}>
+                              <td>{s.season}</td>
+                              <td>{s.team?.name || '—'}</td>
+                              <td>{s.stat?.gamesPlayed ?? s.stat?.games ?? '-'}</td>
+                              <td>{s.stat?.atBats ?? '-'}</td>
+                              <td>{s.stat?.hits ?? '-'}</td>
+                              <td>{s.stat?.homeRuns ?? '-'} </td>
+                              <td>{s.stat?.rbi ?? '-'}</td>
+                              <td>{s.stat?.stolenBases ?? '-'}</td>
+                              <td>{s.stat?.avg ?? '-'}</td>
+                              <td>{s.stat?.obp ?? '-'}</td>
+                              <td>{s.stat?.ops ?? '-'}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </>
+                ) : null}
               </div>
             )}
           </div>
@@ -380,17 +505,17 @@ function UserSelection({ onUserSelect }: { onUserSelect: (userId: string) => voi
       <div className="user-selection-modal">
         <h2>Select User</h2>
         <div className="user-buttons">
-          <button 
+          <button
             className="user-button sam"
             onClick={() => onUserSelect('Sam beson')}
           >
-            Sam's Mentaculous
+            Sam
           </button>
-          <button 
+          <button
             className="user-button jalk"
             onClick={() => onUserSelect('Jalk McUser')}
           >
-            Jalk's Mentaculous
+            Jalk
           </button>
         </div>
       </div>
@@ -403,13 +528,13 @@ function App() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [games, setGames] = useState<any[]>([]);
   const [selectedGame, setSelectedGame] = useState(null);
-  const [boxScore, setBoxScore] = useState(null);
+  const [boxScore, setBoxScore] = useState<any>(null);
   const [selectedTeam, setSelectedTeam] = useState('away');
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('games');
   const [mentaculous, setMentaculous] = React.useState<Record<string, MentaculousPlayer>>({});
   const [mentaculousPage, setMentaculousPage] = useState(0)
-  const [updatedPlayerId, setUpdatedPlayerId] = useState(null);
+  const [updatedPlayerId, setUpdatedPlayerId] = useState<number | null>(null);
   const [tooltipOpenId, setTooltipOpenId] = useState<number | null>(null);
   const [order, setOrder] = useState<string[]>([]);
   const lineRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -423,7 +548,7 @@ function App() {
 
   useEffect(() => {
     if (!currentUser) return; // Don't load data until user is selected
-    
+
     setDataLoaded(false); // Reset to false before loading
     async function loadInitialData() {
       // MIGRATION: If mentaculous is missing, but old keys exist, migrate them
@@ -501,12 +626,12 @@ function App() {
             orderArr = JSON.parse(storedOrder);
             if (!orderArr.length) {
               orderArr = Object.entries(parsed)
-                .sort(([,a], [,b]) => ((a as any).addedAt ?? 0) - ((b as any).addedAt ?? 0))
+                .sort(([, a], [, b]) => ((a as any).addedAt ?? 0) - ((b as any).addedAt ?? 0))
                 .map(([id]) => id);
             }
           } else {
             orderArr = Object.entries(parsed)
-              .sort(([,a], [,b]) => ((a as any).addedAt ?? 0) - ((b as any).addedAt ?? 0))
+              .sort(([, a], [, b]) => ((a as any).addedAt ?? 0) - ((b as any).addedAt ?? 0))
               .map(([id]) => id);
           }
         }
@@ -517,7 +642,7 @@ function App() {
 
     loadInitialData();
   }, [currentUser]);
-  
+
   // Move function for manual override (must be defined before autosave effect)
   function move(playerId: string, delta: number) {
     setOrder((prevOrder) => {
@@ -551,27 +676,27 @@ function App() {
       .catch((error) => console.error('Error fetching schedule:', error));
   }, [date]);
 
-  
+
   const loadBoxScore = async (gamePk: number) => {
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/boxscore`);
       const boxScore = await res.json();
-  
+
       const awayPlayers = boxScore?.teams?.away?.players ?? {};
       const homePlayers = boxScore?.teams?.home?.players ?? {};
       const allPlayers = [...Object.values(awayPlayers), ...Object.values(homePlayers)];
-  
+
       const today = new Date().toISOString().split('T')[0];
-  
+
       // Step 1: Filter players who hit a home run (season total increased)
-      const playersWithHRs = allPlayers.filter((p) => {
+      const playersWithHRs = allPlayers.filter((p: any) => {
         return p.seasonStats?.batting?.homeRuns > 0;
       });
-  
+
       // Step 2: Fetch career HRs for just those players
-      const careerHRs = {};
+      const careerHRs: Record<string, number> = {};
       await Promise.all(
-        playersWithHRs.map(async (p) => {
+        playersWithHRs.map(async (p: any) => {
           const playerId = p.person.id;
           try {
             const res = await fetch(
@@ -585,18 +710,17 @@ function App() {
           }
         })
       );
-  
+
       // Step 3: Enrich players with HR progress
-      const updatedPlayers = allPlayers.map((player) => {
+      const updatedPlayers = allPlayers.map((player: any) => {
         if (!player.stats) return player;
-  
+
         if (player.seasonStats?.batting?.homeRuns != null) {
           player.stats.seasonTotalHR = player.seasonStats.batting.homeRuns;
         }
-  
-        const seasonHR = player.stats.seasonTotalHR;
+
         const careerHR = careerHRs[player.person.id];
-  
+
         if (
           typeof player.stats?.batting?.homeRuns === 'number' &&
           typeof player.seasonStats?.batting?.homeRuns === 'number' &&
@@ -604,130 +728,145 @@ function App() {
         ) {
           const hrToday = player.stats.batting.homeRuns;
           const seasonHRTotal = player.seasonStats.batting.homeRuns;
-        
+
           // Build one HR entry per HR hit today
           const homeRunProgress = [];
           for (let i = 0; i < hrToday; i++) {
             const seasonHRNumber = seasonHRTotal - i;
             const careerHRNumber = careerHR - i;
-        
+
             homeRunProgress.unshift({
               seasonHRNumber,
               careerHRNumber,
               hrId: `${player.person.id}_${today}_${seasonHRNumber}`,
             });
           }
-        
           player.homeRunProgress = homeRunProgress;
         }
-        
-  
+
         return player;
       });
-  
+
       // Step 4: Rebuild player map and merge back
-      const playerMap = updatedPlayers.reduce((map, p) => {
+      const playerMap: Record<string, any> = updatedPlayers.reduce((map: Record<string, any>, p: any) => {
         map[String(p.person.id)] = p;
         return map;
       }, {});
-  
+
       ['home', 'away'].forEach((teamKey) => {
         const team = boxScore.teams[teamKey];
-        const updated = {};
+        const updated: Record<string, any> = {};
         for (let key in team.players) {
           const id = String(team.players[key].person.id);
           updated[key] = playerMap[id] || team.players[key];
         }
         boxScore.teams[teamKey].players = updated;
       });
-  // right before `setBoxScore(boxScore);` add:
 
-        const currentYear = new Date().getFullYear().toString();
+      const currentYear = new Date().getFullYear().toString();
 
-        await Promise.all(
-          updatedPlayers.map(async (player) => {
-            const id = player.person.id;
-            try {
-              const res = await fetch(
-                `https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=yearByYear&group=hitting`
-              );
-              const data = await res.json();
-              const split = data.stats[0].splits.find(
-                (s) => s.season === currentYear
-              );
-              if (split && split.stat) {
-                // stash into your player object
-                player.stats.batting.seasonAvg = split.stat.avg;
-                player.stats.batting.seasonOps = split.stat.ops;
-              } else {
-                player.stats.batting.seasonAvg = '-';
-                player.stats.batting.seasonOps = '-';
-              }
-            } catch (err) {
-              console.warn(`Failed season stats for ${id}`, err);
+      await Promise.all(
+        updatedPlayers.map(async (player: any) => {
+          const id = player.person.id;
+          try {
+            const res = await fetch(
+              `https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=yearByYear&group=hitting`
+            );
+            const data = await res.json();
+            const split = data.stats[0].splits.find(
+              (s: any) => s.season === currentYear
+            );
+            if (split && split.stat) {
+              // stash into your player object
+              player.stats.batting.seasonAvg = split.stat.avg;
+              player.stats.batting.seasonOps = split.stat.ops;
+            } else {
               player.stats.batting.seasonAvg = '-';
               player.stats.batting.seasonOps = '-';
             }
+          } catch (err) {
+            console.warn(`Failed season stats for ${id}`, err);
+            player.stats.batting.seasonAvg = '-';
+            player.stats.batting.seasonOps = '-';
+          }
+        })
+      );
+      await Promise.all(
+        updatedPlayers
+          .filter((p: any) => p.stats?.pitching)   // only for pitchers
+          .map(async (player: any) => {
+            try {
+              // Use season stats instead of yearByYear to get combined totals for traded players
+              const res = await fetch(
+                `https://statsapi.mlb.com/api/v1/people/${player.person.id}/stats?stats=season&group=pitching`
+              );
+              const data = await res.json();
+              const seasonStat = data.stats[0]?.splits[0]?.stat;
+              if (seasonStat) {
+                player.stats.pitching.seasonEra = seasonStat.era ?? '-';
+                // Store the complete season pitching stats for save info
+                player.seasonStats = player.seasonStats || {};
+                player.seasonStats.pitching = seasonStat;
+                console.log(`📊 Season stats for ${player.person.fullName}: ${seasonStat.saves} saves, ${seasonStat.era} ERA`);
+              } else {
+                player.stats.pitching.seasonEra = '-';
+              }
+            } catch (error) {
+              console.warn(`Failed to fetch season pitching stats for ${player.person.fullName}:`, error);
+              player.stats.pitching.seasonEra = '-';
+            }
           })
-        );
-          await Promise.all(
-            updatedPlayers
-              .filter(p => p.stats?.pitching)   // only for pitchers
-              .map(async (player) => {
-                try {
-                  const res = await fetch(
-                    `https://statsapi.mlb.com/api/v1/people/${player.person.id}/stats?stats=yearByYear&group=pitching`
-                  );
-                  const data = await res.json();
-                  const pitSplit = data.stats[0].splits.find(s => s.season === currentYear);
-                  player.stats.pitching.seasonEra = pitSplit?.stat?.era ?? '-';
-                } catch {
-                  player.stats.pitching.seasonEra = '-';
-                }
-              })
-          );
+      );
+
+      // Try to get pitching order from play-by-play data
+      try {
+        const playByPlayRes = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/playByPlay`);
+        const playByPlayData = await playByPlayRes.json();
+
+        console.log('🏀 Play-by-play data fetched successfully for game:', gamePk);
+
+        // Track when each pitcher first appeared
+        const pitcherFirstAppearance = new Map();
+        let playIndex = 0;
+
+        for (const inning of playByPlayData.allPlays || []) {
+          const pitcher = inning.matchup?.pitcher;
+          if (pitcher && !pitcherFirstAppearance.has(pitcher.id)) {
+            pitcherFirstAppearance.set(pitcher.id, playIndex);
+            console.log(`⚾ Pitcher ${pitcher.fullName} first appeared at play index ${playIndex}`);
+          }
+          playIndex++;
+        }
+
+        console.log('🎯 Final pitcher order map:', Array.from(pitcherFirstAppearance.entries()));
+
+        // Apply pitching order to players
+        ['home', 'away'].forEach((teamKey) => {
+          const team = boxScore.teams[teamKey];
+          for (let key in team.players) {
+            const player = team.players[key];
+            if (player.stats?.pitching && pitcherFirstAppearance.has(player.person.id)) {
+              player.pitchingOrder = pitcherFirstAppearance.get(player.person.id);
+              console.log(`✅ Set pitchingOrder ${player.pitchingOrder} for ${player.person.fullName}`);
+            }
+          }
+        });
+      } catch (error) {
+        console.warn('❌ Could not fetch play-by-play data for pitching order:', error);
+      }
       setBoxScore(boxScore);
     } catch (error) {
       console.error('Error loading box score:', error);
     }
   };
-  
-  
+
+
   const changeDate = (days: number) => {
     const currentDate = new Date(date);
     currentDate.setDate(currentDate.getDate() + days);
     setDate(currentDate.toISOString().split('T')[0]);
   };
 
-  function trackHomeRunProgression(playByPlay, careerTotalsMap = {}) {
-    const seasonTracker = {};
-    const careerTracker = {};
-    const results = [];
-  
-    for (const play of playByPlay.allPlays || []) {
-      const { batter, result, about } = play;
-      if (!batter || result.eventType !== 'home_run') continue;
-  
-      const playerId = String(batter.id);
-      const date = about?.startTime?.split('T')[0];
-      const seasonHR = (seasonTracker[playerId] = (seasonTracker[playerId] || 0) + 1);
-      const careerHR = (careerTracker[playerId] = (careerTracker[playerId] || (careerTotalsMap[playerId] || 0)) + 1);
-  
-      results.push({
-        playerId,
-        playerName: batter.fullName,
-        seasonHRNumber: seasonHR,
-        careerHRNumber: careerHR,
-        date,
-        inning: about?.inning,
-        hrId: `${playerId}_${date}_${seasonHR}`,
-      });
-    }
-  
-    return results;
-  }
-  
-  
   const getLastName = (person: any) => {
     // Prefer explicit lastName if available
     if (person.lastName) return person.lastName;
@@ -740,7 +879,7 @@ function App() {
     }
     return '';
   };
-  
+
   const renderPagination = () => {
     const totalPages = Math.ceil(Object.keys(mentaculous).length / 32) || 1;
     return (
@@ -766,62 +905,58 @@ function App() {
 
   const formatSupplementalStats = (team: any) => {
     const allPlayers = team.players || {};
-    const stats = team.teamStats?.batting || {};
 
     // Use HomerEntry for players with home runs
     const homers = Object.entries(allPlayers)
-  .filter(([_, p]) => p.stats?.batting?.homeRuns > 0)
-  .map(([key, p]) => (
-    <HomerEntry
-      key={key}
-      player={p}
-      getLastName={getLastName}
-      onAdd={async (player, hr) => await handleAddToMentaculous(player, hr, team.team?.name, team.team?.id)}
-      onRemove={handleRemoveHomeRun}
-      mentaculous={mentaculous} // ✅ required for per-HR tracking
-    />
-  ));
+      .filter(([_, p]: [string, any]) => p.stats?.batting?.homeRuns > 0)
+      .map(([key, p]: [string, any]) => (
+        <HomerEntry
+          key={key}
+          player={p}
+          getLastName={getLastName}
+          onAdd={async (player, hr) => await handleAddToMentaculous(player, hr, team.team?.name, team.team?.id)}
+          onRemove={handleRemoveHomeRun}
+          mentaculous={mentaculous} // ✅ required for per-HR tracking
+        />
+      ));
 
 
     // Format doubles
     const doubles = Object.entries(allPlayers)
-      .filter(([_, p]) => p.stats?.batting?.doubles > 0)
-      .map(([_, p]) => {
+      .filter(([_, p]: [string, any]) => p.stats?.batting?.doubles > 0)
+      .map(([_, p]: [string, any]) => {
         const pitchers = p.gameEvents?.doubles
-          ?.map((d) => d.pitcher)
+          ?.map((d: any) => d.pitcher)
           .join(', ');
-        return ` ${getLastName(p.person)} ${p.stats.batting.doubles}${
-          pitchers ? `, ${pitchers}` : ''
-        }`;
+        return ` ${getLastName(p.person)} ${p.stats.batting.doubles}${pitchers ? `, ${pitchers}` : ''
+          }`;
       });
 
     // Format total bases
     const totalBases = Object.entries(allPlayers)
-      .filter(([_, p]) => p.stats?.batting?.totalBases > 0)
+      .filter(([_, p]: [string, any]) => p.stats?.batting?.totalBases > 0)
       .map(
-        ([_, p]) => ` ${getLastName(p.person)} ${p.stats.batting.totalBases}`
+        ([_, p]: [string, any]) => ` ${getLastName(p.person)} ${p.stats.batting.totalBases}`
       );
 
     // Format RBIs
     const rbis = Object.entries(allPlayers)
-      .filter(([_, p]) => p.stats?.batting?.rbi > 0)
-      .map(([_, p]) => {
-        const breakdown = p.gameEvents?.rbiBreakdown;
+      .filter(([_, p]: [string, any]) => p.stats?.batting?.rbi > 0)
+      .map(([_, p]: [string, any]) => {
         const seasonRBI = p.seasonStats?.batting?.rbi ?? 'N/A';
         return ` ${getLastName(p.person)} ${p.stats.batting.rbi} (${seasonRBI})
         `;
       });
 
     const steals = Object.entries(allPlayers)
-      .filter(([_, p]) => p.stats?.batting?.stolenBases > 0)
-      .map(([_, p]) => {
+      .filter(([_, p]: [string, any]) => p.stats?.batting?.stolenBases > 0)
+      .map(([_, p]: [string, any]) => {
         const name = getLastName(p.person);
         const gameSB = p.stats.batting.stolenBases;
         // If you’ve fetched season-by-season, p.seasonStats.batting?.stolenBases should exist
         const seasonSB = p.seasonStats?.batting?.stolenBases ?? 'N/A';
         return `${name} ${gameSB} (${seasonSB})`;
       });
-    
 
     return (
       <div className="supplemental-stats">
@@ -840,10 +975,10 @@ function App() {
           {rbis.length > 0 && (
             <div className="stat-line">RBI—{rbis.join('; ')}</div>
           )}
-           {steals.length > 0 && (
+          {steals.length > 0 && (
             <div className="stat-line">
-            SB— {steals.join('; ')}
-         </div>
+              SB— {steals.join('; ')}
+            </div>
           )}
         </div>
 
@@ -851,12 +986,12 @@ function App() {
           <div className="stat-section">
             <div className="stat-line">
               BASERUNNING
-              {Object.entries(team.baserunning).map(([type, events]) => (
+              {Object.entries(team.baserunning).map(([type, events]: [string, any]) => (
                 <div key={type}>
                   {type.toUpperCase()}—
                   {events
                     .map(
-                      (e) =>
+                      (e: any) =>
                         `${e.player} (${e.number}, ${e.base} base off ${e.pitcher}/${e.catcher})`
                     )
                     .join('; ')}
@@ -871,11 +1006,11 @@ function App() {
           <div className="stat-section">
             <div className="stat-line">
               FIELDING
-              {Object.entries(team.fielding).map(([type, events]) => (
+              {Object.entries(team.fielding).map(([type, events]: [string, any]) => (
                 <div key={type}>
                   {type.toUpperCase()}—
                   {events
-                    .map((e) => `${e.player} (${e.number}, ${e.description})`)
+                    .map((e: any) => `${e.player} (${e.number}, ${e.description})`)
                     .join('; ')}
                   .
                 </div>
@@ -887,23 +1022,23 @@ function App() {
     );
   };
 
-  const getPitchingOrder = (player) => {
-    const events = player.gameEvents?.pitching;
-    if (!events || events.length === 0) return Infinity;
-    const first = events[0];
-    return first.inning + (first.atBatIndex || 0) * 0.01;
-  };
-
-  const renderPitchingStats = (team) => {
+  const renderPitchingStats = (team: any) => {
     const pitchers = Object.entries(team.players || {})
-      .filter(([_, p]) => p.stats?.pitching?.inningsPitched)
-      .map(([key, p]) => ({ key, ...p }))
-      .sort(
-        (a, b) =>
-          (a.appearanceIndex ?? Infinity) - (b.appearanceIndex ?? Infinity)
-      );
+      .filter(([_, p]: [string, any]) => p.stats?.pitching?.inningsPitched)
+      .map(([key, p]: [string, any]) => ({ key, ...p }))
+      .sort((a: any, b: any) => {
+        // Only use explicit pitchingOrder if both players have it from play-by-play API
+        if (a.pitchingOrder !== undefined && b.pitchingOrder !== undefined) {
+          console.log(`🔄 Sorting: ${a.person.fullName} (order: ${a.pitchingOrder}) vs ${b.person.fullName} (order: ${b.pitchingOrder})`);
+          return a.pitchingOrder - b.pitchingOrder;
+        }
 
-    const teamPitchingStats = team.teamStats?.pitching || {};
+        // If either player doesn't have pitchingOrder, maintain original order
+        console.log(`⚠️ No pitching order for ${a.person.fullName} or ${b.person.fullName} - maintaining original order`);
+        return 0;
+      });
+
+    console.log('📋 Final pitcher order:', pitchers.map(p => `${p.person.fullName} (${p.pitchingOrder ?? 'no order'})`));
 
     return (
       <div className="team-stats">
@@ -924,11 +1059,26 @@ function App() {
             </tr>
           </thead>
           <tbody>
-            {pitchers.map((player) => {
+            {pitchers.map((player: any) => {
               const stats = player?.stats?.pitching;
+              const gameSave = stats?.saves > 0;
+              const seasonSaves = player?.seasonStats?.pitching?.saves ?? 0;
+
               return (
                 <tr key={player.person.id}>
-                  <td>{player.person.fullName}</td>
+                  <td>
+                    <span
+                      className="clickable-name"
+                      onClick={() =>
+                        setSelectedPlayerId(Number(player.person.id))
+                      }
+                    >
+                      {player.person.fullName}
+                    </span>
+                    {gameSave && (
+                      <span className="save-indicator"> (SV, {seasonSaves})</span>
+                    )}
+                  </td>
                   <td>{stats.inningsPitched}</td>
                   <td>{stats.hits}</td>
                   <td>{stats.runs}</td>
@@ -943,15 +1093,15 @@ function App() {
             })}
           </tbody>
         </table>
-        </div>
+      </div>
     );
   };
 
-  const formatBattingLine = (player) => {
+  const formatBattingLine = (player: any) => {
     if (!player.gameEvents?.atBats) return '';
     return player.gameEvents.atBats
-      .sort((a, b) => a.inning - b.inning)
-      .map((ab) => {
+      .sort((a: any, b: any) => a.inning - b.inning)
+      .map((ab: any) => {
         switch (ab.event) {
           case 'Single':
             return '1B';
@@ -990,10 +1140,10 @@ function App() {
       .join(', ');
   };
 
-  const renderBattingStats = (team) => {
+  const renderBattingStats = (team: any) => {
     const players = Object.entries(team.players || {})
-      .filter(([_, p]) => p.stats?.batting?.plateAppearances > 0)
-      .map(([key, p]) => ({ key, ...p }));
+      .filter(([_, p]: [string, any]) => p.stats?.batting?.plateAppearances > 0)
+      .map(([key, p]: [string, any]) => ({ key, ...p }));
 
     return (
       <div className="team-stats">
@@ -1046,7 +1196,7 @@ function App() {
                   </tr>
                   {battingLine && (
                     <tr className="batting-line">
-                      <td colSpan="9">{battingLine}</td>
+                      <td colSpan={9}>{battingLine}</td>
                     </tr>
                   )}
                 </React.Fragment>
@@ -1060,131 +1210,127 @@ function App() {
   };
 
   const renderMentaculous = () => {
-  // Use the order array to sort mentaculous entries
-  const entries = order
-    .map(id => [id, mentaculous[id]] as [string, MentaculousPlayer])
-    .filter(([, entry]) => entry);
+    // Use the order array to sort mentaculous entries
+    const entries = order
+      .map(id => [id, mentaculous[id]] as [string, MentaculousPlayer])
+      .filter(([, entry]) => entry);
 
-  const totalPages = Math.ceil(entries.length / 32) || 1;
-  const start = mentaculousPage * 32;
-  const currentEntries = entries.slice(start, start + 32);
-  
+    const start = mentaculousPage * 32;
+    const currentEntries = entries.slice(start, start + 32);
+
     return (
       <div className="mentaculous-container">
         {renderPagination()}
-  
+
         <div className="mentaculous-page notebook">
           <div className="notebook-title-line">
             <h2>Mentaculous</h2>
           </div>
           <div className="notebook-lines" ref={linesContainerRef}>
             {Array.from({ length: 33 }).map((_, i) => {
-            if (i === 0) {
+              if (i === 0) {
+                return (
+                  <div key="spacer" className="notebook-line empty" />
+                );
+              }
+
+              const entry = currentEntries[i - 1];
+              if (!entry) {
+                return (
+                  <div key={i} className="notebook-line empty" />
+                );
+              }
+
+              const [playerId, { playerName, homeRuns, teamName, teamId }] = entry;
+              const teamAbbr = getTeamAbbreviation(teamName);
+
               return (
-                <div key="spacer" className="notebook-line empty" />
-              );
-            }
-  
-            const entry = currentEntries[i - 1];
-            if (!entry) {
-              return (
-                <div key={i} className="notebook-line empty" />
-              );
-            }
-  
-            const [playerId, { playerName, homeRuns, teamName, teamId }] = entry;
-            const teamAbbr = getTeamAbbreviation(teamName);
-  
-            return (
-              <div key={playerId} className="notebook-line.filled">
-               {manualOverride && (
-                 <>
-                  {/* ↑↓ arrows */}
-                  <button className="arrow-btn" onClick={() => move(playerId, -10)} title="Move up 10">«</button>
-                 <button className="arrow-btn" onClick={() => move(playerId, -1)} title="Move up 1">↑</button>
-                 <button className="arrow-btn" onClick={() => move(playerId, +1)} title="Move down 1">↓</button>
-                 <button className="arrow-btn" onClick={() => move(playerId, +10)} title="Move down 10">»</button>
-                 </>
-                 )}
-                <div
-                key={playerId}
-                ref={(r) => { lineRefs.current[playerId] = r; }}
-                className={`notebook-line filled ${
-                  updatedPlayerId === parseInt(playerId) ? 'update-animate' : ''
-                }`}
-                >
-                <div className="notebook-left">
-                  {teamId && (
-                    <img
-                      className="team-logo"
-                      src={getTeamLogoUrl(teamId)}
-                      alt={teamAbbr}
-                      width={24}
-                      height={24}
-                    />
+                <div key={playerId} className="notebook-line.filled">
+                  {manualOverride && (
+                    <>
+                      {/* ↑↓ arrows */}
+                      <button className="arrow-btn" onClick={() => move(playerId, -10)} title="Move up 10">«</button>
+                      <button className="arrow-btn" onClick={() => move(playerId, -1)} title="Move up 1">↑</button>
+                      <button className="arrow-btn" onClick={() => move(playerId, +1)} title="Move down 1">↓</button>
+                      <button className="arrow-btn" onClick={() => move(playerId, +10)} title="Move down 10">»</button>
+                    </>
                   )}
-                  <span className="notebook-abbr">{teamAbbr}</span>
-                </div>
-  
-                <div className="player-info">
-                  <div className="player-name">
-                    {playerName} –{' '}
-                    <span
-                      className="hr-count-wrapper"
-                      onClick={() =>
-                        setTooltipOpenId((prev) =>
-                          prev === parseInt(playerId) ? null : parseInt(playerId)
-                        )
-                      }
-                    >
-                      {homeRuns.length}
-                      {tooltipOpenId === parseInt(playerId) && (
-                        <div className="tooltip-box">
-                          {homeRuns.map((hr: any, idx: number) => {
-                            const { date } = parseHrId(hr.hrId ?? hr);
-                            const formatted = new Date(date).toLocaleDateString(
-                              undefined,
-                              { month: 'short', day: 'numeric' }
-                            );
-                            const opponent = hr.opponent || 'Unknown';
-                            return (
-                              <div key={idx} className="tooltip-line">
-                                {formatted} {opponent}
-                              </div>
-                            );
-                          })}
-                        </div>
+                  <div
+                    key={playerId}
+                    ref={(r) => { lineRefs.current[playerId] = r; }}
+                    className={`notebook-line filled ${updatedPlayerId === parseInt(playerId) ? 'update-animate' : ''
+                      }`}
+                  >
+                    <div className="notebook-left">
+                      {teamId && (
+                        <img
+                          className="team-logo"
+                          src={getTeamLogoUrl(Number(teamId))}
+                          alt={teamAbbr}
+                          width={24}
+                          height={24}
+                        />
                       )}
-                    </span>
+                      <span className="notebook-abbr">{teamAbbr}</span>
+                    </div>
+
+                    <div className="player-info">
+                      <div className="player-name">
+                        {playerName} –{' '}
+                        <span
+                          className="hr-count-wrapper"
+                          onClick={() =>
+                            setTooltipOpenId((prev) =>
+                              prev === parseInt(playerId) ? null : parseInt(playerId)
+                            )
+                          }
+                        >
+                          {homeRuns.length}
+                          {tooltipOpenId === parseInt(playerId) && (
+                            <div className="tooltip-box">
+                              {homeRuns.map((hr: any, idx: number) => {
+                                const { date } = parseHrId(hr.hrId ?? hr);
+                                const formatted = new Date(date).toLocaleDateString(
+                                  undefined,
+                                  { month: 'short', day: 'numeric' }
+                                );
+                                const opponent = hr.opponent || 'Unknown';
+                                return (
+                                  <div key={idx} className="tooltip-line">
+                                    {formatted} {opponent}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="player-buttons">
+                        <button
+                          className="view-button"
+                          onClick={() => setSelectedPlayerId(parseInt(playerId))}
+                        >
+                          View
+                        </button>
+                      </div>
+                    </div>
                   </div>
-  
-                  <div className="player-buttons">
-                    <button
-                      className="view-button"
-                      onClick={() => setSelectedPlayerId(parseInt(playerId))}
-                    >
-                      View
-                    </button>
-                  </div>
-                 </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
           </div>
         </div>
-  
+
         {renderPagination()}
         <div className="manual-override-toggle">
           <button onClick={() => setManualOverride(o => !o)}>
             {manualOverride ? 'Disable Manual Override' : 'Enable Manual Override'}
-      </button>
-    </div>
-  </div>
+          </button>
+        </div>
+      </div>
     );
   };
-  
-
 
   const handleRemoveHomeRun = (playerId: string, hrId: string) => {
     setMentaculous(prev => {
@@ -1250,7 +1396,7 @@ function App() {
       // determine the base entry (either the old one, or a brand‐new one)
       const base = existing ?? {
         playerName: player.person.fullName,
-        teamName:  teamName || "Unknown",
+        teamName: teamName || "Unknown",
         teamId,
         homeRuns: [],
         // only stamp here when there is no existing entry
@@ -1267,9 +1413,9 @@ function App() {
         ...prev,
         [playerId]: {
           ...base,
-          teamId:    base.teamId    ?? teamId,
+          teamId: base.teamId ?? teamId,
           homeRuns: [...base.homeRuns, { hrId: hr.hrId, opponent }],
-          addedAt:  base.addedAt,        // <-- keep the original
+          addedAt: base.addedAt,        // <-- keep the original
         }
       };
     });
@@ -1299,31 +1445,31 @@ function App() {
   };
 
   // Add this effect after games are loaded
-useEffect(() => {
-  // Only fetch for in-progress games
-  const inProgressGames = games.filter(g => g.status.detailedState === 'In Progress');
-  if (inProgressGames.length === 0) return;
-  inProgressGames.forEach(game => {
-    fetch(`https://statsapi.mlb.com/api/v1.1/game/${game.gamePk}/feed/live`)
-      .then(res => res.json())
-      .then(data => {
-        const linescore = data.liveData?.linescore;
-        const currentPlay = data.liveData?.plays?.currentPlay;
-        setLiveInfo(prev => ({
-          ...prev,
-          [game.gamePk]: {
-            inning: linescore?.currentInning,
-            inningState: linescore?.inningState,
-            outs: linescore?.outs,
-            pitcher: currentPlay?.matchup?.pitcher?.fullName,
-            batter: currentPlay?.matchup?.batter?.fullName,
-            awayScore: linescore?.teams?.away?.runs,
-            homeScore: linescore?.teams?.home?.runs,
-          }
-        }));
-      });
-  });
-}, [games]);
+  useEffect(() => {
+    // Only fetch for in-progress games
+    const inProgressGames = games.filter(g => g.status.detailedState === 'In Progress');
+    if (inProgressGames.length === 0) return;
+    inProgressGames.forEach(game => {
+      fetch(`https://statsapi.mlb.com/api/v1.1/game/${game.gamePk}/feed/live`)
+        .then(res => res.json())
+        .then(data => {
+          const linescore = data.liveData?.linescore;
+          const currentPlay = data.liveData?.plays?.currentPlay;
+          setLiveInfo(prev => ({
+            ...prev,
+            [game.gamePk]: {
+              inning: linescore?.currentInning,
+              inningState: linescore?.inningState,
+              outs: linescore?.outs,
+              pitcher: currentPlay?.matchup?.pitcher?.fullName,
+              batter: currentPlay?.matchup?.batter?.fullName,
+              awayScore: linescore?.teams?.away?.runs,
+              homeScore: linescore?.teams?.home?.runs,
+            }
+          }));
+        });
+    });
+  }, [games]);
 
   return (
     <div className="app">
@@ -1344,14 +1490,14 @@ useEffect(() => {
             >
               Mentaculous ({currentUser})
             </button>
-             {manualOverride && (
+            {manualOverride && (
               <button
                 className={activeTab === 'backend' ? 'active' : ''}
                 onClick={() => setActiveTab('backend')}
-               >
-                 Mentaculous Backend
-               </button>
-               )}
+              >
+                Mentaculous Backend
+              </button>
+            )}
             <button
               className="user-switch-btn"
               onClick={() => setCurrentUser(null)}
@@ -1360,300 +1506,300 @@ useEffect(() => {
             </button>
           </div>
 
-      {activeTab === 'games' && (
-        <>
-        {!selectedGame && (
-          <>
-          <div className="date-selector">
-            <button onClick={() => changeDate(-1)}>←</button>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-            <button onClick={() => changeDate(1)}>→</button>
-          </div>
-
-            <div className="games-list">
-            {games.map((game) => {
-              const awayName = game.teams.away.team.name;
-              const homeName = game.teams.home.team.name;
-          
-              return (
-                <div
-                  key={game.gamePk}
-                  className="game-item"
-                  onClick={() => {
-                    setSelectedGame(game);
-                    loadBoxScore(game.gamePk);
-                  }}
-                >
-                
-                <div className="team-score-row">
-                  <div className="team-row">
-                    <img className="team-logo" src={getTeamLogoUrl(game.teams.away.team.id)} alt={awayName} />
-                    <div className="team-details">
-                      <div className="team-name">{awayName}</div>
-                      <div className="team-record">
-                        ({game.teams.away.leagueRecord.wins}–{game.teams.away.leagueRecord.losses})
-                      </div>
-                    </div>
-                  </div>
-                  <div className="team-score">
-                    {game.status.detailedState === 'Final' ? game.teams.away.score : (game.status.detailedState === 'In Progress' ? (liveInfo[game.gamePk]?.awayScore ?? '-') : '')}
-                  </div>
-                </div>
-
-                <div className="team-score-row">
-                  <div className="team-row">
-                    <img className="team-logo" src={getTeamLogoUrl(game.teams.home.team.id)} alt={homeName} />
-                    <div className="team-details">
-                      <div className="team-name">{homeName}</div>
-                      <div className="team-record">
-                        ({game.teams.home.leagueRecord.wins}–{game.teams.home.leagueRecord.losses})
-                      </div>
-                    </div>
-                  </div>
-                  <div className="team-score">
-                    {game.status.detailedState === 'Final' ? game.teams.home.score : (game.status.detailedState === 'In Progress' ? (liveInfo[game.gamePk]?.homeScore ?? '-') : '')}
-                  </div>
-                </div>
-
-                <div className="game-status">{game.status.detailedState}</div>
-                {game.status.detailedState === 'In Progress' && (
-                  <div className="game-live-info" style={{ marginTop: 8, fontSize: '0.95em', background: '#f3f6fa', borderRadius: 6, padding: 8 }}>
-                    <div>
-                      <strong>Inning:</strong> {liveInfo[game.gamePk]?.inningState ?? '-'} {liveInfo[game.gamePk]?.inning ?? '-'}
-                    </div>
-                    <div>
-                      <strong>Outs:</strong> {liveInfo[game.gamePk]?.outs ?? '-'}
-                    </div>
-                    <div>
-                      <strong>Pitcher:</strong> {liveInfo[game.gamePk]?.pitcher ?? '-'}
-                    </div>
-                    <div>
-                      <strong>Batter:</strong> {liveInfo[game.gamePk]?.batter ?? '-'}
-                    </div>
-                  </div>
-                )}
-              </div>
-              );
-            })}
-          </div>
-        </>
-          )}
-
-          {selectedGame && !boxScore && (
-            <div className="loading">Loading box score...</div>
-          )}
-
-          {selectedGame && boxScore && (
-            <div className="box-score">
-              <button
-                onClick={() => {
-                  setSelectedGame(null);
-                  setBoxScore(null);
-                }}
-              >
-                ← Back to Games
-              </button>
-
-              <div className="view-toggle">
-                <button
-                  className={selectedTeam === 'away' ? 'active' : ''}
-                  onClick={() => setSelectedTeam('away')}
-                >
-                  {(() => {
-                    const teamName = boxScore.teams?.away?.team?.name;
-                    return (
-                      <>
-                        {teamName}
-                      </>
-                    );
-                  })()}
-                </button>
-                <button
-                  className={selectedTeam === 'home' ? 'active' : ''}
-                  onClick={() => setSelectedTeam('home')}
-                >
-                  {(() => {
-                    const teamName = boxScore.teams?.home?.team?.name;
-                    return (
-                      <>
-                        {teamName}
-                      </>
-                    );
-                  })()}
-                </button>
-              </div>
-
-              <div className="team-section">
-                {selectedTeam === 'away' && (
-                  <>
-                    {renderBattingStats(boxScore.teams?.away)}
-                    {renderPitchingStats(boxScore.teams?.away)}
-                  </>
-                )}
-                {selectedTeam === 'home' && (
-                  <>
-                    {renderBattingStats(boxScore.teams?.home)}
-                    {renderPitchingStats(boxScore.teams?.home)}
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-{activeTab === 'backend' && manualOverride && (
-  <div className="backend-tab">
-    <h2>Mentaculous Backend</h2>
-    {Object.entries(mentaculous).length === 0 ? (
-      <p>No entries yet.</p>
-    ) : (
-      Object.entries(mentaculous)
-      .sort(([ , a], [ , b ]) =>
-        a.playerName.localeCompare(b.playerName))
-      .map(([playerId, { playerName, homeRuns, teamName, teamId }]) => {
-        // Find missing HR numbers
-        const seasonTotal = homeRuns && homeRuns.length > 0 && homeRuns[0].seasonTotalHR
-          ? homeRuns[0].seasonTotalHR
-          : null;
-        let maxMentaculousHR = 0;
-        if (Array.isArray(homeRuns)) {
-          maxMentaculousHR = Math.max(0, ...homeRuns.map((hr: HomeRun) => {
-            if (hr.hrId) {
-              const parts = hr.hrId.split('_');
-              return Number(parts[2]) || 0;
-            }
-            return 0;
-          }));
-        }
-        const seasonHRTotal = Math.max(seasonTotal || 0, maxMentaculousHR);
-        const mentaculousHRNums = new Set(
-          (homeRuns || []).map((hr: HomeRun) => {
-            if (hr.hrId) {
-              const parts = hr.hrId.split('_');
-              return Number(parts[2]);
-            }
-            return null;
-          }).filter((x: number | null): x is number => x != null)
-        );
-        const missingHRs: number[] = [];
-        for (let n = 1; n <= seasonHRTotal; n++) {
-          if (!mentaculousHRNums.has(n)) missingHRs.push(n);
-        }
-        // Use manualHRAdd state for this player
-        const manualHRNum = manualHRAdd[playerId]?.num || '';
-        const manualHRDate = manualHRAdd[playerId]?.date || '';
-        return (
-          <div key={playerId} className="backend-player-block">
-            <h3>{playerName}</h3>
-            <ul>
-              {homeRuns.map((hr: HomeRun) => (
-                <li key={hr.hrId} className="backend-hr-line">
-                  <code>{hr.hrId}</code>
-                  <button
-                    className="remove-button"
-                    style={{ marginLeft: '8px' }}
-                    onClick={() => handleRemoveHomeRun(playerId, hr.hrId)}
-                  >
-                    Delete
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <button
-              className="remove-button"
-              style={{ marginTop: '4px' }}
-              onClick={() => {
-                if (window.confirm(`Remove all ${playerName} entries?`)) {
-                  setMentaculous(prev => {
-                    const newMentaculous = { ...prev };
-                    delete newMentaculous[playerId];
-                    return newMentaculous;
-                  });
-                  setOrder(o => o.filter(id => id !== playerId));
-                }
-              }}
-            >
-              Delete All for {playerName}
-            </button>
-            {/* Show missing HRs and manual add UI */}
-            {missingHRs.length > 0 && (
-              <div className="missing-hrs-block">
-                <div style={{ marginTop: 8, fontWeight: 'bold', color: 'red' }}>
-                  Missing HRs: {missingHRs.join(', ')}
-                </div>
-                <div style={{ marginTop: 4 }}>
-                  <label>
-                    HR Number:
-                    <input
-                      type="number"
-                      min="1"
-                      max={seasonHRTotal}
-                      value={manualHRNum}
-                      onChange={e => setManualHRAdd(prev => ({
-                        ...prev,
-                        [playerId]: { ...prev[playerId], num: e.target.value }
-                      }))}
-                      style={{ width: 50, marginLeft: 4 }}
-                    />
-                  </label>
-                  <label style={{ marginLeft: 8 }}>
-                    Date (YYYY-MM-DD):
+          {activeTab === 'games' && (
+            <>
+              {!selectedGame && (
+                <>
+                  <div className="date-selector">
+                    <button onClick={() => changeDate(-1)}>←</button>
                     <input
                       type="date"
-                      value={manualHRDate}
-                      onChange={e => setManualHRAdd(prev => ({
-                        ...prev,
-                        [playerId]: { ...prev[playerId], date: e.target.value }
-                      }))}
-                      style={{ marginLeft: 4 }}
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
                     />
-                  </label>
+                    <button onClick={() => changeDate(1)}>→</button>
+                  </div>
+
+                  <div className="games-list">
+                    {games.map((game) => {
+                      const awayName = game.teams.away.team.name;
+                      const homeName = game.teams.home.team.name;
+
+                      return (
+                        <div
+                          key={game.gamePk}
+                          className="game-item"
+                          onClick={() => {
+                            setSelectedGame(game);
+                            loadBoxScore(game.gamePk);
+                          }}
+                        >
+
+                          <div className="team-score-row">
+                            <div className="team-row">
+                              <img className="team-logo" src={getTeamLogoUrl(game.teams.away.team.id)} alt={awayName} />
+                              <div className="team-details">
+                                <div className="team-name">{awayName}</div>
+                                <div className="team-record">
+                                  ({game.teams.away.leagueRecord.wins}–{game.teams.away.leagueRecord.losses})
+                                </div>
+                              </div>
+                            </div>
+                            <div className="team-score">
+                              {game.status.detailedState === 'Final' ? game.teams.away.score : (game.status.detailedState === 'In Progress' ? (liveInfo[game.gamePk]?.awayScore ?? '-') : '')}
+                            </div>
+                          </div>
+
+                          <div className="team-score-row">
+                            <div className="team-row">
+                              <img className="team-logo" src={getTeamLogoUrl(game.teams.home.team.id)} alt={homeName} />
+                              <div className="team-details">
+                                <div className="team-name">{homeName}</div>
+                                <div className="team-record">
+                                  ({game.teams.home.leagueRecord.wins}–{game.teams.home.leagueRecord.losses})
+                                </div>
+                              </div>
+                            </div>
+                            <div className="team-score">
+                              {game.status.detailedState === 'Final' ? game.teams.home.score : (game.status.detailedState === 'In Progress' ? (liveInfo[game.gamePk]?.homeScore ?? '-') : '')}
+                            </div>
+                          </div>
+
+                          <div className="game-status">{game.status.detailedState}</div>
+                          {game.status.detailedState === 'In Progress' && (
+                            <div className="game-live-info" style={{ marginTop: 8, fontSize: '0.95em', background: '#f3f6fa', borderRadius: 6, padding: 8 }}>
+                              <div>
+                                <strong>Inning:</strong> {liveInfo[game.gamePk]?.inningState ?? '-'} {liveInfo[game.gamePk]?.inning ?? '-'}
+                              </div>
+                              <div>
+                                <strong>Outs:</strong> {liveInfo[game.gamePk]?.outs ?? '-'}
+                              </div>
+                              <div>
+                                <strong>Pitcher:</strong> {liveInfo[game.gamePk]?.pitcher ?? '-'}
+                              </div>
+                              <div>
+                                <strong>Batter:</strong> {liveInfo[game.gamePk]?.batter ?? '-'}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              {selectedGame && !boxScore && (
+                <div className="loading">Loading box score...</div>
+              )}
+
+              {selectedGame && boxScore && (
+                <div className="box-score">
                   <button
-                    style={{ marginLeft: 8 }}
-                    disabled={
-                      !manualHRNum ||
-                      !manualHRDate ||
-                      !missingHRs.includes(Number(manualHRNum))
-                    }
                     onClick={() => {
-                      const hrId = `${playerId}_${manualHRDate}_${manualHRNum}`;
-                      setMentaculous(prev => {
-                        const prevPlayer = prev[playerId] || { homeRuns: [], playerName, teamName, teamId };
-                        return {
-                          ...prev,
-                          [playerId]: {
-                            ...prevPlayer,
-                            homeRuns: [
-                              ...prevPlayer.homeRuns,
-                              { hrId, opponent: 'Manual', seasonTotalHR: seasonHRTotal },
-                            ],
-                            playerName,
-                            teamName,
-                            teamId,
-                          },
-                        };
-                      });
-                      if (!order.includes(playerId)) {
-                        setOrder(o => [...o, playerId]);
-                      }
-                      setManualHRAdd(prev => ({ ...prev, [playerId]: { num: '', date: '' } }));
+                      setSelectedGame(null);
+                      setBoxScore(null);
                     }}
                   >
-                    Add Missing HR
+                    ← Back to Games
                   </button>
+
+                  <div className="view-toggle">
+                    <button
+                      className={selectedTeam === 'away' ? 'active' : ''}
+                      onClick={() => setSelectedTeam('away')}
+                    >
+                      {(() => {
+                        const teamName = boxScore.teams?.away?.team?.name;
+                        return (
+                          <>
+                            {teamName}
+                          </>
+                        );
+                      })()}
+                    </button>
+                    <button
+                      className={selectedTeam === 'home' ? 'active' : ''}
+                      onClick={() => setSelectedTeam('home')}
+                    >
+                      {(() => {
+                        const teamName = boxScore.teams?.home?.team?.name;
+                        return (
+                          <>
+                            {teamName}
+                          </>
+                        );
+                      })()}
+                    </button>
+                  </div>
+
+                  <div className="team-section">
+                    {selectedTeam === 'away' && (
+                      <>
+                        {renderBattingStats(boxScore.teams?.away)}
+                        {renderPitchingStats(boxScore.teams?.away)}
+                      </>
+                    )}
+                    {selectedTeam === 'home' && (
+                      <>
+                        {renderBattingStats(boxScore.teams?.home)}
+                        {renderPitchingStats(boxScore.teams?.home)}
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        );
-      })
-    )}
-  </div>
-)}
+              )}
+            </>
+          )}
+          {activeTab === 'backend' && manualOverride && (
+            <div className="backend-tab">
+              <h2>Mentaculous Backend</h2>
+              {Object.entries(mentaculous).length === 0 ? (
+                <p>No entries yet.</p>
+              ) : (
+                Object.entries(mentaculous)
+                  .sort(([, a], [, b]) =>
+                    a.playerName.localeCompare(b.playerName))
+                  .map(([playerId, { playerName, homeRuns, teamName, teamId }]) => {
+                    // Find missing HR numbers
+                    const seasonTotal = homeRuns && homeRuns.length > 0 && homeRuns[0].seasonTotalHR
+                      ? homeRuns[0].seasonTotalHR
+                      : null;
+                    let maxMentaculousHR = 0;
+                    if (Array.isArray(homeRuns)) {
+                      maxMentaculousHR = Math.max(0, ...homeRuns.map((hr: HomeRun) => {
+                        if (hr.hrId) {
+                          const parts = hr.hrId.split('_');
+                          return Number(parts[2]) || 0;
+                        }
+                        return 0;
+                      }));
+                    }
+                    const seasonHRTotal = Math.max(seasonTotal || 0, maxMentaculousHR);
+                    const mentaculousHRNums = new Set(
+                      (homeRuns || []).map((hr: HomeRun) => {
+                        if (hr.hrId) {
+                          const parts = hr.hrId.split('_');
+                          return Number(parts[2]);
+                        }
+                        return null;
+                      }).filter((x: number | null): x is number => x != null)
+                    );
+                    const missingHRs: number[] = [];
+                    for (let n = 1; n <= seasonHRTotal; n++) {
+                      if (!mentaculousHRNums.has(n)) missingHRs.push(n);
+                    }
+                    // Use manualHRAdd state for this player
+                    const manualHRNum = manualHRAdd[playerId]?.num || '';
+                    const manualHRDate = manualHRAdd[playerId]?.date || '';
+                    return (
+                      <div key={playerId} className="backend-player-block">
+                        <h3>{playerName}</h3>
+                        <ul>
+                          {homeRuns.map((hr: HomeRun) => (
+                            <li key={hr.hrId} className="backend-hr-line">
+                              <code>{hr.hrId}</code>
+                              <button
+                                className="remove-button"
+                                style={{ marginLeft: '8px' }}
+                                onClick={() => handleRemoveHomeRun(playerId, hr.hrId)}
+                              >
+                                Delete
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                        <button
+                          className="remove-button"
+                          style={{ marginTop: '4px' }}
+                          onClick={() => {
+                            if (window.confirm(`Remove all ${playerName} entries?`)) {
+                              setMentaculous(prev => {
+                                const newMentaculous = { ...prev };
+                                delete newMentaculous[playerId];
+                                return newMentaculous;
+                              });
+                              setOrder(o => o.filter(id => id !== playerId));
+                            }
+                          }}
+                        >
+                          Delete All for {playerName}
+                        </button>
+                        {/* Show missing HRs and manual add UI */}
+                        {missingHRs.length > 0 && (
+                          <div className="missing-hrs-block">
+                            <div style={{ marginTop: 8, fontWeight: 'bold', color: 'red' }}>
+                              Missing HRs: {missingHRs.join(', ')}
+                            </div>
+                            <div style={{ marginTop: 4 }}>
+                              <label>
+                                HR Number:
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max={seasonHRTotal}
+                                  value={manualHRNum}
+                                  onChange={e => setManualHRAdd(prev => ({
+                                    ...prev,
+                                    [playerId]: { ...prev[playerId], num: e.target.value }
+                                  }))}
+                                  style={{ width: 50, marginLeft: 4 }}
+                                />
+                              </label>
+                              <label style={{ marginLeft: 8 }}>
+                                Date (YYYY-MM-DD):
+                                <input
+                                  type="date"
+                                  value={manualHRDate}
+                                  onChange={e => setManualHRAdd(prev => ({
+                                    ...prev,
+                                    [playerId]: { ...prev[playerId], date: e.target.value }
+                                  }))}
+                                  style={{ marginLeft: 4 }}
+                                />
+                              </label>
+                              <button
+                                style={{ marginLeft: 8 }}
+                                disabled={
+                                  !manualHRNum ||
+                                  !manualHRDate ||
+                                  !missingHRs.includes(Number(manualHRNum))
+                                }
+                                onClick={() => {
+                                  const hrId = `${playerId}_${manualHRDate}_${manualHRNum}`;
+                                  setMentaculous(prev => {
+                                    const prevPlayer = prev[playerId] || { homeRuns: [], playerName, teamName, teamId };
+                                    return {
+                                      ...prev,
+                                      [playerId]: {
+                                        ...prevPlayer,
+                                        homeRuns: [
+                                          ...prevPlayer.homeRuns,
+                                          { hrId, opponent: 'Manual', seasonTotalHR: seasonHRTotal },
+                                        ],
+                                        playerName,
+                                        teamName,
+                                        teamId,
+                                      },
+                                    };
+                                  });
+                                  if (!order.includes(playerId)) {
+                                    setOrder(o => [...o, playerId]);
+                                  }
+                                  setManualHRAdd(prev => ({ ...prev, [playerId]: { num: '', date: '' } }));
+                                }}
+                              >
+                                Add Missing HR
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+              )}
+            </div>
+          )}
 
           {activeTab === 'mentaculous' && renderMentaculous()}
 
