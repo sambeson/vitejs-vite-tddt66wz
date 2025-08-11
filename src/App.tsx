@@ -552,8 +552,23 @@ function App() {
   // Clear Jalk's localStorage on app load to prevent cross-device data persistence
   React.useEffect(() => {
     console.log('🗑️ Auto-clearing Jalk\'s localStorage on app load...');
+    
+    // Debug: Check what's in localStorage before clearing
+    const jalksData = localStorage.getItem('mentaculous_Jalk McUser');
+    const jalksOrder = localStorage.getItem('mentaculousOrder_Jalk McUser');
+    console.log('📊 Before clearing - Jalk\'s mentaculous:', jalksData);
+    console.log('📊 Before clearing - Jalk\'s order:', jalksOrder);
+    
+    // Clear Jalk's data
     localStorage.removeItem('mentaculous_Jalk McUser');
     localStorage.removeItem('mentaculousOrder_Jalk McUser');
+    
+    // Debug: Verify it was cleared
+    const afterData = localStorage.getItem('mentaculous_Jalk McUser');
+    const afterOrder = localStorage.getItem('mentaculousOrder_Jalk McUser');
+    console.log('📊 After clearing - Jalk\'s mentaculous:', afterData);
+    console.log('📊 After clearing - Jalk\'s order:', afterOrder);
+    
     console.log('✅ Jalk\'s localStorage auto-cleared!');
   }, []);
 
@@ -1833,5 +1848,42 @@ function App() {
     </div>
   );
 }
+
+// Debug function to check localStorage contents
+function debugLocalStorage() {
+  console.log('🔍 localStorage debug:');
+  console.log('Sam\'s mentaculous:', localStorage.getItem('mentaculous_Sam beson'));
+  console.log('Sam\'s order:', localStorage.getItem('mentaculousOrder_Sam beson'));
+  console.log('Jalk\'s mentaculous:', localStorage.getItem('mentaculous_Jalk McUser'));
+  console.log('Jalk\'s order:', localStorage.getItem('mentaculousOrder_Jalk McUser'));
+  
+  // Show all localStorage keys
+  const allKeys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    allKeys.push(localStorage.key(i));
+  }
+  console.log('All localStorage keys:', allKeys);
+}
+
+// Manual function to clear Jalk's data
+function clearJalkData() {
+  console.log('🗑️ Manually clearing Jalk\'s localStorage...');
+  localStorage.removeItem('mentaculous_Jalk McUser');
+  localStorage.removeItem('mentaculousOrder_Jalk McUser');
+  console.log('✅ Jalk\'s localStorage manually cleared!');
+}
+
+// Generic function to clear any user's localStorage
+function clearUserDataFromLocalStorage(userId: string) {
+  console.log(`🗑️ Clearing localStorage for user "${userId}"...`);
+  localStorage.removeItem(`mentaculous_${userId}`);
+  localStorage.removeItem(`mentaculousOrder_${userId}`);
+  console.log(`✅ Successfully cleared localStorage for user "${userId}"`);
+}
+
+// Make them available globally
+(window as any).debugLocalStorage = debugLocalStorage;
+(window as any).clearJalkData = clearJalkData;
+(window as any).clearUserDataFromLocalStorage = clearUserDataFromLocalStorage;
 
 export default App;

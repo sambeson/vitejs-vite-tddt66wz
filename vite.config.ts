@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'robots.txt', 'icons/*'],
+      includeAssets: ['favicon.svg', 'robots.txt', 'vite.svg'],
       manifest: {
         name: 'Mentaculous Tracker',
         short_name: 'Mentaculous',
@@ -17,14 +17,14 @@ export default defineConfig({
         theme_color: '#041e42',
         icons: [
           {
-            src: 'icons/pwa-icon-192.png',
+            src: 'vite.svg',
             sizes: '192x192',
-            type: 'image/png',
+            type: 'image/svg+xml',
           },
           {
-            src: 'icons/pwa-icon-512.png',
+            src: 'vite.svg',
             sizes: '512x512',
-            type: 'image/png',
+            type: 'image/svg+xml',
           },
         ],
       },
