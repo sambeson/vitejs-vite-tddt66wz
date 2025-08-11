@@ -549,6 +549,14 @@ function App() {
   const [dataLoaded, setDataLoaded] = useState(false); // New state to track data loading
   const [liveInfo, setLiveInfo] = useState<Record<string, any>>({}); // Add this state
 
+  // Clear Jalk's localStorage on app load to prevent cross-device data persistence
+  React.useEffect(() => {
+    console.log('🗑️ Auto-clearing Jalk\'s localStorage on app load...');
+    localStorage.removeItem('mentaculous_Jalk McUser');
+    localStorage.removeItem('mentaculousOrder_Jalk McUser');
+    console.log('✅ Jalk\'s localStorage auto-cleared!');
+  }, []);
+
   // Manual HR add state for backend tab, keyed by playerId
   const [manualHRAdd, setManualHRAdd] = useState<Record<string, { num: string; date: string }>>({});
 
