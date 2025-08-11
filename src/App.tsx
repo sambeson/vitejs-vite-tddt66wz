@@ -549,29 +549,6 @@ function App() {
   const [dataLoaded, setDataLoaded] = useState(false); // New state to track data loading
   const [liveInfo, setLiveInfo] = useState<Record<string, any>>({}); // Add this state
 
-  // Clear Jalk's localStorage on app load to prevent cross-device data persistence
-  React.useEffect(() => {
-    console.log('🗑️ Auto-clearing Jalk\'s localStorage on app load...');
-    
-    // Debug: Check what's in localStorage before clearing
-    const jalksData = localStorage.getItem('mentaculous_Jalk McUser');
-    const jalksOrder = localStorage.getItem('mentaculousOrder_Jalk McUser');
-    console.log('📊 Before clearing - Jalk\'s mentaculous:', jalksData);
-    console.log('📊 Before clearing - Jalk\'s order:', jalksOrder);
-    
-    // Clear Jalk's data
-    localStorage.removeItem('mentaculous_Jalk McUser');
-    localStorage.removeItem('mentaculousOrder_Jalk McUser');
-    
-    // Debug: Verify it was cleared
-    const afterData = localStorage.getItem('mentaculous_Jalk McUser');
-    const afterOrder = localStorage.getItem('mentaculousOrder_Jalk McUser');
-    console.log('📊 After clearing - Jalk\'s mentaculous:', afterData);
-    console.log('📊 After clearing - Jalk\'s order:', afterOrder);
-    
-    console.log('✅ Jalk\'s localStorage auto-cleared!');
-  }, []);
-
   // Manual HR add state for backend tab, keyed by playerId
   const [manualHRAdd, setManualHRAdd] = useState<Record<string, { num: string; date: string }>>({});
 
@@ -1881,9 +1858,81 @@ function clearUserDataFromLocalStorage(userId: string) {
   console.log(`✅ Successfully cleared localStorage for user "${userId}"`);
 }
 
+// Function to restore a user's data from Supabase
+async function restoreUserDataFromSupabase(userId: string) {
+  console.log(`🔄 Restoring data for user "${userId}" from Supabase...`);
+  
+  try {
+    // Fetch mentaculous data
+    const mentaculousData = await fetchMentaculousFromSupabase(userId);
+    if (mentaculousData && Object.keys(mentaculousData).length > 0) {
+      localStorage.setItem(`mentaculous_${userId}`, JSON.stringify(mentaculousData));
+      console.log(`✅ Restored mentaculous data for "${userId}"`);
+    } else {
+      console.log(`⚠️ No mentaculous data found in Supabase for "${userId}"`);
+    }
+    
+    // Fetch order data
+    const orderData = await fetchOrderFromSupabase(userId);
+    if (orderData && orderData.length > 0) {
+      localStorage.setItem(`mentaculousOrder_${userId}`, JSON.stringify(orderData));
+      console.log(`✅ Restored order data for "${userId}"`);
+    } else {
+      console.log(`⚠️ No order data found in Supabase for "${userId}"`);
+    }
+    
+    console.log(`🎉 Data restoration complete for "${userId}"! Refresh the page to see the restored data.`);
+    return true;
+  } catch (error) {
+    console.error(`❌ Failed to restore data for "${userId}":`, error);
+    return false;
+  }
+}
+
+// Function to check what's actually in Supabase for all users
+async function checkSupabaseData() {
+  console.log('🔍 Checking all data in Supabase...');
+  
+  try {
+    const { data, error } = await supabase
+      .from('mentaculous_backups')
+      .select('*');
+      
+    if (error) {
+      console.error('❌ Error fetching Supabase data:', error);
+      return;
+    }
+    
+    console.log('📊 All Supabase records:', data);
+    
+    if (data && data.length > 0) {
+      data.forEach(record => {
+        console.log(`📝 User: "${record.user_id}"`);
+        console.log(`   Mentaculous: ${record.mentaculous ? 'Has data' : 'Empty'}`);
+        console.log(`   Order: ${record.mentorder ? 'Has data' : 'Empty'}`);
+        if (record.mentaculous) {
+          try {
+            const parsed = JSON.parse(record.mentaculous);
+            const playerCount = Object.keys(parsed).length;
+            console.log(`   Player count: ${playerCount}`);
+          } catch (e) {
+            console.log(`   Mentaculous data: "${record.mentaculous}"`);
+          }
+        }
+      });
+    } else {
+      console.log('⚠️ No records found in Supabase!');
+    }
+  } catch (error) {
+    console.error('❌ Failed to check Supabase data:', error);
+  }
+}
+
 // Make them available globally
 (window as any).debugLocalStorage = debugLocalStorage;
 (window as any).clearJalkData = clearJalkData;
 (window as any).clearUserDataFromLocalStorage = clearUserDataFromLocalStorage;
+(window as any).restoreUserDataFromSupabase = restoreUserDataFromSupabase;
+(window as any).checkSupabaseData = checkSupabaseData;
 
 export default App;
