@@ -3,6 +3,7 @@ import './styles.css';
 import { backupToSupabase, supabase } from './supabase';
 
 async function fetchOrderFromSupabase(userId: string) {
+  console.log(`🔍 Fetching order for userId: "${userId}"`);
   const { data, error } = await supabase
     .from('mentaculous_backups')
     .select('mentorder')
@@ -13,7 +14,7 @@ async function fetchOrderFromSupabase(userId: string) {
     return null;
   }
 
-  console.log('Supabase mentorder fetch data:', data);
+  console.log(`📊 Raw Supabase order data for "${userId}":`, data);
 
   let orderArr = [];
   if (data && data.length && data[0].mentorder) {
@@ -27,10 +28,12 @@ async function fetchOrderFromSupabase(userId: string) {
       orderArr = data[0].mentorder;
     }
   }
+  console.log(`✅ Parsed order for "${userId}":`, orderArr);
   return orderArr;
 }
 
 async function fetchMentaculousFromSupabase(userId: string) {
+  console.log(`🔍 Fetching mentaculous for userId: "${userId}"`);
   const { data, error } = await supabase
     .from('mentaculous_backups')
     .select('mentaculous')
@@ -41,6 +44,8 @@ async function fetchMentaculousFromSupabase(userId: string) {
     return null;
   }
 
+  console.log(`📊 Raw Supabase mentaculous data for "${userId}":`, data);
+
   let mentaculousObj = {};
   if (data && data.length && data[0].mentaculous) {
     try {
@@ -49,6 +54,7 @@ async function fetchMentaculousFromSupabase(userId: string) {
       mentaculousObj = {};
     }
   }
+  console.log(`✅ Parsed mentaculous for "${userId}":`, mentaculousObj);
   return mentaculousObj;
 }
 
@@ -595,12 +601,16 @@ function App() {
       // Try to load mentaculous from Supabase
       let parsed = {};
       if (currentUser) {
+        console.log(`🔍 Loading data for user: "${currentUser}"`);
         const supabaseMentaculous = await fetchMentaculousFromSupabase(currentUser);
+        console.log(`📊 Supabase data for "${currentUser}":`, supabaseMentaculous);
         if (supabaseMentaculous && Object.keys(supabaseMentaculous).length) {
           parsed = supabaseMentaculous;
           localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(parsed));
+          console.log(`💾 Saved Supabase data to localStorage for "${currentUser}"`);
         } else {
           mentaculousRaw = localStorage.getItem(`mentaculous_${currentUser}`);
+          console.log(`💿 Loading from localStorage for "${currentUser}":`, mentaculousRaw);
           if (mentaculousRaw) {
             try {
               parsed = JSON.parse(mentaculousRaw);
@@ -610,6 +620,7 @@ function App() {
           }
         }
       }
+      console.log(`✅ Final parsed data for "${currentUser}":`, parsed);
       setMentaculous(parsed);
 
       // --- SUPABASE ORDER LOAD (as before) ---

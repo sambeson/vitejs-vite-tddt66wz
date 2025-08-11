@@ -5,11 +5,13 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function backupToSupabase(userId: string, mentaculousData?: any, orderData?: string[]) {
-  // Use provided data if available, otherwise fall back to localStorage
-  const mentaculous = mentaculousData ? JSON.stringify(mentaculousData) : localStorage.getItem('mentaculous');
-  const mentorder = orderData ? JSON.stringify(orderData) : localStorage.getItem('mentaculousOrder');
+  // Use provided data if available, otherwise fall back to user-specific localStorage
+  const mentaculous = mentaculousData ? JSON.stringify(mentaculousData) : localStorage.getItem(`mentaculous_${userId}`);
+  const mentorder = orderData ? JSON.stringify(orderData) : localStorage.getItem(`mentaculousOrder_${userId}`);
   
-  const { data, error } = await supabase
+  console.log(`🔄 Backing up data for user "${userId}":`, { mentaculous: !!mentaculous, mentorder: !!mentorder });
+  
+  const { error } = await supabase
     .from('mentaculous_backups')
     .upsert(
       [
@@ -25,7 +27,7 @@ export async function backupToSupabase(userId: string, mentaculousData?: any, or
     console.error('Backup failed:', error);
     return false;
   } else {
-    console.log('Backup successful:', data);
+    console.log(`✅ Backup successful for user "${userId}"`);
     return true;
   }
 }
