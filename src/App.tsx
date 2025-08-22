@@ -548,6 +548,26 @@ function App() {
   const [manualOverride, setManualOverride] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false); // New state to track data loading
   const [liveInfo, setLiveInfo] = useState<Record<string, any>>({}); // Add this state
+  const [pitcherInfo, setPitcherInfo] = useState<Record<string, any>>({}); // Store pitcher information for games
+  const [standings, setStandings] = useState<any[]>([]);
+  const [wildCardStandings, setWildCardStandings] = useState<any[]>([]);
+  const [standingsTab, setStandingsTab] = useState<'divisions' | 'wildcard'>('divisions');
+  const [selectedTeamRoster, setSelectedTeamRoster] = useState<any>(null);
+  const [teamRoster, setTeamRoster] = useState<any[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (menuOpen && !target.closest('.menu-container')) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [menuOpen]);
 
   // Manual HR add state for backend tab, keyed by playerId
   const [manualHRAdd, setManualHRAdd] = useState<Record<string, { num: string; date: string }>>({});
@@ -686,6 +706,226 @@ function App() {
       .then((data) => setGames(data.dates[0]?.games || []))
       .catch((error) => console.error('Error fetching schedule:', error));
   }, [date]);
+
+  // Fetch starting pitcher information for future games
+  useEffect(() => {
+    const futureGames = games.filter(g => 
+      g.status.detailedState === 'Scheduled' || 
+      g.status.detailedState === 'Pre-Game'
+    );
+    
+    futureGames.forEach(async (game) => {
+      try {
+        // Fetch game data with probable pitchers
+        const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&gamePk=${game.gamePk}&hydrate=probablePitcher(note)`);
+        const gameData = await res.json();
+        
+        if (gameData.dates?.[0]?.games?.[0]) {
+          const gameInfo = gameData.dates[0].games[0];
+          const awayPitcher = gameInfo.teams?.away?.probablePitcher;
+          const homePitcher = gameInfo.teams?.home?.probablePitcher;
+          
+          let pitcherData: any = {};
+          
+          // Fetch detailed stats for each pitcher
+          if (awayPitcher?.id) {
+            const awayStats = await fetchPitcherStats(awayPitcher.id);
+            pitcherData.away = { ...awayPitcher, stats: awayStats };
+          }
+          
+          if (homePitcher?.id) {
+            const homeStats = await fetchPitcherStats(homePitcher.id);
+            pitcherData.home = { ...homePitcher, stats: homeStats };
+          }
+          
+          setPitcherInfo(prev => ({
+            ...prev,
+            [game.gamePk]: pitcherData
+          }));
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch pitcher info for game ${game.gamePk}:`, error);
+      }
+    });
+  }, [games]);
+
+  // Fetch MLB standings
+  useEffect(() => {
+    const fetchStandings = async () => {
+      try {
+        // Division ID to name mapping
+        const divisionNames: { [key: number]: string } = {
+          200: 'American League West',
+          201: 'American League East', 
+          202: 'American League Central',
+          203: 'National League West',
+          204: 'National League East',
+          205: 'National League Central'
+        };
+
+        // Fetch both AL and NL standings separately (regular season and wild card)
+        const [alResponse, nlResponse, alWildCardResponse, nlWildCardResponse] = await Promise.all([
+          fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=103&season=2025&standingsTypes=regularSeason'),
+          fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=104&season=2025&standingsTypes=regularSeason'),
+          fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=103&season=2025&standingsTypes=wildCard'),
+          fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=104&season=2025&standingsTypes=wildCard')
+        ]);
+        
+        const [alData, nlData, alWildCardData, nlWildCardData] = await Promise.all([
+          alResponse.json(),
+          nlResponse.json(),
+          alWildCardResponse.json(),
+          nlWildCardResponse.json()
+        ]);
+        
+        console.log('AL standings:', alData);
+        console.log('NL standings:', nlData);
+        
+        const allTeams: any[] = [];
+        
+        // Process AL data
+        if (alData.records) {
+          alData.records.forEach((division: any) => {
+            division.teamRecords.forEach((team: any) => {
+              allTeams.push({
+                ...team,
+                divisionName: divisionNames[division.division.id] || 'Unknown Division',
+                leagueName: 'American League'
+              });
+            });
+          });
+        }
+        
+        // Process NL data
+        if (nlData.records) {
+          nlData.records.forEach((division: any) => {
+            division.teamRecords.forEach((team: any) => {
+              allTeams.push({
+                ...team,
+                divisionName: divisionNames[division.division.id] || 'Unknown Division',
+                leagueName: 'National League'
+              });
+            });
+          });
+        }
+        
+        // Process wild card standings
+        const allWildCardTeams: any[] = [];
+        
+        // Process AL wild card data
+        if (alWildCardData.records && alWildCardData.records.length > 0) {
+          alWildCardData.records[0].teamRecords.forEach((team: any) => {
+            allWildCardTeams.push({
+              ...team,
+              leagueName: 'American League'
+            });
+          });
+        }
+        
+        // Process NL wild card data
+        if (nlWildCardData.records && nlWildCardData.records.length > 0) {
+          nlWildCardData.records[0].teamRecords.forEach((team: any) => {
+            allWildCardTeams.push({
+              ...team,
+              leagueName: 'National League'
+            });
+          });
+        }
+        
+        setStandings(allTeams);
+        setWildCardStandings(allWildCardTeams);
+      } catch (error) {
+        console.error('Error fetching standings:', error);
+      }
+    };
+
+    fetchStandings();
+  }, []);
+
+  // Function to fetch team roster
+  const fetchTeamRoster = async (teamId: number) => {
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/teams/${teamId}/roster`);
+      const data = await res.json();
+      
+      if (data.roster) {
+        // Sort roster by position groups: Pitchers, Catchers, Infielders, Outfielders, DH
+        const sortedRoster = data.roster.sort((a: any, b: any) => {
+          const aPos = a.position.abbreviation;
+          const bPos = b.position.abbreviation;
+          
+          // Define position groups
+          const getPositionGroup = (pos: string) => {
+            if (pos === 'P') return 1; // Pitchers first
+            if (pos === 'C') return 2; // Catchers second
+            if (['1B', '2B', '3B', 'SS', 'IF'].includes(pos)) return 3; // Infielders third
+            if (['LF', 'CF', 'RF', 'OF'].includes(pos)) return 4; // Outfielders fourth
+            if (pos === 'DH') return 5; // DH last
+            return 6; // Any other positions
+          };
+          
+          const aGroup = getPositionGroup(aPos);
+          const bGroup = getPositionGroup(bPos);
+          
+          if (aGroup !== bGroup) {
+            return aGroup - bGroup;
+          }
+          
+          // Within same group, sort by specific position order
+          const inGroupOrder: Record<string, number> = {
+            // Pitchers (already grouped)
+            'P': 1,
+            // Catchers (already grouped)
+            'C': 1,
+            // Infielders
+            '1B': 1, '2B': 2, '3B': 3, 'SS': 4, 'IF': 5,
+            // Outfielders
+            'LF': 1, 'CF': 2, 'RF': 3, 'OF': 4,
+            // DH (already grouped)
+            'DH': 1
+          };
+          
+          const aPosOrder = inGroupOrder[aPos] || 999;
+          const bPosOrder = inGroupOrder[bPos] || 999;
+          
+          if (aPosOrder !== bPosOrder) {
+            return aPosOrder - bPosOrder;
+          }
+          
+          // If same position, sort by jersey number
+          return (a.jerseyNumber || 999) - (b.jerseyNumber || 999);
+        });
+        
+        setTeamRoster(sortedRoster);
+        
+        // Find team info from standings or use API data
+        const teamInfo = standings.find(team => team.team.id === teamId);
+        setSelectedTeamRoster(teamInfo?.team || { 
+          id: teamId, 
+          name: data.roster[0]?.person?.currentTeam?.name || 'Team' 
+        });
+        setActiveTab('roster');
+      }
+    } catch (error) {
+      console.error('Error fetching team roster:', error);
+    }
+  };
+
+  // Helper function to fetch pitcher statistics
+  const fetchPitcherStats = async (pitcherId: number) => {
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${pitcherId}/stats?stats=season&group=pitching`);
+      const data = await res.json();
+      
+      if (data.stats?.[0]?.splits?.[0]?.stat) {
+        return data.stats[0].splits[0].stat;
+      }
+      return null;
+    } catch (error) {
+      console.warn(`Failed to fetch stats for pitcher ${pitcherId}:`, error);
+      return null;
+    }
+  };
 
 
   const loadBoxScore = async (gamePk: number) => {
@@ -876,6 +1116,20 @@ function App() {
     const currentDate = new Date(date);
     currentDate.setDate(currentDate.getDate() + days);
     setDate(currentDate.toISOString().split('T')[0]);
+  };
+
+  // Helper function to format game time
+  const formatGameTime = (gameDate: string) => {
+    try {
+      const gameTime = new Date(gameDate);
+      return gameTime.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (error) {
+      return '';
+    }
   };
 
   const getLastName = (person: any) => {
@@ -1220,6 +1474,289 @@ function App() {
     );
   };
 
+  const renderStandings = () => {
+    console.log('Standings data in render:', standings);
+    console.log('Standings length:', standings.length);
+    
+    if (!standings || standings.length === 0) {
+      return (
+        <div className="standings-container">
+          <p>Loading standings data...</p>
+        </div>
+      );
+    }
+    
+    // Group teams by league and division
+    const americanLeague = {
+      'American League East': standings.filter(team => team.leagueName === 'American League' && team.divisionName === 'American League East'),
+      'American League Central': standings.filter(team => team.leagueName === 'American League' && team.divisionName === 'American League Central'),
+      'American League West': standings.filter(team => team.leagueName === 'American League' && team.divisionName === 'American League West')
+    };
+    
+    const nationalLeague = {
+      'National League East': standings.filter(team => team.leagueName === 'National League' && team.divisionName === 'National League East'),
+      'National League Central': standings.filter(team => team.leagueName === 'National League' && team.divisionName === 'National League Central'),
+      'National League West': standings.filter(team => team.leagueName === 'National League' && team.divisionName === 'National League West')
+    };
+    
+    console.log('American League divisions:', americanLeague);
+    console.log('National League divisions:', nationalLeague);
+    
+    const renderDivisionTable = (divisionName: string, teams: any[]) => {
+      const sortedTeams = teams.sort((a, b) => a.divisionRank - b.divisionRank);
+      
+      return (
+        <div key={divisionName} className="division-standings">
+          <h3>{divisionName}</h3>
+          <table className="standings-table">
+            <thead>
+              <tr>
+                <th>Team</th>
+                <th>W</th>
+                <th>L</th>
+                <th>PCT</th>
+                <th>GB</th>
+                <th>WCGB</th>
+                <th>L10</th>
+                <th>STRK</th>
+                <th>RS</th>
+                <th>RA</th>
+                <th>DIFF</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedTeams.map((team: any) => (
+                <tr key={team.team.id} className={team.divisionLeader ? 'division-leader' : ''}>
+                  <td>
+                    <div className="team-cell">
+                      <img 
+                        src={getTeamLogoUrl(team.team.id)} 
+                        alt={team.team.name}
+                        className="standings-team-logo"
+                      />
+                      <span 
+                        className="clickable-team-name"
+                        onClick={() => fetchTeamRoster(team.team.id)}
+                      >
+                        {team.team.name}
+                      </span>
+                    </div>
+                  </td>
+                  <td>{team.wins}</td>
+                  <td>{team.losses}</td>
+                  <td>{team.winningPercentage}</td>
+                  <td>{team.gamesBack === '-' ? '-' : team.gamesBack}</td>
+                  <td>{team.wildCardGamesBack || '-'}</td>
+                  <td>
+                    {team.records?.splitRecords?.find((r: any) => r.type === 'lastTen')?.wins || 0}-{team.records?.splitRecords?.find((r: any) => r.type === 'lastTen')?.losses || 0}
+                  </td>
+                  <td>{team.streak?.streakCode || '-'}</td>
+                  <td>{team.runsScored || '-'}</td>
+                  <td>{team.runsAllowed || '-'}</td>
+                  <td className={team.runDifferential >= 0 ? 'positive-diff' : 'negative-diff'}>
+                    {team.runDifferential >= 0 ? '+' : ''}{team.runDifferential || 0}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    };
+
+    const renderWildCardStandings = () => {
+      const americanLeague = wildCardStandings.filter(team => team.leagueName === 'American League');
+      const nationalLeague = wildCardStandings.filter(team => team.leagueName === 'National League');
+
+      const renderWildCardTable = (leagueName: string, teams: any[]) => (
+        <div key={leagueName} className="wildcard-standings">
+          <h3>{leagueName} Wild Card</h3>
+          <table className="standings-table">
+            <thead>
+              <tr>
+                <th>Team</th>
+                <th>W</th>
+                <th>L</th>
+                <th>PCT</th>
+                <th>WCGB</th>
+                <th>L10</th>
+                <th>STRK</th>
+                <th>RS</th>
+                <th>RA</th>
+                <th>DIFF</th>
+              </tr>
+            </thead>
+            <tbody>
+              {teams.map((team: any, index: number) => (
+                <tr key={team.team.id} className={index < 3 ? 'wildcard-spot' : ''}>
+                  <td>
+                    <div className="team-cell">
+                      <img 
+                        src={getTeamLogoUrl(team.team.id)} 
+                        alt={team.team.name}
+                        className="standings-team-logo"
+                      />
+                      <span 
+                        className="clickable-team-name"
+                        onClick={() => fetchTeamRoster(team.team.id)}
+                      >
+                        {team.team.name}
+                      </span>
+                    </div>
+                  </td>
+                  <td>{team.wins}</td>
+                  <td>{team.losses}</td>
+                  <td>{team.winningPercentage}</td>
+                  <td>{team.wildCardGamesBack === '-' ? '-' : team.wildCardGamesBack}</td>
+                  <td>{team.lastTenGamesRecord}</td>
+                  <td>{team.streakCode}</td>
+                  <td>{team.runsScored}</td>
+                  <td>{team.runsAllowed}</td>
+                  <td>{team.runDifferential}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+
+      return (
+        <div className="wildcard-container">
+          <div className="leagues-container">
+            <div className="league-standings">
+              {renderWildCardTable('American League', americanLeague)}
+            </div>
+            
+            <div className="league-standings">
+              {renderWildCardTable('National League', nationalLeague)}
+            </div>
+          </div>
+        </div>
+      );
+    };
+    
+    return (
+      <div className="standings-container">
+        <h2>MLB Standings</h2>
+        
+        <div className="standings-tabs">
+          <button 
+            className={`standings-tab-button ${standingsTab === 'divisions' ? 'active' : ''}`}
+            onClick={() => setStandingsTab('divisions')}
+          >
+            Divisions
+          </button>
+          <button 
+            className={`standings-tab-button ${standingsTab === 'wildcard' ? 'active' : ''}`}
+            onClick={() => setStandingsTab('wildcard')}
+          >
+            Wild Card
+          </button>
+        </div>
+
+        {standingsTab === 'divisions' ? (
+          <div className="leagues-container">
+            <div className="league-standings">
+              <h2>American League</h2>
+              {Object.entries(americanLeague).map(([divisionName, teams]) => 
+                renderDivisionTable(divisionName, teams)
+              )}
+            </div>
+            
+            <div className="league-standings">
+              <h2>National League</h2>
+              {Object.entries(nationalLeague).map(([divisionName, teams]) => 
+                renderDivisionTable(divisionName, teams)
+              )}
+            </div>
+          </div>
+        ) : (
+          renderWildCardStandings()
+        )}
+      </div>
+    );
+  };
+
+  const renderRoster = () => {
+    if (!selectedTeamRoster || !teamRoster.length) {
+      return <div className="roster-container">No roster data available</div>;
+    }
+
+    // Group players by position groups
+    const positionGroups = {
+      'Pitchers': teamRoster.filter(p => p.position.abbreviation === 'P'),
+      'Catchers': teamRoster.filter(p => p.position.abbreviation === 'C'),
+      'Infielders': teamRoster.filter(p => ['1B', '2B', '3B', 'SS', 'IF'].includes(p.position.abbreviation)),
+      'Outfielders': teamRoster.filter(p => ['LF', 'CF', 'RF', 'OF'].includes(p.position.abbreviation)),
+      'Designated Hitters': teamRoster.filter(p => p.position.abbreviation === 'DH'),
+      'Other': teamRoster.filter(p => !['P', 'C', '1B', '2B', '3B', 'SS', 'IF', 'LF', 'CF', 'RF', 'OF', 'DH'].includes(p.position.abbreviation))
+    };
+
+    const groupOrder = ['Pitchers', 'Catchers', 'Infielders', 'Outfielders', 'Designated Hitters', 'Other'];
+    
+    return (
+      <div className="roster-container">
+        <div className="roster-header">
+          <div className="team-header">
+            <img 
+              src={getTeamLogoUrl(selectedTeamRoster.id)} 
+              alt={selectedTeamRoster.name}
+              className="roster-team-logo"
+            />
+            <h2>{selectedTeamRoster.name} Roster</h2>
+          </div>
+          <button 
+            className="back-button"
+            onClick={() => {
+              setActiveTab('standings');
+              setSelectedTeamRoster(null);
+              setTeamRoster([]);
+            }}
+          >
+            ← Back to Standings
+          </button>
+        </div>
+        
+        <div className="roster-positions">
+          {groupOrder.map(groupName => {
+            const players = positionGroups[groupName as keyof typeof positionGroups];
+            if (!players || players.length === 0) return null;
+            
+            return (
+              <div key={groupName} className="position-group">
+                <h3 className="position-title">{groupName}</h3>
+                <div className="players-grid">
+                  {players.map((player: any) => (
+                    <div 
+                      key={player.person.id} 
+                      className="roster-player-card"
+                      onClick={() => setSelectedPlayerId(player.person.id)}
+                    >
+                      <img
+                        src={`https://img.mlbstatic.com/mlb-photos/image/upload/v1/people/${player.person.id}/headshot/67/current.png`}
+                        alt={player.person.fullName}
+                        className="roster-player-photo"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                      <div className="roster-player-info">
+                        <div className="roster-player-name">{player.person.fullName}</div>
+                        <div className="roster-player-details">
+                          #{player.jerseyNumber} • {player.position.name}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   const renderMentaculous = () => {
     // Use the order array to sort mentaculous entries
     const entries = order
@@ -1488,33 +2025,76 @@ function App() {
         <UserSelection onUserSelect={setCurrentUser} />
       ) : (
         <>
-          <div className="tab-header">
-            <button
-              className={activeTab === 'games' ? 'active' : ''}
-              onClick={() => setActiveTab('games')}
-            >
-              Games
-            </button>
-            <button
-              className={activeTab === 'mentaculous' ? 'active' : ''}
-              onClick={() => setActiveTab('mentaculous')}
-            >
-              Mentaculous ({currentUser})
-            </button>
-            {manualOverride && (
+          <div className="header-controls">
+            {/* Main tabs for Games and Mentaculous */}
+            <div className="main-tabs">
               <button
-                className={activeTab === 'backend' ? 'active' : ''}
-                onClick={() => setActiveTab('backend')}
+                className={activeTab === 'games' ? 'active' : ''}
+                onClick={() => setActiveTab('games')}
               >
-                Mentaculous Backend
+                Games
               </button>
-            )}
-            <button
-              className="user-switch-btn"
-              onClick={() => setCurrentUser(null)}
-            >
-              Switch User
-            </button>
+              <button
+                className={activeTab === 'mentaculous' ? 'active' : ''}
+                onClick={() => setActiveTab('mentaculous')}
+              >
+                Mentaculous ({currentUser})
+              </button>
+            </div>
+            
+            {/* Dropdown menu for other options */}
+            <div className="menu-container">
+              <button 
+                className="menu-button"
+                onClick={() => setMenuOpen(!menuOpen)}
+              >
+                ☰ More
+              </button>
+              {menuOpen && (
+                <div className="menu-dropdown">
+                  <button
+                    className={activeTab === 'standings' ? 'active' : ''}
+                    onClick={() => {
+                      setActiveTab('standings');
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Standings
+                  </button>
+                  {selectedTeamRoster && (
+                    <button
+                      className={activeTab === 'roster' ? 'active' : ''}
+                      onClick={() => {
+                        setActiveTab('roster');
+                        setMenuOpen(false);
+                      }}
+                    >
+                      {selectedTeamRoster.name} Roster
+                    </button>
+                  )}
+                  {manualOverride && (
+                    <button
+                      className={activeTab === 'backend' ? 'active' : ''}
+                      onClick={() => {
+                        setActiveTab('backend');
+                        setMenuOpen(false);
+                      }}
+                    >
+                      Mentaculous Backend
+                    </button>
+                  )}
+                  <button
+                    className="user-switch-btn"
+                    onClick={() => {
+                      setCurrentUser(null);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Switch User
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {activeTab === 'games' && (
@@ -1535,6 +2115,8 @@ function App() {
                     {games.map((game) => {
                       const awayName = game.teams.away.team.name;
                       const homeName = game.teams.home.team.name;
+                      const isFutureGame = game.status.detailedState === 'Scheduled' || game.status.detailedState === 'Pre-Game';
+                      const pitchers = pitcherInfo[game.gamePk];
 
                       return (
                         <div
@@ -1545,15 +2127,56 @@ function App() {
                             loadBoxScore(game.gamePk);
                           }}
                         >
-
                           <div className="team-score-row">
                             <div className="team-row">
                               <img className="team-logo" src={getTeamLogoUrl(game.teams.away.team.id)} alt={awayName} />
                               <div className="team-details">
-                                <div className="team-name">{awayName}</div>
+                                <div 
+                                  className="team-name clickable-team-name"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    fetchTeamRoster(game.teams.away.team.id);
+                                  }}
+                                >
+                                  {awayName}
+                                </div>
                                 <div className="team-record">
                                   ({game.teams.away.leagueRecord.wins}–{game.teams.away.leagueRecord.losses})
                                 </div>
+                                {isFutureGame && (
+                                  <div className="pitcher-info">
+                                    {pitchers?.away ? (
+                                      <div 
+                                        className="pitcher-clickable"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedPlayerId(pitchers.away.id);
+                                        }}
+                                      >
+                                        <img 
+                                          src={`https://img.mlbstatic.com/mlb-photos/image/upload/v1/people/${pitchers.away.id}/headshot/67/current.png`}
+                                          alt={pitchers.away.fullName}
+                                          className="pitcher-photo"
+                                          onError={(e) => {
+                                            (e.target as HTMLImageElement).style.display = 'none';
+                                          }}
+                                        />
+                                        <div className="pitcher-details">
+                                          <div className="pitcher-name">{pitchers.away.fullName}</div>
+                                          {pitchers.away.stats && (
+                                            <div className="pitcher-stats">
+                                              ({pitchers.away.stats.wins}-{pitchers.away.stats.losses}, {pitchers.away.stats.era} ERA)
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="pitcher-details">
+                                        <div className="pitcher-name">TBD</div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             </div>
                             <div className="team-score">
@@ -1565,10 +2188,52 @@ function App() {
                             <div className="team-row">
                               <img className="team-logo" src={getTeamLogoUrl(game.teams.home.team.id)} alt={homeName} />
                               <div className="team-details">
-                                <div className="team-name">{homeName}</div>
+                                <div 
+                                  className="team-name clickable-team-name"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    fetchTeamRoster(game.teams.home.team.id);
+                                  }}
+                                >
+                                  {homeName}
+                                </div>
                                 <div className="team-record">
                                   ({game.teams.home.leagueRecord.wins}–{game.teams.home.leagueRecord.losses})
                                 </div>
+                                {isFutureGame && (
+                                  <div className="pitcher-info">
+                                    {pitchers?.home ? (
+                                      <div 
+                                        className="pitcher-clickable"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedPlayerId(pitchers.home.id);
+                                        }}
+                                      >
+                                        <img 
+                                          src={`https://img.mlbstatic.com/mlb-photos/image/upload/v1/people/${pitchers.home.id}/headshot/67/current.png`}
+                                          alt={pitchers.home.fullName}
+                                          className="pitcher-photo"
+                                          onError={(e) => {
+                                            (e.target as HTMLImageElement).style.display = 'none';
+                                          }}
+                                        />
+                                        <div className="pitcher-details">
+                                          <div className="pitcher-name">{pitchers.home.fullName}</div>
+                                          {pitchers.home.stats && (
+                                            <div className="pitcher-stats">
+                                              ({pitchers.home.stats.wins}-{pitchers.home.stats.losses}, {pitchers.home.stats.era} ERA)
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="pitcher-details">
+                                        <div className="pitcher-name">TBD</div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             </div>
                             <div className="team-score">
@@ -1576,7 +2241,12 @@ function App() {
                             </div>
                           </div>
 
-                          <div className="game-status">{game.status.detailedState}</div>
+                          <div className="game-status">
+                            {isFutureGame ? 
+                              `${game.status.detailedState} - ${formatGameTime(game.gameDate)}` : 
+                              game.status.detailedState
+                            }
+                          </div>
                           {game.status.detailedState === 'In Progress' && (
                             <div className="game-live-info" style={{ marginTop: 8, fontSize: '0.95em', background: '#f3f6fa', borderRadius: 6, padding: 8 }}>
                               <div>
@@ -1811,6 +2481,10 @@ function App() {
               )}
             </div>
           )}
+
+          {activeTab === 'standings' && renderStandings()}
+
+          {activeTab === 'roster' && renderRoster()}
 
           {activeTab === 'mentaculous' && renderMentaculous()}
 
