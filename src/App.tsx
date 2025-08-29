@@ -2,6 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import './styles.css';
 import { backupToSupabase, supabase } from './supabase';
 
+// Function to remove accents from text for custom font compatibility
+function removeAccents(str: string): string {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 async function fetchOrderFromSupabase(userId: string) {
   console.log(`🔍 Fetching order for userId: "${userId}"`);
   const { data, error } = await supabase
@@ -196,6 +201,8 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
   const [careerStats, setCareerStats] = useState<any>(null);
   const [seasonStats, setSeasonStats] = useState<{ hitting?: any[], pitching?: any[] }>({});
   const [isPitcher, setIsPitcher] = useState<boolean>(false);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState<boolean>(false);
 
   useEffect(() => {
     // Fetch player bio info
@@ -307,6 +314,64 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
       .catch((err) =>
         console.error('Error fetching year-by-year pitching stats for', playerId, err)
       );
+
+    // Fetch transaction history for the player
+    const fetchTransactions = async () => {
+      setLoadingTransactions(true);
+      try {
+        const response = await fetch(
+          `https://statsapi.mlb.com/api/v1/transactions?playerId=${playerId}&limit=100&order=desc`
+        );
+        const data = await response.json();
+        
+        if (data.transactions) {
+          // Filter to only include meaningful MLB transactions (no number changes, etc.)
+          const mlbTransactions = data.transactions.filter((transaction: any) => {
+            // Exclude number changes and other minor transactions
+            if (transaction.typeCode === 'NC' || // Number change
+                transaction.description?.toLowerCase().includes('number') ||
+                transaction.description?.toLowerCase().includes('#')) {
+              return false;
+            }
+            
+            // Include major transaction types
+            const majorTransactionTypes = [
+              'SGN',  // Signed
+              'TRD',  // Traded
+              'REL',  // Released
+              'SE',   // Selected
+              'DFA',  // Designated for assignment
+              'CL',   // Claimed
+              'EXT',  // Contract extension
+              'PUR',  // Purchased
+              'FA'    // Free agent
+            ];
+            
+            // Check if fromTeam or toTeam is an MLB team (team IDs 108-158 are typically MLB)
+            const fromTeamIsMLB = transaction.fromTeam && 
+              (transaction.fromTeam.id >= 108 && transaction.fromTeam.id <= 158);
+            
+            const toTeamIsMLB = transaction.toTeam && 
+              (transaction.toTeam.id >= 108 && transaction.toTeam.id <= 158);
+            
+            // Include if it's a major transaction type OR involves MLB teams
+            return majorTransactionTypes.includes(transaction.typeCode) || 
+                   fromTeamIsMLB || toTeamIsMLB;
+          });
+          
+          setTransactions(mlbTransactions);
+        } else {
+          setTransactions([]);
+        }
+      } catch (err) {
+        console.error('Error fetching player transactions:', err);
+        setTransactions([]);
+      } finally {
+        setLoadingTransactions(false);
+      }
+    };
+
+    fetchTransactions();
   }, [playerId]);
 
   return (
@@ -481,6 +546,38 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
                 ) : null}
               </div>
             )}
+
+            {/* Transaction History Section */}
+            <div className="transaction-history">
+              <h3>Transaction History</h3>
+              {loadingTransactions ? (
+                <p>Loading transaction history...</p>
+              ) : transactions.length > 0 ? (
+                <div className="transactions-list">
+                  {transactions.map((transaction: any, index: number) => (
+                    <div key={transaction.id || index} className="transaction-item">
+                      <div className="transaction-date">
+                        {new Date(transaction.date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </div>
+                      <div className="transaction-details">
+                        <div className="transaction-description">{transaction.description}</div>
+                        {transaction.fromTeam && transaction.toTeam && (
+                          <div className="transaction-teams">
+                            {transaction.fromTeam.name} → {transaction.toTeam.name}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p>No transaction history available for this player.</p>
+              )}
+            </div>
           </div>
         ) : (
           <p>Loading profile...</p>
@@ -1824,7 +1921,7 @@ function App() {
 
                     <div className="player-info">
                       <div className="player-name">
-                        {playerName} –{' '}
+                        <span className="mentaculous-font">{removeAccents(playerName)}</span> –{' '}
                         <span
                           className="hr-count-wrapper"
                           onClick={() =>
