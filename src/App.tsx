@@ -1,66 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './styles.css';
-import { backupToSupabase, supabase } from './supabase';
+import { fetchFromFirebase, saveToFirebase } from './firebase';
+import { historical2025 } from './historical2025';
 
 // Function to remove accents from text for custom font compatibility
 function removeAccents(str: string): string {
   return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-}
-
-async function fetchOrderFromSupabase(userId: string) {
-  console.log(`🔍 Fetching order for userId: "${userId}"`);
-  const { data, error } = await supabase
-    .from('mentaculous_backups')
-    .select('mentorder')
-    .eq('user_id', userId);
-
-  if (error) {
-    console.warn('Supabase mentorder fetch error:', error);
-    return null;
-  }
-
-  console.log(`📊 Raw Supabase order data for "${userId}":`, data);
-
-  let orderArr = [];
-  if (data && data.length && data[0].mentorder) {
-    if (typeof data[0].mentorder === 'string') {
-      try {
-        orderArr = JSON.parse(data[0].mentorder);
-      } catch {
-        orderArr = [];
-      }
-    } else if (Array.isArray(data[0].mentorder)) {
-      orderArr = data[0].mentorder;
-    }
-  }
-  console.log(`✅ Parsed order for "${userId}":`, orderArr);
-  return orderArr;
-}
-
-async function fetchMentaculousFromSupabase(userId: string) {
-  console.log(`🔍 Fetching mentaculous for userId: "${userId}"`);
-  const { data, error } = await supabase
-    .from('mentaculous_backups')
-    .select('mentaculous')
-    .eq('user_id', userId);
-
-  if (error) {
-    console.warn('Supabase mentaculous fetch error:', error);
-    return null;
-  }
-
-  console.log(`📊 Raw Supabase mentaculous data for "${userId}":`, data);
-
-  let mentaculousObj = {};
-  if (data && data.length && data[0].mentaculous) {
-    try {
-      mentaculousObj = JSON.parse(data[0].mentaculous);
-    } catch {
-      mentaculousObj = {};
-    }
-  }
-  console.log(`✅ Parsed mentaculous for "${userId}":`, mentaculousObj);
-  return mentaculousObj;
 }
 
 const teamAbbreviations = {
@@ -626,6 +571,10 @@ function UserSelection({ onUserSelect }: { onUserSelect: (userId: string) => voi
   );
 }
 
+
+
+
+
 function App() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -672,103 +621,60 @@ function App() {
   useEffect(() => {
     if (!currentUser) return; // Don't load data until user is selected
 
-    setDataLoaded(false); // Reset to false before loading
+    let cancelled = false;
+    setDataLoaded(false);
     async function loadInitialData() {
-      // MIGRATION: If mentaculous is missing, but old keys exist, migrate them
-      let mentaculousRaw = localStorage.getItem(`mentaculous_${currentUser}`);
-      if (!mentaculousRaw || mentaculousRaw === '{}' || mentaculousRaw === 'null') {
-        const newMentaculous: Record<string, any> = {};
-        let fallbackAddedAt = Date.now();
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (!key) continue;
-          // Example pattern: 12345_416_12
-          const match = key.match(/^(\d+)_(\d+)_([\d]+)$/);
-          if (match) {
-            const [, playerId] = match;
-            const hrId = key;
-            let value;
-            try {
-              value = JSON.parse(localStorage.getItem(key) || '{}');
-            } catch {
-              value = localStorage.getItem(key);
-            }
-            if (!newMentaculous[playerId]) {
-              newMentaculous[playerId] = {
-                playerName: value?.playerName || "Unknown",
-                teamName: value?.teamName || "Unknown",
-                teamId: value?.teamId || null,
-                homeRuns: [],
-                // Use fallbackAddedAt and increment for each new player
-                addedAt: fallbackAddedAt++,
-              };
-            }
-            newMentaculous[playerId].homeRuns.push({
-              hrId,
-              opponent: value?.opponent || "Unknown",
-            });
-          }
-        }
-        if (Object.keys(newMentaculous).length > 0) {
-          localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(newMentaculous));
-        }
-      }
-
-      // --- SUPABASE MENTACULOUS LOAD STARTS HERE ---
-      // Try to load mentaculous from Supabase
-      let parsed = {};
-      if (currentUser) {
-        console.log(`🔍 Loading data for user: "${currentUser}"`);
-        const supabaseMentaculous = await fetchMentaculousFromSupabase(currentUser);
-        console.log(`📊 Supabase data for "${currentUser}":`, supabaseMentaculous);
-        if (supabaseMentaculous && Object.keys(supabaseMentaculous).length) {
-          parsed = supabaseMentaculous;
-          localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(parsed));
-          console.log(`💾 Saved Supabase data to localStorage for "${currentUser}"`);
-        } else {
-          mentaculousRaw = localStorage.getItem(`mentaculous_${currentUser}`);
-          console.log(`💿 Loading from localStorage for "${currentUser}":`, mentaculousRaw);
-          if (mentaculousRaw) {
-            try {
-              parsed = JSON.parse(mentaculousRaw);
-            } catch {
-              parsed = {};
-            }
-          }
-        }
-      }
-      console.log(`✅ Final parsed data for "${currentUser}":`, parsed);
-      setMentaculous(parsed);
-
-      // --- SUPABASE ORDER LOAD (as before) ---
-      // Try to load order from Supabase
+      let parsed: Record<string, any> = {};
       let orderArr: string[] = [];
-      if (currentUser) {
-        const supabaseOrder = await fetchOrderFromSupabase(currentUser);
-        if (supabaseOrder && supabaseOrder.length) {
-          orderArr = supabaseOrder;
+      try {
+        const { mentaculous: fbMentaculous, mentorder: fbOrder } = await fetchFromFirebase(currentUser);
+        if (fbMentaculous && Object.keys(fbMentaculous).length) {
+          parsed = fbMentaculous;
+          localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(parsed));
+        } else {
+          const mentaculousRaw = localStorage.getItem(`mentaculous_${currentUser}`);
+          if (mentaculousRaw) {
+            try { parsed = JSON.parse(mentaculousRaw); } catch { parsed = {}; }
+          }
+        }
+        if (fbOrder && fbOrder.length) {
+          orderArr = fbOrder;
           localStorage.setItem(`mentaculousOrder_${currentUser}`, JSON.stringify(orderArr));
         } else {
           const storedOrder = localStorage.getItem(`mentaculousOrder_${currentUser}`);
           if (storedOrder) {
             orderArr = JSON.parse(storedOrder);
-            if (!orderArr.length) {
-              orderArr = Object.entries(parsed)
-                .sort(([, a], [, b]) => ((a as any).addedAt ?? 0) - ((b as any).addedAt ?? 0))
-                .map(([id]) => id);
-            }
-          } else {
+          }
+          if (!orderArr.length) {
             orderArr = Object.entries(parsed)
               .sort(([, a], [, b]) => ((a as any).addedAt ?? 0) - ((b as any).addedAt ?? 0))
               .map(([id]) => id);
           }
         }
+      } catch (e) {
+        console.warn('Firebase load failed, falling back to localStorage:', e);
+        const mentaculousRaw = localStorage.getItem(`mentaculous_${currentUser}`);
+        if (mentaculousRaw) {
+          try { parsed = JSON.parse(mentaculousRaw); } catch { parsed = {}; }
+        }
+        const storedOrder = localStorage.getItem(`mentaculousOrder_${currentUser}`);
+        if (storedOrder) {
+          try { orderArr = JSON.parse(storedOrder); } catch { orderArr = []; }
+        }
+        if (!orderArr.length) {
+          orderArr = Object.entries(parsed)
+            .sort(([, a], [, b]) => ((a as any).addedAt ?? 0) - ((b as any).addedAt ?? 0))
+            .map(([id]) => id);
+        }
       }
+      if (cancelled) return;
+      setMentaculous(parsed);
       setOrder(orderArr);
-      setDataLoaded(true); // Set to true after data is loaded
+      setDataLoaded(true);
     }
 
     loadInitialData();
+    return () => { cancelled = true; };
   }, [currentUser]);
 
   // Move function for manual override (must be defined before autosave effect)
@@ -787,14 +693,16 @@ function App() {
     });
   }
 
-  // Autosave to Supabase and localStorage after mentaculous/order changes, but only after dataLoaded
+  // Autosave to Firebase and localStorage after mentaculous/order changes, but only after dataLoaded
+  // localStorage updates immediately; Firebase write is debounced to avoid excessive writes
   useEffect(() => {
     if (!dataLoaded || !currentUser) return;
-    // Debug: log autosave trigger
-    console.log('[Autosave] Triggered', { mentaculous, order, currentUser });
     localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(mentaculous));
     localStorage.setItem(`mentaculousOrder_${currentUser}`, JSON.stringify(order));
-    backupToSupabase(currentUser, mentaculous, order); // Pass the current data
+    const timer = setTimeout(() => {
+      saveToFirebase(currentUser, mentaculous, order).catch(e => console.error('[Autosave] Firebase save failed:', e));
+    }, 1500);
+    return () => clearTimeout(timer);
   }, [mentaculous, order, dataLoaded, currentUser]);
 
   useEffect(() => {
@@ -1977,6 +1885,94 @@ function App() {
     );
   };
 
+  const [historicalPage, setHistoricalPage] = useState(0);
+  const [historicalTooltipId, setHistoricalTooltipId] = useState<string | null>(null);
+
+  const renderHistorical = () => {
+    const { mentaculous: hist, mentorder: histOrder } = historical2025;
+    const entries = histOrder
+      .map(id => [id, hist[id]] as [string, any])
+      .filter(([, e]) => e);
+
+    const pageSize = 32;
+    const totalPages = Math.ceil(entries.length / pageSize);
+    const start = historicalPage * pageSize;
+    const currentEntries = entries.slice(start, start + pageSize);
+
+    return (
+      <div className="mentaculous-container">
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '8px 0' }}>
+          <button onClick={() => setHistoricalPage(p => Math.max(0, p - 1))} disabled={historicalPage === 0}>◀</button>
+          <span style={{ lineHeight: '32px' }}>Page {historicalPage + 1} / {totalPages}</span>
+          <button onClick={() => setHistoricalPage(p => Math.min(totalPages - 1, p + 1))} disabled={historicalPage >= totalPages - 1}>▶</button>
+        </div>
+
+        <div className="mentaculous-page notebook">
+          <div className="notebook-title-line">
+            <h2>Historical Mentaculi — 2025</h2>
+          </div>
+          <div className="notebook-lines">
+            {Array.from({ length: 33 }).map((_, i) => {
+              if (i === 0) return <div key="spacer" className="notebook-line empty" />;
+              const entry = currentEntries[i - 1];
+              if (!entry) return <div key={i} className="notebook-line empty" />;
+
+              const [playerId, { playerName, homeRuns, teamName, teamId }] = entry;
+              const teamAbbr = getTeamAbbreviation(teamName);
+
+              return (
+                <div key={playerId} className="notebook-line filled">
+                  <div className="notebook-left">
+                    {teamId && (
+                      <img
+                        className="team-logo"
+                        src={getTeamLogoUrl(Number(teamId))}
+                        alt={teamAbbr}
+                        width={24}
+                        height={24}
+                      />
+                    )}
+                    <span className="notebook-abbr">{teamAbbr}</span>
+                  </div>
+                  <div className="player-info">
+                    <div className="player-name">
+                      <span className="mentaculous-font">{removeAccents(playerName)}</span> –{' '}
+                      <span
+                        className="hr-count-wrapper"
+                        onClick={() => setHistoricalTooltipId(prev => prev === playerId ? null : playerId)}
+                      >
+                        {homeRuns.length}
+                        {historicalTooltipId === playerId && (
+                          <div className="tooltip-box">
+                            {homeRuns.map((hr: any, idx: number) => {
+                              const { date } = parseHrId(hr.hrId ?? hr);
+                              const formatted = new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                              return (
+                                <div key={idx} className="tooltip-line">
+                                  {formatted} {hr.opponent || 'Unknown'}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '8px 0' }}>
+          <button onClick={() => setHistoricalPage(p => Math.max(0, p - 1))} disabled={historicalPage === 0}>◀</button>
+          <span style={{ lineHeight: '32px' }}>Page {historicalPage + 1} / {totalPages}</span>
+          <button onClick={() => setHistoricalPage(p => Math.min(totalPages - 1, p + 1))} disabled={historicalPage >= totalPages - 1}>▶</button>
+        </div>
+      </div>
+    );
+  };
+
   const handleRemoveHomeRun = (playerId: string, hrId: string) => {
     setMentaculous(prev => {
       const prevPlayer = prev[playerId];
@@ -2180,6 +2176,15 @@ function App() {
                       Mentaculous Backend
                     </button>
                   )}
+                  <button
+                    className={activeTab === 'historical' ? 'active' : ''}
+                    onClick={() => {
+                      setActiveTab('historical');
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Historical Mentaculi
+                  </button>
                   <button
                     className="user-switch-btn"
                     onClick={() => {
@@ -2585,6 +2590,8 @@ function App() {
 
           {activeTab === 'mentaculous' && renderMentaculous()}
 
+          {activeTab === 'historical' && renderHistorical()}
+
           {selectedPlayerId && (
             <PlayerProfile
               playerId={selectedPlayerId}
@@ -2596,114 +2603,5 @@ function App() {
     </div>
   );
 }
-
-// Debug function to check localStorage contents
-function debugLocalStorage() {
-  console.log('🔍 localStorage debug:');
-  console.log('Sam\'s mentaculous:', localStorage.getItem('mentaculous_Sam beson'));
-  console.log('Sam\'s order:', localStorage.getItem('mentaculousOrder_Sam beson'));
-  console.log('Jalk\'s mentaculous:', localStorage.getItem('mentaculous_Jalk McUser'));
-  console.log('Jalk\'s order:', localStorage.getItem('mentaculousOrder_Jalk McUser'));
-  
-  // Show all localStorage keys
-  const allKeys = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    allKeys.push(localStorage.key(i));
-  }
-  console.log('All localStorage keys:', allKeys);
-}
-
-// Manual function to clear Jalk's data
-function clearJalkData() {
-  console.log('🗑️ Manually clearing Jalk\'s localStorage...');
-  localStorage.removeItem('mentaculous_Jalk McUser');
-  localStorage.removeItem('mentaculousOrder_Jalk McUser');
-  console.log('✅ Jalk\'s localStorage manually cleared!');
-}
-
-// Generic function to clear any user's localStorage
-function clearUserDataFromLocalStorage(userId: string) {
-  console.log(`🗑️ Clearing localStorage for user "${userId}"...`);
-  localStorage.removeItem(`mentaculous_${userId}`);
-  localStorage.removeItem(`mentaculousOrder_${userId}`);
-  console.log(`✅ Successfully cleared localStorage for user "${userId}"`);
-}
-
-// Function to restore a user's data from Supabase
-async function restoreUserDataFromSupabase(userId: string) {
-  console.log(`🔄 Restoring data for user "${userId}" from Supabase...`);
-  
-  try {
-    // Fetch mentaculous data
-    const mentaculousData = await fetchMentaculousFromSupabase(userId);
-    if (mentaculousData && Object.keys(mentaculousData).length > 0) {
-      localStorage.setItem(`mentaculous_${userId}`, JSON.stringify(mentaculousData));
-      console.log(`✅ Restored mentaculous data for "${userId}"`);
-    } else {
-      console.log(`⚠️ No mentaculous data found in Supabase for "${userId}"`);
-    }
-    
-    // Fetch order data
-    const orderData = await fetchOrderFromSupabase(userId);
-    if (orderData && orderData.length > 0) {
-      localStorage.setItem(`mentaculousOrder_${userId}`, JSON.stringify(orderData));
-      console.log(`✅ Restored order data for "${userId}"`);
-    } else {
-      console.log(`⚠️ No order data found in Supabase for "${userId}"`);
-    }
-    
-    console.log(`🎉 Data restoration complete for "${userId}"! Refresh the page to see the restored data.`);
-    return true;
-  } catch (error) {
-    console.error(`❌ Failed to restore data for "${userId}":`, error);
-    return false;
-  }
-}
-
-// Function to check what's actually in Supabase for all users
-async function checkSupabaseData() {
-  console.log('🔍 Checking all data in Supabase...');
-  
-  try {
-    const { data, error } = await supabase
-      .from('mentaculous_backups')
-      .select('*');
-      
-    if (error) {
-      console.error('❌ Error fetching Supabase data:', error);
-      return;
-    }
-    
-    console.log('📊 All Supabase records:', data);
-    
-    if (data && data.length > 0) {
-      data.forEach(record => {
-        console.log(`📝 User: "${record.user_id}"`);
-        console.log(`   Mentaculous: ${record.mentaculous ? 'Has data' : 'Empty'}`);
-        console.log(`   Order: ${record.mentorder ? 'Has data' : 'Empty'}`);
-        if (record.mentaculous) {
-          try {
-            const parsed = JSON.parse(record.mentaculous);
-            const playerCount = Object.keys(parsed).length;
-            console.log(`   Player count: ${playerCount}`);
-          } catch (e) {
-            console.log(`   Mentaculous data: "${record.mentaculous}"`);
-          }
-        }
-      });
-    } else {
-      console.log('⚠️ No records found in Supabase!');
-    }
-  } catch (error) {
-    console.error('❌ Failed to check Supabase data:', error);
-  }
-}
-
-// Make them available globally
-(window as any).debugLocalStorage = debugLocalStorage;
-(window as any).clearJalkData = clearJalkData;
-(window as any).clearUserDataFromLocalStorage = clearUserDataFromLocalStorage;
-(window as any).restoreUserDataFromSupabase = restoreUserDataFromSupabase;
-(window as any).checkSupabaseData = checkSupabaseData;
 
 export default App;

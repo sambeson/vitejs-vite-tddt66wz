@@ -404,14 +404,8 @@
 
 .game-status {
   margin-top: 8px;
-  font-size: 12px;
-  color: #888;
-}
-
-.game-status {
   font-size: 13px;
   color: #666;
-  margin-top: 8px;
 }
 
 /* ========================================
