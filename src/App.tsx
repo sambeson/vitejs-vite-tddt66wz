@@ -585,6 +585,10 @@ function App() {
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('games');
   const [mentaculous, setMentaculous] = React.useState<Record<string, MentaculousPlayer>>({});
+  const mentaculousRef = useRef<Record<string, MentaculousPlayer>>({});
+  const orderRef = useRef<string[]>([]);
+  const dataLoadedRef = useRef(false);
+  const currentUserRef = useRef<string | null>(null);
   const [mentaculousPage, setMentaculousPage] = useState(0)
   const [updatedPlayerId, setUpdatedPlayerId] = useState<number | null>(null);
   const [tooltipOpenId, setTooltipOpenId] = useState<number | null>(null);
@@ -601,6 +605,26 @@ function App() {
   const [selectedTeamRoster, setSelectedTeamRoster] = useState<any>(null);
   const [teamRoster, setTeamRoster] = useState<any[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Keep refs in sync for beforeunload handler (closures can't capture latest state)
+  useEffect(() => { mentaculousRef.current = mentaculous; }, [mentaculous]);
+  useEffect(() => { orderRef.current = order; }, [order]);
+  useEffect(() => { dataLoadedRef.current = dataLoaded; }, [dataLoaded]);
+  useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
+
+  // beforeunload: flush latest state to localStorage immediately on force close
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const user = currentUserRef.current;
+      if (!user || !dataLoadedRef.current) return;
+      const now = new Date().toISOString();
+      localStorage.setItem(`mentaculous_${user}`, JSON.stringify(mentaculousRef.current));
+      localStorage.setItem(`mentaculousOrder_${user}`, JSON.stringify(orderRef.current));
+      localStorage.setItem(`mentaculousUpdatedAt_${user}`, now);
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -627,29 +651,54 @@ function App() {
       let parsed: Record<string, any> = {};
       let orderArr: string[] = [];
       try {
-        const { mentaculous: fbMentaculous, mentorder: fbOrder } = await fetchFromFirebase(currentUser);
-        if (fbMentaculous && Object.keys(fbMentaculous).length) {
+        const { mentaculous: fbMentaculous, mentorder: fbOrder, updatedAt: fbUpdatedAt } = await fetchFromFirebase(currentUser);
+        const lsUpdatedAt = localStorage.getItem(`mentaculousUpdatedAt_${currentUser}`);
+
+        // Use localStorage when it has a newer timestamp than Firebase — this
+        // happens when the app was force-closed before the 1500ms debounce fired.
+        const lsIsNewer = lsUpdatedAt && fbUpdatedAt && lsUpdatedAt > fbUpdatedAt;
+
+        const mentaculousRaw = localStorage.getItem(`mentaculous_${currentUser}`);
+        const storedOrder = localStorage.getItem(`mentaculousOrder_${currentUser}`);
+        let lsParsed: Record<string, any> = {};
+        let lsOrder: string[] = [];
+        if (mentaculousRaw) {
+          try { lsParsed = JSON.parse(mentaculousRaw); } catch { lsParsed = {}; }
+        }
+        if (storedOrder) {
+          try { lsOrder = JSON.parse(storedOrder); } catch { lsOrder = []; }
+        }
+
+        if (fbMentaculous && Object.keys(fbMentaculous).length && !lsIsNewer) {
+          // Firebase is authoritative (it's newer or we have no timestamp to compare)
           parsed = fbMentaculous;
           localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(parsed));
-        } else {
-          const mentaculousRaw = localStorage.getItem(`mentaculous_${currentUser}`);
-          if (mentaculousRaw) {
-            try { parsed = JSON.parse(mentaculousRaw); } catch { parsed = {}; }
-          }
+          if (fbUpdatedAt) localStorage.setItem(`mentaculousUpdatedAt_${currentUser}`, fbUpdatedAt);
+        } else if (Object.keys(lsParsed).length) {
+          // localStorage is newer (user had unsaved changes when force-closed)
+          console.log('[Load] Using localStorage — it is newer than Firebase');
+          parsed = lsParsed;
+        } else if (fbMentaculous && Object.keys(fbMentaculous).length) {
+          // No localStorage data at all, fall back to Firebase
+          parsed = fbMentaculous;
+          localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(parsed));
+          if (fbUpdatedAt) localStorage.setItem(`mentaculousUpdatedAt_${currentUser}`, fbUpdatedAt);
         }
-        if (fbOrder && fbOrder.length) {
+
+        if (fbOrder && fbOrder.length && !lsIsNewer) {
           orderArr = fbOrder;
           localStorage.setItem(`mentaculousOrder_${currentUser}`, JSON.stringify(orderArr));
-        } else {
-          const storedOrder = localStorage.getItem(`mentaculousOrder_${currentUser}`);
-          if (storedOrder) {
-            orderArr = JSON.parse(storedOrder);
-          }
-          if (!orderArr.length) {
-            orderArr = Object.entries(parsed)
-              .sort(([, a], [, b]) => ((a as any).addedAt ?? 0) - ((b as any).addedAt ?? 0))
-              .map(([id]) => id);
-          }
+        } else if (lsOrder.length) {
+          orderArr = lsOrder;
+        } else if (fbOrder && fbOrder.length) {
+          orderArr = fbOrder;
+          localStorage.setItem(`mentaculousOrder_${currentUser}`, JSON.stringify(orderArr));
+        }
+
+        if (!orderArr.length) {
+          orderArr = Object.entries(parsed)
+            .sort(([, a], [, b]) => ((a as any).addedAt ?? 0) - ((b as any).addedAt ?? 0))
+            .map(([id]) => id);
         }
       } catch (e) {
         console.warn('Firebase load failed, falling back to localStorage:', e);
@@ -694,11 +743,13 @@ function App() {
   }
 
   // Autosave to Firebase and localStorage after mentaculous/order changes, but only after dataLoaded
-  // localStorage updates immediately; Firebase write is debounced to avoid excessive writes
+  // localStorage (+ timestamp) updates immediately; Firebase write is debounced to avoid excessive writes
   useEffect(() => {
     if (!dataLoaded || !currentUser) return;
+    const now = new Date().toISOString();
     localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(mentaculous));
     localStorage.setItem(`mentaculousOrder_${currentUser}`, JSON.stringify(order));
+    localStorage.setItem(`mentaculousUpdatedAt_${currentUser}`, now);
     const timer = setTimeout(() => {
       saveToFirebase(currentUser, mentaculous, order).catch(e => console.error('[Autosave] Firebase save failed:', e));
     }, 1500);
