@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(start http://localhost:5175)",
+      "Bash(start cmd /k \"npm run dev\")",
+      "Bash(start http://localhost:5173)",
+      "Bash(netstat -ano)",
+      "Bash(for pid in 56564 75784 79056)",
+      "Bash(do echo \"PID $pid:\")",
+      "Bash(wmic process where \"ProcessId=$pid\" get CommandLine)",
+      "Bash(done)",
+      "Bash(start http://localhost:5174)",
+      "Bash(curl -s \"https://cjqrygafxxdysjjxxwhl.supabase.co/rest/v1/mentaculous_backups?select=user_id,mentaculous,mentorder\" -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqcXJ5Z2FmeHhkeXNqanh4d2hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzMzcwMjcsImV4cCI6MjA1OTkxMzAyN30.3J9JJghy_8aXUPNuRayg-MiDS5hVMfEoFO_S9sgr1AA\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqcXJ5Z2FmeHhkeXNqanh4d2hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzMzcwMjcsImV4cCI6MjA1OTkxMzAyN30.3J9JJghy_8aXUPNuRayg-MiDS5hVMfEoFO_S9sgr1AA\")",
+      "Bash(node -e \":*)",
+      "Bash(powershell -Command \"Invoke-RestMethod -Uri ''https://cjqrygafxxdysjjxxwhl.supabase.co/rest/v1/mentaculous_backups?select=user_id,mentaculous,mentorder'' -Headers @{''apikey''=''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqcXJ5Z2FmeHhkeXNqanh4d2hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzMzcwMjcsImV4cCI6MjA1OTkxMzAyN30.3J9JJghy_8aXUPNuRayg-MiDS5hVMfEoFO_S9sgr1AA'';''Authorization''=''Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqcXJ5Z2FmeHhkeXNqanh4d2hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzMzcwMjcsImV4cCI6MjA1OTkxMzAyN30.3J9JJghy_8aXUPNuRayg-MiDS5hVMfEoFO_S9sgr1AA''} | ConvertTo-Json -Depth 10\")",
+      "Bash(node --version)",
+      "Bash(node --experimental-fetch -e \"console.log\\(''fetch:'', typeof fetch\\)\")",
+      "Bash(node --experimental-fetch -e \":*)",
+      "Bash(node capture-server.mjs)",
+      "Bash(node analyze.cjs)",
+      "Bash(node patch.cjs)",
+      "Bash(npm install firebase)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(claude mcp add puppeteer -- npx -y @modelcontextprotocol/server-puppeteer)",
+      "Read(//c/Users/yanks/**)",
+      "Read(//c/Users/yanks/AppData/Roaming/Claude/**)",
+      "Bash(npx @playwright/mcp@latest --version)",
+      "Bash(npx @playwright/mcp@latest)"
+    ]
+  }
+}

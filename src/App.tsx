@@ -1,5 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './styles.css';
+import { fetchFromFirebase, saveToFirebase } from './firebase';
+import { historical2025 } from './historical2025';
+
+// Function to remove accents from text for custom font compatibility
+function removeAccents(str: string): string {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
 
 const teamAbbreviations = {
   'Arizona Diamondbacks': 'ARI',
@@ -33,40 +40,114 @@ const teamAbbreviations = {
   'Toronto Blue Jays': 'TOR',
   'Washington Nationals': 'WAS',
 };
+const teamAbbreviationMap = Object.entries(teamAbbreviations).reduce(
+  (map, [name, abbr]) => {
+    map[name.toLowerCase()] = abbr;
+    return map;
+  },
+  {} as Record<string, string>
+);
+
+function getTeamLogoUrl(teamId: number) {
+  return `https://www.mlbstatic.com/team-logos/${teamId}.svg`;
+}
+
+function getTeamAbbreviation(name: string = ''): string {
+  return teamAbbreviationMap[name.trim().toLowerCase()] || 'UNK';
+}
+
+function parseHrId(hrId: string) {
+  const [, dateStr, hrNum] = hrId.split('_');
+  return {
+    date: dateStr, // '2024-04-15'
+    seasonHRNumber: Number(hrNum),
+  };
+}
 
 // New HomerEntry component for HR entries in supplemental stats
-function HomerEntry({ player, getLastName, onAdd, alreadyLogged }) {
-  const [fading, setFading] = useState(false);
+interface HomerEntryProps {
+  player: any; // Replace `any` with a more specific type if possible
+  getLastName: (person: any) => string;
+  onAdd: (player: any, hr: any, teamName: any) => void;
+  onRemove: (playerId: string, hrId: string) => void; // Add the correct type for `onRemove`
+  mentaculous: any;
+}
+function HomerEntry({
+  player,
+  getLastName,
+  onAdd,
+  onRemove,
+  mentaculous,
+}: HomerEntryProps) {
+  const [fadingIndex, setFadingIndex] = useState<number | null>(null);
 
-  const handleClick = (e) => {
-    e.stopPropagation();
-    onAdd(player);
-    setFading(true);
-  };
+  if (!player.homeRunProgress || player.homeRunProgress.length === 0) {
+    return (
+      <span className="homer-entry">
+        <strong>{getLastName(player.person)}</strong>{' '}
+        {`${player.stats.seasonTotalHR ?? '??'} Season, ${player.stats.career?.homeRuns || 'N/A'} Career`}
+      </span>
+    );
+  }
+
+  // Get mentaculous HR count for this player
+  const mentaculousHRCount = mentaculous[player.person.id]?.homeRuns?.length || 0;
+  const seasonTotalHR = player.stats.seasonTotalHR ?? 0;
 
   return (
-    <span className="homer-entry">
-      {getLastName(player.person)} ({player.stats.batting.homeRuns} Season,{' '}
-      {player.stats.career?.homeRuns || 'N/A'} Career)
-      {alreadyLogged ? (
-        <span className="added-indicator"> Added! </span>
-      ) : (
-        <button
-          className={`mentaculous-button ${fading ? 'fade-out' : ''}`}
-          onClick={handleClick}
-        >
-          Add
-        </button>
-      )}
-    </span>
+    <>
+      {player.homeRunProgress.map((hr: any, index: number) => {
+        const alreadyLoggedForThis = mentaculous[player.person.id]?.homeRuns?.some((h: any) => h.hrId === hr.hrId);
+        // Only allow add if mentaculous HR count < season total
+        const canAdd = !alreadyLoggedForThis && mentaculousHRCount < seasonTotalHR;
+        return (
+          <span key={index} className="homer-entry">
+            <strong>{getLastName(player.person)}</strong>{' '}
+            {`${hr.seasonHRNumber} Season, ${hr.careerHRNumber} Career`}
+
+            {alreadyLoggedForThis ? (
+              <>
+                <span className="added-indicator"> Added! </span>
+                <button
+                  className="remove-button"
+                  onClick={e => {
+                    e.stopPropagation();
+                    onRemove(String(player.person.id), hr.hrId);
+                  }}
+                >
+                  Remove HR
+                </button>
+              </>
+            ) : (
+              canAdd && (
+                <button
+                  className={`mentaculous-button ${fadingIndex === index ? 'fade-out' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAdd(player, hr, player.team?.name ?? 'Unknown');
+                    setFadingIndex(index);
+                  }}
+                >
+                  Add
+                </button>
+              )
+            )}
+          </span>
+        );
+      })}
+    </>
   );
 }
 
+export { HomerEntry };
 
-function PlayerProfile({ playerId, onClose }) {
-  const [profile, setProfile] = useState(null);
-  const [careerStats, setCareerStats] = useState(null);
-  const [seasonStats, setSeasonStats] = useState([]);
+function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () => void }) {
+  const [profile, setProfile] = useState<any>(null);
+  const [careerStats, setCareerStats] = useState<any>(null);
+  const [seasonStats, setSeasonStats] = useState<{ hitting?: any[], pitching?: any[] }>({});
+  const [isPitcher, setIsPitcher] = useState<boolean>(false);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState<boolean>(false);
 
   useEffect(() => {
     // Fetch player bio info
@@ -74,13 +155,23 @@ function PlayerProfile({ playerId, onClose }) {
       .then((res) => res.json())
       .then((data) => {
         if (data.people && data.people.length > 0) {
-          setProfile(data.people[0]);
+          const player = data.people[0];
+          setProfile(player);
+
+          // Determine if this is a pitcher
+          const position = player.primaryPosition?.name || '';
+          const pitcherCheck = position.toLowerCase().includes('pitcher') ||
+            position.toLowerCase() === 'p';
+          setIsPitcher(pitcherCheck);
+
+          console.log(`Player ${player.fullName} is pitcher: ${pitcherCheck} (position: ${position})`);
         }
       })
       .catch((err) =>
         console.error('Error fetching player bio for', playerId, err)
       );
 
+    // We'll fetch both hitting and pitching stats, then display based on isPitcher
     // Fetch career hitting stats
     fetch(
       `https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=career&group=hitting`
@@ -93,12 +184,38 @@ function PlayerProfile({ playerId, onClose }) {
           data.stats[0].splits &&
           data.stats[0].splits.length > 0
         ) {
-          setCareerStats(data.stats[0].splits[0].stat);
+          setCareerStats((prev: any) => ({
+            ...prev,
+            hitting: data.stats[0].splits[0].stat
+          }));
         }
       })
       .catch((err) =>
-        console.error('Error fetching career stats for', playerId, err)
+        console.error('Error fetching career hitting stats for', playerId, err)
       );
+
+    // Fetch career pitching stats
+    fetch(
+      `https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=career&group=pitching`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (
+          data.stats &&
+          data.stats[0] &&
+          data.stats[0].splits &&
+          data.stats[0].splits.length > 0
+        ) {
+          setCareerStats((prev: any) => ({
+            ...prev,
+            pitching: data.stats[0].splits[0].stat
+          }));
+        }
+      })
+      .catch((err) =>
+        console.error('Error fetching career pitching stats for', playerId, err)
+      );
+
     // Fetch year-by-year hitting stats
     fetch(
       `https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=yearByYear&group=hitting`
@@ -111,22 +228,96 @@ function PlayerProfile({ playerId, onClose }) {
           data.stats[0].splits &&
           data.stats[0].splits.length > 0
         ) {
-          setSeasonStats(data.stats[0].splits);
+          setSeasonStats(prev => ({
+            ...prev,
+            hitting: data.stats[0].splits
+          }));
         }
       })
       .catch((err) =>
-        console.error('Error fetching year-by-year stats for', playerId, err)
+        console.error('Error fetching year-by-year hitting stats for', playerId, err)
       );
-  }, [playerId]);
 
-  const getLastName = (person) => {
-    if (person.lastName) return person.lastName;
-    if (person.fullName) {
-      const parts = person.fullName.split(' ');
-      return parts[parts.length - 1];
-    }
-    return '';
-  };
+    // Fetch year-by-year pitching stats
+    fetch(
+      `https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=yearByYear&group=pitching`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (
+          data.stats &&
+          data.stats[0] &&
+          data.stats[0].splits &&
+          data.stats[0].splits.length > 0
+        ) {
+          setSeasonStats(prev => ({
+            ...prev,
+            pitching: data.stats[0].splits
+          }));
+        }
+      })
+      .catch((err) =>
+        console.error('Error fetching year-by-year pitching stats for', playerId, err)
+      );
+
+    // Fetch transaction history for the player
+    const fetchTransactions = async () => {
+      setLoadingTransactions(true);
+      try {
+        const response = await fetch(
+          `https://statsapi.mlb.com/api/v1/transactions?playerId=${playerId}&limit=100&order=desc`
+        );
+        const data = await response.json();
+        
+        if (data.transactions) {
+          // Filter to only include meaningful MLB transactions (no number changes, etc.)
+          const mlbTransactions = data.transactions.filter((transaction: any) => {
+            // Exclude number changes and other minor transactions
+            if (transaction.typeCode === 'NC' || // Number change
+                transaction.description?.toLowerCase().includes('number') ||
+                transaction.description?.toLowerCase().includes('#')) {
+              return false;
+            }
+            
+            // Include major transaction types
+            const majorTransactionTypes = [
+              'SGN',  // Signed
+              'TRD',  // Traded
+              'REL',  // Released
+              'SE',   // Selected
+              'DFA',  // Designated for assignment
+              'CL',   // Claimed
+              'EXT',  // Contract extension
+              'PUR',  // Purchased
+              'FA'    // Free agent
+            ];
+            
+            // Check if fromTeam or toTeam is an MLB team (team IDs 108-158 are typically MLB)
+            const fromTeamIsMLB = transaction.fromTeam && 
+              (transaction.fromTeam.id >= 108 && transaction.fromTeam.id <= 158);
+            
+            const toTeamIsMLB = transaction.toTeam && 
+              (transaction.toTeam.id >= 108 && transaction.toTeam.id <= 158);
+            
+            // Include if it's a major transaction type OR involves MLB teams
+            return majorTransactionTypes.includes(transaction.typeCode) || 
+                   fromTeamIsMLB || toTeamIsMLB;
+          });
+          
+          setTransactions(mlbTransactions);
+        } else {
+          setTransactions([]);
+        }
+      } catch (err) {
+        console.error('Error fetching player transactions:', err);
+        setTransactions([]);
+      } finally {
+        setLoadingTransactions(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [playerId]);
 
   return (
     <div className="modal">
@@ -136,13 +327,18 @@ function PlayerProfile({ playerId, onClose }) {
         </button>
         {profile ? (
           <div className="player-profile">
+            <img
+              src={`https://img.mlbstatic.com/mlb-photos/image/upload/v1/people/${profile.id}/headshot/67/current.png`}
+              alt={`${profile.fullName} headshot`}
+              className="player-headshot"
+            />
             <h2>{profile.fullName}</h2>
             <p>
               <strong>Position:</strong> {profile.primaryPosition.name}
             </p>
             <p>
               <strong>Birth:</strong> {profile.birthDate} in {profile.birthCity}
-              , {profile.birthCountry}
+              , {profile.birthStateProvince ?? ''} {profile.birthCountry}
             </p>
             <p>
               <strong>Debut:</strong> {profile.mlbDebutDate}
@@ -153,66 +349,180 @@ function PlayerProfile({ playerId, onClose }) {
             </p>
             {careerStats ? (
               <div className="career-stats">
-                <h3>Career Hitting Stats</h3>
-                <p>
-                  <strong>Games Played:</strong> {careerStats.gamesPlayed}
-                </p>
-                <p>
-                  <strong>At Bats:</strong> {careerStats.atBats}
-                </p>
-                <p>
-                  <strong>Hits:</strong> {careerStats.hits}
-                </p>
-                <p>
-                  <strong>Home Runs:</strong> {careerStats.homeRuns}
-                </p>
-                <p>
-                  <strong>Average:</strong> {careerStats.avg}
-                </p>
-                <p>
-                  <strong>OPS:</strong> {careerStats.ops}
-                </p>
+                {isPitcher && careerStats.pitching ? (
+                  <>
+                    <h3>Career Pitching Stats</h3>
+                    <p>
+                      <strong>Wins:</strong> {careerStats.pitching.wins}
+                    </p>
+                    <p>
+                      <strong>Losses:</strong> {careerStats.pitching.losses}
+                    </p>
+                    <p>
+                      <strong>ERA:</strong> {careerStats.pitching.era}
+                    </p>
+                    <p>
+                      <strong>Quality Starts:</strong> {careerStats.pitching.qualityStarts || 0}
+                    </p>
+                    <p>
+                      <strong>Innings Pitched:</strong> {careerStats.pitching.inningsPitched}
+                    </p>
+                    <p>
+                      <strong>Strikeouts:</strong> {careerStats.pitching.strikeOuts}
+                    </p>
+                    <p>
+                      <strong>Saves:</strong> {careerStats.pitching.saves}
+                    </p>
+                    <p>
+                      <strong>WHIP:</strong> {careerStats.pitching.whip}
+                    </p>
+                  </>
+                ) : careerStats.hitting ? (
+                  <>
+                    <h3>Career Hitting Stats</h3>
+                    <p>
+                      <strong>Games Played:</strong> {careerStats.hitting.gamesPlayed}
+                    </p>
+                    <p>
+                      <strong>At Bats:</strong> {careerStats.hitting.atBats}
+                    </p>
+                    <p>
+                      <strong>Hits:</strong> {careerStats.hitting.hits}
+                    </p>
+                    <p>
+                      <strong>Home Runs:</strong> {careerStats.hitting.homeRuns}
+                    </p>
+                    <p>
+                      <strong>Average:</strong> {careerStats.hitting.avg}
+                    </p>
+                    <p>
+                      <strong>OPS:</strong> {careerStats.hitting.ops}
+                    </p>
+                  </>
+                ) : null}
               </div>
             ) : (
               <p>Loading career stats...</p>
             )}
-            {Array.isArray(seasonStats) && seasonStats.length > 0 && (
+            {seasonStats && (
               <div className="season-stats">
-                <h3>Season-by-Season Hitting</h3>
-                <table className="profile-stats-table">
-                  <thead>
-                    <tr>
-                      <th>Year</th>
-                      <th>Team</th>
-                      <th>G</th>
-                      <th>AB</th>
-                      <th>H</th>
-                      <th>HR</th>
-                      <th>RBI</th>
-                      <th>AVG</th>
-                      <th>OPS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {seasonStats
-                      .filter((s) => s?.season && s?.stat?.gamesPlayed > 0)
-                      .map((s, index) => (
-                        <tr key={index}>
-                          <td>{s.season}</td>
-                          <td>{s.team?.name || '—'}</td>
-                          <td>{s.stat?.gamesPlayed ?? '-'}</td>
-                          <td>{s.stat?.atBats ?? '-'}</td>
-                          <td>{s.stat?.hits ?? '-'}</td>
-                          <td>{s.stat?.homeRuns ?? '-'} </td>
-                          <td>{s.stat?.rbi ?? '-'}</td>
-                          <td>{s.stat?.avg ?? '-'}</td>
-                          <td>{s.stat?.ops ?? '-'}</td>
+                {isPitcher && seasonStats.pitching && Array.isArray(seasonStats.pitching) && seasonStats.pitching.length > 0 ? (
+                  <>
+                    <h3>Season-by-Season Pitching</h3>
+                    <table className="profile-stats-table">
+                      <thead>
+                        <tr>
+                          <th>Year</th>
+                          <th>Team</th>
+                          <th>W</th>
+                          <th>L</th>
+                          <th>ERA</th>
+                          <th>IP</th>
+                          <th>SO</th>
+                          <th>QS</th>
+                          <th>SV</th>
+                          <th>HLD</th>
+                          <th>WHIP</th>
                         </tr>
-                      ))}
-                  </tbody>
-                </table>
+                      </thead>
+                      <tbody>
+                        {seasonStats.pitching
+                          .filter((s: any) => s?.season && (s?.stat?.gamesPlayed > 0 || s?.stat?.games > 0))
+                          .sort((a: any, b: any) => parseInt(a.season) - parseInt(b.season))
+                          .map((s: any, index: number) => (
+                            <tr key={index}>
+                              <td>{s.season}</td>
+                              <td>{s.team?.name || '—'}</td>
+                              <td>{s.stat?.wins ?? '-'}</td>
+                              <td>{s.stat?.losses ?? '-'}</td>
+                              <td>{s.stat?.era ?? '-'}</td>
+                              <td>{s.stat?.inningsPitched ?? '-'}</td>
+                              <td>{s.stat?.strikeOuts ?? '-'}</td>
+                              <td>{s.stat?.qualityStarts ?? '-'}</td>
+                              <td>{s.stat?.saves ?? '-'}</td>
+                              <td>{s.stat?.holds ?? '-'}</td>
+                              <td>{s.stat?.whip ?? '-'}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </>
+                ) : seasonStats.hitting && Array.isArray(seasonStats.hitting) && seasonStats.hitting.length > 0 ? (
+                  <>
+                    <h3>Season-by-Season Hitting</h3>
+                    <table className="profile-stats-table">
+                      <thead>
+                        <tr>
+                          <th>Year</th>
+                          <th>Team</th>
+                          <th>G</th>
+                          <th>AB</th>
+                          <th>H</th>
+                          <th>HR</th>
+                          <th>RBI</th>
+                          <th>SB</th>
+                          <th>AVG</th>
+                          <th>OBP</th>
+                          <th>OPS</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {seasonStats.hitting
+                          .filter((s: any) => s?.season && (s?.stat?.gamesPlayed > 0 || s?.stat?.games > 0))
+                          .sort((a: any, b: any) => parseInt(a.season) - parseInt(b.season))
+                          .map((s: any, index: number) => (
+                            <tr key={index}>
+                              <td>{s.season}</td>
+                              <td>{s.team?.name || '—'}</td>
+                              <td>{s.stat?.gamesPlayed ?? s.stat?.games ?? '-'}</td>
+                              <td>{s.stat?.atBats ?? '-'}</td>
+                              <td>{s.stat?.hits ?? '-'}</td>
+                              <td>{s.stat?.homeRuns ?? '-'} </td>
+                              <td>{s.stat?.rbi ?? '-'}</td>
+                              <td>{s.stat?.stolenBases ?? '-'}</td>
+                              <td>{s.stat?.avg ?? '-'}</td>
+                              <td>{s.stat?.obp ?? '-'}</td>
+                              <td>{s.stat?.ops ?? '-'}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </>
+                ) : null}
               </div>
             )}
+
+            {/* Transaction History Section */}
+            <div className="transaction-history">
+              <h3>Transaction History</h3>
+              {loadingTransactions ? (
+                <p>Loading transaction history...</p>
+              ) : transactions.length > 0 ? (
+                <div className="transactions-list">
+                  {transactions.map((transaction: any, index: number) => (
+                    <div key={transaction.id || index} className="transaction-item">
+                      <div className="transaction-date">
+                        {new Date(transaction.date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </div>
+                      <div className="transaction-details">
+                        <div className="transaction-description">{transaction.description}</div>
+                        {transaction.fromTeam && transaction.toTeam && (
+                          <div className="transaction-teams">
+                            {transaction.fromTeam.name} → {transaction.toTeam.name}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p>No transaction history available for this player.</p>
+              )}
+            </div>
           </div>
         ) : (
           <p>Loading profile...</p>
@@ -222,59 +532,229 @@ function PlayerProfile({ playerId, onClose }) {
   );
 }
 
-function App() {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [games, setGames] = useState([]);
-  const [selectedGame, setSelectedGame] = useState(null);
-  const [boxScore, setBoxScore] = useState(null);
-  const [selectedTeam, setSelectedTeam] = useState('away');
-  const [selectedPlayerId, setSelectedPlayerId] = useState(null);
-  const [activeTab, setActiveTab] = useState('games');
-  const [mentaculous, setMentaculous] = useState({});
-  const [mentaculousPage, setMentaculousPage] = useState(0)
-  const [updatedPlayerId, setUpdatedPlayerId] = useState(null);
-;
+type HomeRun = {
+  hrId: string;
+  opponent?: string;
+  seasonTotalHR?: number;
+};
 
-  // Function to add a player to mentaculous state
-  const handleAddToMentaculous = (player, teamName) => {
-    const playerId = Number(player.person.id);
-    const currentHr = player.stats?.batting?.homeRuns;
-  
-    if (!currentHr) return;
-  
-    setMentaculous((prev) => {
-      const existing = prev[playerId] || {
-        playerName: player.person.fullName,
-        teamName: teamName || 'Unknown',
-        homeRuns: [],
-      };
-  
-      if (existing.homeRuns.includes(currentHr)) return prev;
-  
-      return {
-        ...prev,
-        [playerId]: {
-          ...existing,
-          homeRuns: [...existing.homeRuns, currentHr],
-        },
-      };
-    });
-  
-    setActiveTab('mentaculous');
-    setUpdatedPlayerId(playerId);
-    setTimeout(() => setUpdatedPlayerId(null), 1000);
-  };
-  
+type MentaculousPlayer = {
+  playerName: string;
+  teamName: string;
+  teamId: string;
+  homeRuns: HomeRun[];
+  addedAt?: number;
+};
+
+// User Selection Component
+function UserSelection({ onUserSelect }: { onUserSelect: (userId: string) => void }) {
+  return (
+    <div className="user-selection-overlay">
+      <div className="user-selection-modal">
+        <h2>Select User</h2>
+        <div className="user-buttons">
+          <button
+            className="user-button sam"
+            onClick={() => onUserSelect('Sam beson')}
+          >
+            Sam
+          </button>
+          <button
+            className="user-button jalk"
+            onClick={() => onUserSelect('Jalk McUser')}
+          >
+            Jalk
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+
+
+function App() {
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [games, setGames] = useState<any[]>([]);
+  const [selectedGame, setSelectedGame] = useState(null);
+  const [boxScore, setBoxScore] = useState<any>(null);
+  const [selectedTeam, setSelectedTeam] = useState('away');
+  const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState('games');
+  const [mentaculous, setMentaculous] = React.useState<Record<string, MentaculousPlayer>>({});
+  const mentaculousRef = useRef<Record<string, MentaculousPlayer>>({});
+  const orderRef = useRef<string[]>([]);
+  const dataLoadedRef = useRef(false);
+  const currentUserRef = useRef<string | null>(null);
+  const [mentaculousPage, setMentaculousPage] = useState(0)
+  const [updatedPlayerId, setUpdatedPlayerId] = useState<number | null>(null);
+  const [tooltipOpenId, setTooltipOpenId] = useState<number | null>(null);
+  const [order, setOrder] = useState<string[]>([]);
+  const lineRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const linesContainerRef = useRef<HTMLDivElement>(null);
+  const [manualOverride, setManualOverride] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false); // New state to track data loading
+  const [liveInfo, setLiveInfo] = useState<Record<string, any>>({}); // Add this state
+  const [pitcherInfo, setPitcherInfo] = useState<Record<string, any>>({}); // Store pitcher information for games
+  const [standings, setStandings] = useState<any[]>([]);
+  const [wildCardStandings, setWildCardStandings] = useState<any[]>([]);
+  const [standingsTab, setStandingsTab] = useState<'divisions' | 'wildcard'>('divisions');
+  const [selectedTeamRoster, setSelectedTeamRoster] = useState<any>(null);
+  const [teamRoster, setTeamRoster] = useState<any[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Keep refs in sync for beforeunload handler (closures can't capture latest state)
+  useEffect(() => { mentaculousRef.current = mentaculous; }, [mentaculous]);
+  useEffect(() => { orderRef.current = order; }, [order]);
+  useEffect(() => { dataLoadedRef.current = dataLoaded; }, [dataLoaded]);
+  useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
+
+  // beforeunload: flush latest state to localStorage immediately on force close
   useEffect(() => {
-    const stored = localStorage.getItem('mentaculous');
-    if (stored) {
-      setMentaculous(JSON.parse(stored));
-    }
+    const handleBeforeUnload = () => {
+      const user = currentUserRef.current;
+      if (!user || !dataLoadedRef.current) return;
+      const now = new Date().toISOString();
+      localStorage.setItem(`mentaculous_${user}`, JSON.stringify(mentaculousRef.current));
+      localStorage.setItem(`mentaculousOrder_${user}`, JSON.stringify(orderRef.current));
+      localStorage.setItem(`mentaculousUpdatedAt_${user}`, now);
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
+  // Close menu when clicking outside
   useEffect(() => {
-    localStorage.setItem('mentaculous', JSON.stringify(mentaculous));
-  }, [mentaculous]);
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (menuOpen && !target.closest('.menu-container')) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [menuOpen]);
+
+  // Manual HR add state for backend tab, keyed by playerId
+  const [manualHRAdd, setManualHRAdd] = useState<Record<string, { num: string; date: string }>>({});
+
+  useEffect(() => {
+    if (!currentUser) return; // Don't load data until user is selected
+
+    let cancelled = false;
+    setDataLoaded(false);
+    async function loadInitialData() {
+      let parsed: Record<string, any> = {};
+      let orderArr: string[] = [];
+      try {
+        const { mentaculous: fbMentaculous, mentorder: fbOrder, updatedAt: fbUpdatedAt } = await fetchFromFirebase(currentUser);
+        const lsUpdatedAt = localStorage.getItem(`mentaculousUpdatedAt_${currentUser}`);
+
+        // Use localStorage when it has a newer timestamp than Firebase — this
+        // happens when the app was force-closed before the 1500ms debounce fired.
+        const lsIsNewer = lsUpdatedAt && fbUpdatedAt && lsUpdatedAt > fbUpdatedAt;
+
+        const mentaculousRaw = localStorage.getItem(`mentaculous_${currentUser}`);
+        const storedOrder = localStorage.getItem(`mentaculousOrder_${currentUser}`);
+        let lsParsed: Record<string, any> = {};
+        let lsOrder: string[] = [];
+        if (mentaculousRaw) {
+          try { lsParsed = JSON.parse(mentaculousRaw); } catch { lsParsed = {}; }
+        }
+        if (storedOrder) {
+          try { lsOrder = JSON.parse(storedOrder); } catch { lsOrder = []; }
+        }
+
+        if (fbMentaculous && Object.keys(fbMentaculous).length && !lsIsNewer) {
+          // Firebase is authoritative (it's newer or we have no timestamp to compare)
+          parsed = fbMentaculous;
+          localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(parsed));
+          if (fbUpdatedAt) localStorage.setItem(`mentaculousUpdatedAt_${currentUser}`, fbUpdatedAt);
+        } else if (Object.keys(lsParsed).length) {
+          // localStorage is newer (user had unsaved changes when force-closed)
+          console.log('[Load] Using localStorage — it is newer than Firebase');
+          parsed = lsParsed;
+        } else if (fbMentaculous && Object.keys(fbMentaculous).length) {
+          // No localStorage data at all, fall back to Firebase
+          parsed = fbMentaculous;
+          localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(parsed));
+          if (fbUpdatedAt) localStorage.setItem(`mentaculousUpdatedAt_${currentUser}`, fbUpdatedAt);
+        }
+
+        if (fbOrder && fbOrder.length && !lsIsNewer) {
+          orderArr = fbOrder;
+          localStorage.setItem(`mentaculousOrder_${currentUser}`, JSON.stringify(orderArr));
+        } else if (lsOrder.length) {
+          orderArr = lsOrder;
+        } else if (fbOrder && fbOrder.length) {
+          orderArr = fbOrder;
+          localStorage.setItem(`mentaculousOrder_${currentUser}`, JSON.stringify(orderArr));
+        }
+
+        if (!orderArr.length) {
+          orderArr = Object.entries(parsed)
+            .sort(([, a], [, b]) => ((a as any).addedAt ?? 0) - ((b as any).addedAt ?? 0))
+            .map(([id]) => id);
+        }
+      } catch (e) {
+        console.warn('Firebase load failed, falling back to localStorage:', e);
+        const mentaculousRaw = localStorage.getItem(`mentaculous_${currentUser}`);
+        if (mentaculousRaw) {
+          try { parsed = JSON.parse(mentaculousRaw); } catch { parsed = {}; }
+        }
+        const storedOrder = localStorage.getItem(`mentaculousOrder_${currentUser}`);
+        if (storedOrder) {
+          try { orderArr = JSON.parse(storedOrder); } catch { orderArr = []; }
+        }
+        if (!orderArr.length) {
+          orderArr = Object.entries(parsed)
+            .sort(([, a], [, b]) => ((a as any).addedAt ?? 0) - ((b as any).addedAt ?? 0))
+            .map(([id]) => id);
+        }
+      }
+      if (cancelled) return;
+      setMentaculous(parsed);
+      setOrder(orderArr);
+      setDataLoaded(true);
+    }
+
+    loadInitialData();
+    return () => { cancelled = true; };
+  }, [currentUser]);
+
+  // Move function for manual override (must be defined before autosave effect)
+  function move(playerId: string, delta: number) {
+    setOrder((prevOrder) => {
+      const idx = prevOrder.indexOf(playerId);
+      if (idx === -1) return prevOrder;
+      let newIdx = idx + delta;
+      if (newIdx < 0) newIdx = 0;
+      if (newIdx >= prevOrder.length) newIdx = prevOrder.length - 1;
+      if (newIdx === idx) return prevOrder;
+      const newOrder = [...prevOrder];
+      newOrder.splice(idx, 1);
+      newOrder.splice(newIdx, 0, playerId);
+      return newOrder;
+    });
+  }
+
+  // Autosave to Firebase and localStorage after mentaculous/order changes, but only after dataLoaded
+  // localStorage (+ timestamp) updates immediately; Firebase write is debounced to avoid excessive writes
+  useEffect(() => {
+    if (!dataLoaded || !currentUser) return;
+    const now = new Date().toISOString();
+    localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(mentaculous));
+    localStorage.setItem(`mentaculousOrder_${currentUser}`, JSON.stringify(order));
+    localStorage.setItem(`mentaculousUpdatedAt_${currentUser}`, now);
+    const timer = setTimeout(() => {
+      saveToFirebase(currentUser, mentaculous, order).catch(e => console.error('[Autosave] Firebase save failed:', e));
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [mentaculous, order, dataLoaded, currentUser]);
 
   useEffect(() => {
     fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`)
@@ -283,73 +763,306 @@ function App() {
       .catch((error) => console.error('Error fetching schedule:', error));
   }, [date]);
 
-  const loadBoxScore = async (gamePk) => {
-    try {
-      // Fetch both boxscore and playByPlay concurrently
-      const [boxScoreRes, playRes] = await Promise.all([
-        fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/boxscore`),
-        fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/playByPlay`),
-      ]);
-      // Convert responses to JSON
-      const boxScore = await boxScoreRes.json();
-      const playByPlay = await playRes.json();
-
-      // Build the pitching order map using a composite metric
-      const pitchingOrderMap = {};
-      if (playByPlay.allPlays) {
-        playByPlay.allPlays.forEach((play, index) => {
-          const pitcher = play.pitcher;
-          if (pitcher) {
-            const pid = String(pitcher.id);
-            if (!(pid in pitchingOrderMap)) {
-              pitchingOrderMap[pid] = index;
-            }
+  // Fetch starting pitcher information for future games
+  useEffect(() => {
+    const futureGames = games.filter(g => 
+      g.status.detailedState === 'Scheduled' || 
+      g.status.detailedState === 'Pre-Game'
+    );
+    
+    futureGames.forEach(async (game) => {
+      try {
+        // Fetch game data with probable pitchers
+        const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&gamePk=${game.gamePk}&hydrate=probablePitcher(note)`);
+        const gameData = await res.json();
+        
+        if (gameData.dates?.[0]?.games?.[0]) {
+          const gameInfo = gameData.dates[0].games[0];
+          const awayPitcher = gameInfo.teams?.away?.probablePitcher;
+          const homePitcher = gameInfo.teams?.home?.probablePitcher;
+          
+          let pitcherData: any = {};
+          
+          // Fetch detailed stats for each pitcher
+          if (awayPitcher?.id) {
+            const awayStats = await fetchPitcherStats(awayPitcher.id);
+            pitcherData.away = { ...awayPitcher, stats: awayStats };
           }
-        });
+          
+          if (homePitcher?.id) {
+            const homeStats = await fetchPitcherStats(homePitcher.id);
+            pitcherData.home = { ...homePitcher, stats: homeStats };
+          }
+          
+          setPitcherInfo(prev => ({
+            ...prev,
+            [game.gamePk]: pitcherData
+          }));
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch pitcher info for game ${game.gamePk}:`, error);
       }
+    });
+  }, [games]);
 
-      // Get all players from the boxScore:
-      const allPlayers = [
-        ...Object.values(boxScore.teams.away.players),
-        ...Object.values(boxScore.teams.home.players),
-      ];
+  // Fetch MLB standings
+  useEffect(() => {
+    const fetchStandings = async () => {
+      try {
+        // Division ID to name mapping
+        const divisionNames: { [key: number]: string } = {
+          200: 'American League West',
+          201: 'American League East', 
+          202: 'American League Central',
+          203: 'National League West',
+          204: 'National League East',
+          205: 'National League Central'
+        };
 
-      // Fetch career stats for all players in parallel:
-      const updatedPlayers = await Promise.all(
-        allPlayers.map(async (player) => {
+        // Fetch both AL and NL standings separately (regular season and wild card)
+        const [alResponse, nlResponse, alWildCardResponse, nlWildCardResponse] = await Promise.all([
+          fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=103&season=2025&standingsTypes=regularSeason'),
+          fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=104&season=2025&standingsTypes=regularSeason'),
+          fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=103&season=2025&standingsTypes=wildCard'),
+          fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=104&season=2025&standingsTypes=wildCard')
+        ]);
+        
+        const [alData, nlData, alWildCardData, nlWildCardData] = await Promise.all([
+          alResponse.json(),
+          nlResponse.json(),
+          alWildCardResponse.json(),
+          nlWildCardResponse.json()
+        ]);
+        
+        console.log('AL standings:', alData);
+        console.log('NL standings:', nlData);
+        
+        const allTeams: any[] = [];
+        
+        // Process AL data
+        if (alData.records) {
+          alData.records.forEach((division: any) => {
+            division.teamRecords.forEach((team: any) => {
+              allTeams.push({
+                ...team,
+                divisionName: divisionNames[division.division.id] || 'Unknown Division',
+                leagueName: 'American League'
+              });
+            });
+          });
+        }
+        
+        // Process NL data
+        if (nlData.records) {
+          nlData.records.forEach((division: any) => {
+            division.teamRecords.forEach((team: any) => {
+              allTeams.push({
+                ...team,
+                divisionName: divisionNames[division.division.id] || 'Unknown Division',
+                leagueName: 'National League'
+              });
+            });
+          });
+        }
+        
+        // Process wild card standings
+        const allWildCardTeams: any[] = [];
+        
+        // Process AL wild card data
+        if (alWildCardData.records && alWildCardData.records.length > 0) {
+          alWildCardData.records[0].teamRecords.forEach((team: any) => {
+            allWildCardTeams.push({
+              ...team,
+              leagueName: 'American League'
+            });
+          });
+        }
+        
+        // Process NL wild card data
+        if (nlWildCardData.records && nlWildCardData.records.length > 0) {
+          nlWildCardData.records[0].teamRecords.forEach((team: any) => {
+            allWildCardTeams.push({
+              ...team,
+              leagueName: 'National League'
+            });
+          });
+        }
+        
+        setStandings(allTeams);
+        setWildCardStandings(allWildCardTeams);
+      } catch (error) {
+        console.error('Error fetching standings:', error);
+      }
+    };
+
+    fetchStandings();
+  }, []);
+
+  // Function to fetch team roster
+  const fetchTeamRoster = async (teamId: number) => {
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/teams/${teamId}/roster`);
+      const data = await res.json();
+      
+      if (data.roster) {
+        // Sort roster by position groups: Pitchers, Catchers, Infielders, Outfielders, DH
+        const sortedRoster = data.roster.sort((a: any, b: any) => {
+          const aPos = a.position.abbreviation;
+          const bPos = b.position.abbreviation;
+          
+          // Define position groups
+          const getPositionGroup = (pos: string) => {
+            if (pos === 'P') return 1; // Pitchers first
+            if (pos === 'C') return 2; // Catchers second
+            if (['1B', '2B', '3B', 'SS', 'IF'].includes(pos)) return 3; // Infielders third
+            if (['LF', 'CF', 'RF', 'OF'].includes(pos)) return 4; // Outfielders fourth
+            if (pos === 'DH') return 5; // DH last
+            return 6; // Any other positions
+          };
+          
+          const aGroup = getPositionGroup(aPos);
+          const bGroup = getPositionGroup(bPos);
+          
+          if (aGroup !== bGroup) {
+            return aGroup - bGroup;
+          }
+          
+          // Within same group, sort by specific position order
+          const inGroupOrder: Record<string, number> = {
+            // Pitchers (already grouped)
+            'P': 1,
+            // Catchers (already grouped)
+            'C': 1,
+            // Infielders
+            '1B': 1, '2B': 2, '3B': 3, 'SS': 4, 'IF': 5,
+            // Outfielders
+            'LF': 1, 'CF': 2, 'RF': 3, 'OF': 4,
+            // DH (already grouped)
+            'DH': 1
+          };
+          
+          const aPosOrder = inGroupOrder[aPos] || 999;
+          const bPosOrder = inGroupOrder[bPos] || 999;
+          
+          if (aPosOrder !== bPosOrder) {
+            return aPosOrder - bPosOrder;
+          }
+          
+          // If same position, sort by jersey number
+          return (a.jerseyNumber || 999) - (b.jerseyNumber || 999);
+        });
+        
+        setTeamRoster(sortedRoster);
+        
+        // Find team info from standings or use API data
+        const teamInfo = standings.find(team => team.team.id === teamId);
+        setSelectedTeamRoster(teamInfo?.team || { 
+          id: teamId, 
+          name: data.roster[0]?.person?.currentTeam?.name || 'Team' 
+        });
+        setActiveTab('roster');
+      }
+    } catch (error) {
+      console.error('Error fetching team roster:', error);
+    }
+  };
+
+  // Helper function to fetch pitcher statistics
+  const fetchPitcherStats = async (pitcherId: number) => {
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${pitcherId}/stats?stats=season&group=pitching`);
+      const data = await res.json();
+      
+      if (data.stats?.[0]?.splits?.[0]?.stat) {
+        return data.stats[0].splits[0].stat;
+      }
+      return null;
+    } catch (error) {
+      console.warn(`Failed to fetch stats for pitcher ${pitcherId}:`, error);
+      return null;
+    }
+  };
+
+
+  const loadBoxScore = async (gamePk: number) => {
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/boxscore`);
+      const boxScore = await res.json();
+
+      const awayPlayers = boxScore?.teams?.away?.players ?? {};
+      const homePlayers = boxScore?.teams?.home?.players ?? {};
+      const allPlayers = [...Object.values(awayPlayers), ...Object.values(homePlayers)];
+
+      const today = new Date().toISOString().split('T')[0];
+
+      // Step 1: Filter players who hit a home run (season total increased)
+      const playersWithHRs = allPlayers.filter((p: any) => {
+        return p.seasonStats?.batting?.homeRuns > 0;
+      });
+
+      // Step 2: Fetch career HRs for just those players
+      const careerHRs: Record<string, number> = {};
+      await Promise.all(
+        playersWithHRs.map(async (p: any) => {
+          const playerId = p.person.id;
           try {
             const res = await fetch(
-              `https://statsapi.mlb.com/api/v1/people/${player.person.id}/stats?stats=career&group=hitting`
+              `https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=career&group=hitting`
             );
-            const json = await res.json();
-            const stat = json?.stats?.[0]?.splits?.[0]?.stat;
-            if (stat) {
-              player.stats.career = stat;
-            }
+            const data = await res.json();
+            const hr = data?.stats?.[0]?.splits?.[0]?.stat?.homeRuns ?? 0;
+            careerHRs[playerId] = hr;
           } catch (err) {
-            console.error(
-              `Error fetching career stats for ${player.person.fullName}`,
-              err
-            );
+            console.warn(`Career HR fetch failed for player ${playerId}`, err);
           }
-          return player;
         })
       );
 
-      // Build a player map (using string IDs for consistency)
-      const playerMap = {};
-      updatedPlayers.forEach((p) => {
-        playerMap[String(p.person.id)] = p;
-      });
-      // Attach appearanceIndex to each updated player using the pitching order map:
-      updatedPlayers.forEach((p) => {
-        p.appearanceIndex = pitchingOrderMap[String(p.person.id)] ?? Infinity;
+      // Step 3: Enrich players with HR progress
+      const updatedPlayers = allPlayers.map((player: any) => {
+        if (!player.stats) return player;
+
+        if (player.seasonStats?.batting?.homeRuns != null) {
+          player.stats.seasonTotalHR = player.seasonStats.batting.homeRuns;
+        }
+
+        const careerHR = careerHRs[player.person.id];
+
+        if (
+          typeof player.stats?.batting?.homeRuns === 'number' &&
+          typeof player.seasonStats?.batting?.homeRuns === 'number' &&
+          typeof careerHR === 'number'
+        ) {
+          const hrToday = player.stats.batting.homeRuns;
+          const seasonHRTotal = player.seasonStats.batting.homeRuns;
+
+          // Build one HR entry per HR hit today
+          const homeRunProgress = [];
+          for (let i = 0; i < hrToday; i++) {
+            const seasonHRNumber = seasonHRTotal - i;
+            const careerHRNumber = careerHR - i;
+
+            homeRunProgress.unshift({
+              seasonHRNumber,
+              careerHRNumber,
+              hrId: `${player.person.id}_${today}_${seasonHRNumber}`,
+            });
+          }
+          player.homeRunProgress = homeRunProgress;
+        }
+
+        return player;
       });
 
-      // Update both home and away team players in the boxScore:
+      // Step 4: Rebuild player map and merge back
+      const playerMap: Record<string, any> = updatedPlayers.reduce((map: Record<string, any>, p: any) => {
+        map[String(p.person.id)] = p;
+        return map;
+      }, {});
+
       ['home', 'away'].forEach((teamKey) => {
         const team = boxScore.teams[teamKey];
-        const updated = {};
+        const updated: Record<string, any> = {};
         for (let key in team.players) {
           const id = String(team.players[key].person.id);
           updated[key] = playerMap[id] || team.players[key];
@@ -357,20 +1070,130 @@ function App() {
         boxScore.teams[teamKey].players = updated;
       });
 
+      const currentYear = new Date().getFullYear().toString();
+
+      await Promise.all(
+        updatedPlayers.map(async (player: any) => {
+          const id = player.person.id;
+          try {
+            const res = await fetch(
+              `https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=yearByYear&group=hitting`
+            );
+            const data = await res.json();
+            const split = data.stats[0].splits.find(
+              (s: any) => s.season === currentYear
+            );
+            if (split && split.stat) {
+              // stash into your player object
+              player.stats.batting.seasonAvg = split.stat.avg;
+              player.stats.batting.seasonOps = split.stat.ops;
+            } else {
+              player.stats.batting.seasonAvg = '-';
+              player.stats.batting.seasonOps = '-';
+            }
+          } catch (err) {
+            console.warn(`Failed season stats for ${id}`, err);
+            player.stats.batting.seasonAvg = '-';
+            player.stats.batting.seasonOps = '-';
+          }
+        })
+      );
+      await Promise.all(
+        updatedPlayers
+          .filter((p: any) => p.stats?.pitching)   // only for pitchers
+          .map(async (player: any) => {
+            try {
+              // Use season stats instead of yearByYear to get combined totals for traded players
+              const res = await fetch(
+                `https://statsapi.mlb.com/api/v1/people/${player.person.id}/stats?stats=season&group=pitching`
+              );
+              const data = await res.json();
+              const seasonStat = data.stats[0]?.splits[0]?.stat;
+              if (seasonStat) {
+                player.stats.pitching.seasonEra = seasonStat.era ?? '-';
+                // Store the complete season pitching stats for save info
+                player.seasonStats = player.seasonStats || {};
+                player.seasonStats.pitching = seasonStat;
+                console.log(`📊 Season stats for ${player.person.fullName}: ${seasonStat.saves} saves, ${seasonStat.era} ERA`);
+              } else {
+                player.stats.pitching.seasonEra = '-';
+              }
+            } catch (error) {
+              console.warn(`Failed to fetch season pitching stats for ${player.person.fullName}:`, error);
+              player.stats.pitching.seasonEra = '-';
+            }
+          })
+      );
+
+      // Try to get pitching order from play-by-play data
+      try {
+        const playByPlayRes = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/playByPlay`);
+        const playByPlayData = await playByPlayRes.json();
+
+        console.log('🏀 Play-by-play data fetched successfully for game:', gamePk);
+
+        // Track when each pitcher first appeared
+        const pitcherFirstAppearance = new Map();
+        let playIndex = 0;
+
+        for (const inning of playByPlayData.allPlays || []) {
+          const pitcher = inning.matchup?.pitcher;
+          if (pitcher && !pitcherFirstAppearance.has(pitcher.id)) {
+            pitcherFirstAppearance.set(pitcher.id, playIndex);
+            console.log(`⚾ Pitcher ${pitcher.fullName} first appeared at play index ${playIndex}`);
+          }
+          playIndex++;
+        }
+
+        console.log('🎯 Final pitcher order map:', Array.from(pitcherFirstAppearance.entries()));
+
+        // Apply pitching order to players
+        ['home', 'away'].forEach((teamKey) => {
+          const team = boxScore.teams[teamKey];
+          for (let key in team.players) {
+            const player = team.players[key];
+            if (player.stats?.pitching && pitcherFirstAppearance.has(player.person.id)) {
+              player.pitchingOrder = pitcherFirstAppearance.get(player.person.id);
+              console.log(`✅ Set pitchingOrder ${player.pitchingOrder} for ${player.person.fullName}`);
+            }
+          }
+        });
+      } catch (error) {
+        console.warn('❌ Could not fetch play-by-play data for pitching order:', error);
+      }
       setBoxScore(boxScore);
     } catch (error) {
-      console.error('Error fetching box score:', error);
+      console.error('Error loading box score:', error);
     }
   };
 
-  const changeDate = (days) => {
+
+  const changeDate = (days: number) => {
     const currentDate = new Date(date);
     currentDate.setDate(currentDate.getDate() + days);
     setDate(currentDate.toISOString().split('T')[0]);
   };
 
-  const getLastName = (person) => {
+  // Helper function to format game time
+  const formatGameTime = (gameDate: string) => {
+    try {
+      const gameTime = new Date(gameDate);
+      return gameTime.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (error) {
+      return '';
+    }
+  };
+
+  const getLastName = (person: any) => {
+    // Prefer explicit lastName if available
     if (person.lastName) return person.lastName;
+    // Otherwise, if a boxscoreName is provided, use it
+    if (person.boxscoreName) return person.boxscoreName;
+    // Otherwise, split the fullName and use the last portion
     if (person.fullName) {
       const parts = person.fullName.split(' ');
       return parts[parts.length - 1];
@@ -378,67 +1201,83 @@ function App() {
     return '';
   };
 
-  const formatSupplementalStats = (team) => {
+  const renderPagination = () => {
+    const totalPages = Math.ceil(Object.keys(mentaculous).length / 32) || 1;
+    return (
+      <div className="pagination-controls">
+        <button
+          onClick={() => setMentaculousPage(p => Math.max(0, p - 1))}
+          disabled={mentaculousPage === 0}
+        >
+          ← Prev
+        </button>
+        <span className="page-info">
+          Page {mentaculousPage + 1} of {totalPages}
+        </span>
+        <button
+          onClick={() => setMentaculousPage(p => Math.min(totalPages - 1, p + 1))}
+          disabled={mentaculousPage === totalPages - 1}
+        >
+          Next →
+        </button>
+      </div>
+    );
+  };
+
+  const formatSupplementalStats = (team: any) => {
     const allPlayers = team.players || {};
-    const stats = team.teamStats?.batting || {};
 
     // Use HomerEntry for players with home runs
     const homers = Object.entries(allPlayers)
-    .filter(([_, p]) => p.stats?.batting?.homeRuns > 0)
-    .map(([key, p]) => {
-      const playerId = Number(p.person.id);
-      const currentHr = p.stats?.batting?.homeRuns;
-      const alreadyLogged = mentaculous[playerId]?.homeRuns?.includes(currentHr);
-  
-      return (
+      .filter(([_, p]: [string, any]) => p.stats?.batting?.homeRuns > 0)
+      .map(([key, p]: [string, any]) => (
         <HomerEntry
           key={key}
           player={p}
           getLastName={getLastName}
-          onAdd={(player) => handleAddToMentaculous(player, team.team.name)}
-          alreadyLogged={alreadyLogged}
+          onAdd={async (player, hr) => await handleAddToMentaculous(player, hr, team.team?.name, team.team?.id)}
+          onRemove={handleRemoveHomeRun}
+          mentaculous={mentaculous} // ✅ required for per-HR tracking
         />
-      );
-    });
+      ));
+
 
     // Format doubles
     const doubles = Object.entries(allPlayers)
-      .filter(([_, p]) => p.stats?.batting?.doubles > 0)
-      .map(([_, p]) => {
+      .filter(([_, p]: [string, any]) => p.stats?.batting?.doubles > 0)
+      .map(([_, p]: [string, any]) => {
         const pitchers = p.gameEvents?.doubles
-          ?.map((d) => d.pitcher)
+          ?.map((d: any) => d.pitcher)
           .join(', ');
-        return ` ${getLastName(p.person)} ${p.stats.batting.doubles}${
-          pitchers ? `, ${pitchers}` : ''
-        }`;
+        return ` ${getLastName(p.person)} ${p.stats.batting.doubles}${pitchers ? `, ${pitchers}` : ''
+          }`;
       });
 
     // Format total bases
     const totalBases = Object.entries(allPlayers)
-      .filter(([_, p]) => p.stats?.batting?.totalBases > 0)
+      .filter(([_, p]: [string, any]) => p.stats?.batting?.totalBases > 0)
       .map(
-        ([_, p]) => ` ${getLastName(p.person)} ${p.stats.batting.totalBases}`
+        ([_, p]: [string, any]) => ` ${getLastName(p.person)} ${p.stats.batting.totalBases}`
       );
 
     // Format RBIs
     const rbis = Object.entries(allPlayers)
-      .filter(([_, p]) => p.stats?.batting?.rbi > 0)
-      .map(([_, p]) => {
-        const breakdown = p.gameEvents?.rbiBreakdown;
-        return ` ${getLastName(p.person)} ${p.stats.batting.rbi}${
-          breakdown ? `, ${breakdown}` : ''
-        }`;
+      .filter(([_, p]: [string, any]) => p.stats?.batting?.rbi > 0)
+      .map(([_, p]: [string, any]) => {
+        const seasonRBI = p.seasonStats?.batting?.rbi ?? 'N/A';
+        return ` ${getLastName(p.person)} ${p.stats.batting.rbi} (${seasonRBI})
+        `;
       });
 
-    // Format 2-out RBIs
-    const twoOutRbis = Object.entries(allPlayers)
-      .filter(([_, p]) => p.stats?.batting?.rbiWithTwoOuts > 0)
-      .map(([_, p]) => getLastName(p.person));
-
-    // Format RISP LOB
-    const rispLob = Object.entries(allPlayers)
-      .filter(([_, p]) => p.stats?.batting?.leftOnBaseInScoringPosition > 0)
-      .map(([_, p]) => getLastName(p.person));
+    const steals = Object.entries(allPlayers)
+      .filter(([_, p]: [string, any]) => p.stats?.batting?.stolenBases > 0)
+      .map(([_, p]: [string, any]) => {
+        const name = getLastName(p.person);
+        const gameSB = p.stats.batting.stolenBases;
+        // If you’ve fetched season-by-season, p.seasonStats.batting?.stolenBases should exist
+        const seasonSB = p.seasonStats?.batting?.stolenBases ?? 'N/A';
+        return `${name} ${gameSB} (${seasonSB})`;
+      });
 
     return (
       <div className="supplemental-stats">
@@ -449,38 +1288,31 @@ function App() {
             </div>
           )}
           {doubles.length > 0 && (
-            <div className="stat-line">2B—{doubles.join('; ')}.</div>
+            <div className="stat-line">2B—{doubles.join('; ')}</div>
           )}
           {totalBases.length > 0 && (
-            <div className="stat-line">TB—{totalBases.join('; ')}.</div>
+            <div className="stat-line">TB—{totalBases.join('; ')}</div>
           )}
           {rbis.length > 0 && (
-            <div className="stat-line">RBI—{rbis.join('; ')}.</div>
+            <div className="stat-line">RBI—{rbis.join('; ')}</div>
           )}
-          {twoOutRbis.length > 0 && (
-            <div className="stat-line">2-out RBI—{twoOutRbis.join('; ')}.</div>
-          )}
-          {rispLob.length > 0 && (
+          {steals.length > 0 && (
             <div className="stat-line">
-              Runners left in scoring position, 2 out—{rispLob.join('; ')}.
+              SB— {steals.join('; ')}
             </div>
           )}
-          <div className="stat-line">
-            Team RISP—{stats.runnersScoringPosition || '0-0'}.
-          </div>
-          <div className="stat-line">Team LOB—{stats.leftOnBase || 0}.</div>
         </div>
 
         {team.baserunning && (
           <div className="stat-section">
             <div className="stat-line">
               BASERUNNING
-              {Object.entries(team.baserunning).map(([type, events]) => (
+              {Object.entries(team.baserunning).map(([type, events]: [string, any]) => (
                 <div key={type}>
                   {type.toUpperCase()}—
                   {events
                     .map(
-                      (e) =>
+                      (e: any) =>
                         `${e.player} (${e.number}, ${e.base} base off ${e.pitcher}/${e.catcher})`
                     )
                     .join('; ')}
@@ -495,11 +1327,11 @@ function App() {
           <div className="stat-section">
             <div className="stat-line">
               FIELDING
-              {Object.entries(team.fielding).map(([type, events]) => (
+              {Object.entries(team.fielding).map(([type, events]: [string, any]) => (
                 <div key={type}>
                   {type.toUpperCase()}—
                   {events
-                    .map((e) => `${e.player} (${e.number}, ${e.description})`)
+                    .map((e: any) => `${e.player} (${e.number}, ${e.description})`)
                     .join('; ')}
                   .
                 </div>
@@ -511,23 +1343,23 @@ function App() {
     );
   };
 
-  const getPitchingOrder = (player) => {
-    const events = player.gameEvents?.pitching;
-    if (!events || events.length === 0) return Infinity;
-    const first = events[0];
-    return first.inning + (first.atBatIndex || 0) * 0.01;
-  };
-
-  const renderPitchingStats = (team) => {
+  const renderPitchingStats = (team: any) => {
     const pitchers = Object.entries(team.players || {})
-      .filter(([_, p]) => p.stats?.pitching?.inningsPitched)
-      .map(([key, p]) => ({ key, ...p }))
-      .sort(
-        (a, b) =>
-          (a.appearanceIndex ?? Infinity) - (b.appearanceIndex ?? Infinity)
-      );
+      .filter(([_, p]: [string, any]) => p.stats?.pitching?.inningsPitched)
+      .map(([key, p]: [string, any]) => ({ key, ...p }))
+      .sort((a: any, b: any) => {
+        // Only use explicit pitchingOrder if both players have it from play-by-play API
+        if (a.pitchingOrder !== undefined && b.pitchingOrder !== undefined) {
+          console.log(`🔄 Sorting: ${a.person.fullName} (order: ${a.pitchingOrder}) vs ${b.person.fullName} (order: ${b.pitchingOrder})`);
+          return a.pitchingOrder - b.pitchingOrder;
+        }
 
-    const teamPitchingStats = team.teamStats?.pitching || {};
+        // If either player doesn't have pitchingOrder, maintain original order
+        console.log(`⚠️ No pitching order for ${a.person.fullName} or ${b.person.fullName} - maintaining original order`);
+        return 0;
+      });
+
+    console.log('📋 Final pitcher order:', pitchers.map(p => `${p.person.fullName} (${p.pitchingOrder ?? 'no order'})`));
 
     return (
       <div className="team-stats">
@@ -543,16 +1375,31 @@ function App() {
               <th>BB</th>
               <th>K</th>
               <th>HR</th>
-              <th>P-S</th>
+              <th>P</th>
               <th>ERA</th>
             </tr>
           </thead>
           <tbody>
-            {pitchers.map((player) => {
+            {pitchers.map((player: any) => {
               const stats = player?.stats?.pitching;
+              const gameSave = stats?.saves > 0;
+              const seasonSaves = player?.seasonStats?.pitching?.saves ?? 0;
+
               return (
                 <tr key={player.person.id}>
-                  <td>{player.person.fullName}</td>
+                  <td>
+                    <span
+                      className="clickable-name"
+                      onClick={() =>
+                        setSelectedPlayerId(Number(player.person.id))
+                      }
+                    >
+                      {player.person.fullName}
+                    </span>
+                    {gameSave && (
+                      <span className="save-indicator"> (SV, {seasonSaves})</span>
+                    )}
+                  </td>
                   <td>{stats.inningsPitched}</td>
                   <td>{stats.hits}</td>
                   <td>{stats.runs}</td>
@@ -560,35 +1407,22 @@ function App() {
                   <td>{stats.baseOnBalls}</td>
                   <td>{stats.strikeOuts}</td>
                   <td>{stats.homeRuns}</td>
-                  <td>{`${stats.pitchesThrown}-${stats.strikes}`}</td>
-                  <td>{stats.era}</td>
+                  <td>{`${stats.pitchesThrown}`}</td>
+                  <td>{stats.seasonEra}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-        <div className="supplemental-stats">
-          <div className="stat-line">
-            WP—{teamPitchingStats.wildPitches || 0}.
-          </div>
-          <div className="stat-line">BK—{teamPitchingStats.balks || 0}.</div>
-          <div className="stat-line">
-            HBP—{teamPitchingStats.hitBatsmen || 0}.
-          </div>
-          <div className="stat-line">
-            Pitches-Strikes—{teamPitchingStats.pitchesThrown || 0}-
-            {teamPitchingStats.strikes || 0}.
-          </div>
-        </div>
       </div>
     );
   };
 
-  const formatBattingLine = (player) => {
+  const formatBattingLine = (player: any) => {
     if (!player.gameEvents?.atBats) return '';
     return player.gameEvents.atBats
-      .sort((a, b) => a.inning - b.inning)
-      .map((ab) => {
+      .sort((a: any, b: any) => a.inning - b.inning)
+      .map((ab: any) => {
         switch (ab.event) {
           case 'Single':
             return '1B';
@@ -627,10 +1461,10 @@ function App() {
       .join(', ');
   };
 
-  const renderBattingStats = (team) => {
+  const renderBattingStats = (team: any) => {
     const players = Object.entries(team.players || {})
-      .filter(([_, p]) => p.stats?.batting?.plateAppearances > 0)
-      .map(([key, p]) => ({ key, ...p }));
+      .filter(([_, p]: [string, any]) => p.stats?.batting?.plateAppearances > 0)
+      .map(([key, p]: [string, any]) => ({ key, ...p }));
 
     return (
       <div className="team-stats">
@@ -645,7 +1479,6 @@ function App() {
               <th>RBI</th>
               <th>BB</th>
               <th>SO</th>
-              <th>LOB</th>
               <th>AVG</th>
               <th>OPS</th>
             </tr>
@@ -679,13 +1512,12 @@ function App() {
                     <td>{stats.rbi}</td>
                     <td>{stats.baseOnBalls}</td>
                     <td>{stats.strikeOuts}</td>
-                    <td>{stats.leftOnBase}</td>
-                    <td>{stats.avg}</td>
-                    <td>{stats.ops}</td>
+                    <td>{stats.seasonAvg}</td>
+                    <td>{stats.seasonOps}</td>
                   </tr>
                   {battingLine && (
                     <tr className="batting-line">
-                      <td colSpan="10">{battingLine}</td>
+                      <td colSpan={9}>{battingLine}</td>
                     </tr>
                   )}
                 </React.Fragment>
@@ -698,232 +1530,1126 @@ function App() {
     );
   };
 
+  const renderStandings = () => {
+    console.log('Standings data in render:', standings);
+    console.log('Standings length:', standings.length);
+    
+    if (!standings || standings.length === 0) {
+      return (
+        <div className="standings-container">
+          <p>Loading standings data...</p>
+        </div>
+      );
+    }
+    
+    // Group teams by league and division
+    const americanLeague = {
+      'American League East': standings.filter(team => team.leagueName === 'American League' && team.divisionName === 'American League East'),
+      'American League Central': standings.filter(team => team.leagueName === 'American League' && team.divisionName === 'American League Central'),
+      'American League West': standings.filter(team => team.leagueName === 'American League' && team.divisionName === 'American League West')
+    };
+    
+    const nationalLeague = {
+      'National League East': standings.filter(team => team.leagueName === 'National League' && team.divisionName === 'National League East'),
+      'National League Central': standings.filter(team => team.leagueName === 'National League' && team.divisionName === 'National League Central'),
+      'National League West': standings.filter(team => team.leagueName === 'National League' && team.divisionName === 'National League West')
+    };
+    
+    console.log('American League divisions:', americanLeague);
+    console.log('National League divisions:', nationalLeague);
+    
+    const renderDivisionTable = (divisionName: string, teams: any[]) => {
+      const sortedTeams = teams.sort((a, b) => a.divisionRank - b.divisionRank);
+      
+      return (
+        <div key={divisionName} className="division-standings">
+          <h3>{divisionName}</h3>
+          <table className="standings-table">
+            <thead>
+              <tr>
+                <th>Team</th>
+                <th>W</th>
+                <th>L</th>
+                <th>PCT</th>
+                <th>GB</th>
+                <th>WCGB</th>
+                <th>L10</th>
+                <th>STRK</th>
+                <th>RS</th>
+                <th>RA</th>
+                <th>DIFF</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedTeams.map((team: any) => (
+                <tr key={team.team.id} className={team.divisionLeader ? 'division-leader' : ''}>
+                  <td>
+                    <div className="team-cell">
+                      <img 
+                        src={getTeamLogoUrl(team.team.id)} 
+                        alt={team.team.name}
+                        className="standings-team-logo"
+                      />
+                      <span 
+                        className="clickable-team-name"
+                        onClick={() => fetchTeamRoster(team.team.id)}
+                      >
+                        {team.team.name}
+                      </span>
+                    </div>
+                  </td>
+                  <td>{team.wins}</td>
+                  <td>{team.losses}</td>
+                  <td>{team.winningPercentage}</td>
+                  <td>{team.gamesBack === '-' ? '-' : team.gamesBack}</td>
+                  <td>{team.wildCardGamesBack || '-'}</td>
+                  <td>
+                    {team.records?.splitRecords?.find((r: any) => r.type === 'lastTen')?.wins || 0}-{team.records?.splitRecords?.find((r: any) => r.type === 'lastTen')?.losses || 0}
+                  </td>
+                  <td>{team.streak?.streakCode || '-'}</td>
+                  <td>{team.runsScored || '-'}</td>
+                  <td>{team.runsAllowed || '-'}</td>
+                  <td className={team.runDifferential >= 0 ? 'positive-diff' : 'negative-diff'}>
+                    {team.runDifferential >= 0 ? '+' : ''}{team.runDifferential || 0}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    };
+
+    const renderWildCardStandings = () => {
+      const americanLeague = wildCardStandings.filter(team => team.leagueName === 'American League');
+      const nationalLeague = wildCardStandings.filter(team => team.leagueName === 'National League');
+
+      const renderWildCardTable = (leagueName: string, teams: any[]) => (
+        <div key={leagueName} className="wildcard-standings">
+          <h3>{leagueName} Wild Card</h3>
+          <table className="standings-table">
+            <thead>
+              <tr>
+                <th>Team</th>
+                <th>W</th>
+                <th>L</th>
+                <th>PCT</th>
+                <th>WCGB</th>
+                <th>L10</th>
+                <th>STRK</th>
+                <th>RS</th>
+                <th>RA</th>
+                <th>DIFF</th>
+              </tr>
+            </thead>
+            <tbody>
+              {teams.map((team: any, index: number) => (
+                <tr key={team.team.id} className={index < 3 ? 'wildcard-spot' : ''}>
+                  <td>
+                    <div className="team-cell">
+                      <img 
+                        src={getTeamLogoUrl(team.team.id)} 
+                        alt={team.team.name}
+                        className="standings-team-logo"
+                      />
+                      <span 
+                        className="clickable-team-name"
+                        onClick={() => fetchTeamRoster(team.team.id)}
+                      >
+                        {team.team.name}
+                      </span>
+                    </div>
+                  </td>
+                  <td>{team.wins}</td>
+                  <td>{team.losses}</td>
+                  <td>{team.winningPercentage}</td>
+                  <td>{team.wildCardGamesBack === '-' ? '-' : team.wildCardGamesBack}</td>
+                  <td>{team.lastTenGamesRecord}</td>
+                  <td>{team.streakCode}</td>
+                  <td>{team.runsScored}</td>
+                  <td>{team.runsAllowed}</td>
+                  <td>{team.runDifferential}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+
+      return (
+        <div className="wildcard-container">
+          <div className="leagues-container">
+            <div className="league-standings">
+              {renderWildCardTable('American League', americanLeague)}
+            </div>
+            
+            <div className="league-standings">
+              {renderWildCardTable('National League', nationalLeague)}
+            </div>
+          </div>
+        </div>
+      );
+    };
+    
+    return (
+      <div className="standings-container">
+        <h2>MLB Standings</h2>
+        
+        <div className="standings-tabs">
+          <button 
+            className={`standings-tab-button ${standingsTab === 'divisions' ? 'active' : ''}`}
+            onClick={() => setStandingsTab('divisions')}
+          >
+            Divisions
+          </button>
+          <button 
+            className={`standings-tab-button ${standingsTab === 'wildcard' ? 'active' : ''}`}
+            onClick={() => setStandingsTab('wildcard')}
+          >
+            Wild Card
+          </button>
+        </div>
+
+        {standingsTab === 'divisions' ? (
+          <div className="leagues-container">
+            <div className="league-standings">
+              <h2>American League</h2>
+              {Object.entries(americanLeague).map(([divisionName, teams]) => 
+                renderDivisionTable(divisionName, teams)
+              )}
+            </div>
+            
+            <div className="league-standings">
+              <h2>National League</h2>
+              {Object.entries(nationalLeague).map(([divisionName, teams]) => 
+                renderDivisionTable(divisionName, teams)
+              )}
+            </div>
+          </div>
+        ) : (
+          renderWildCardStandings()
+        )}
+      </div>
+    );
+  };
+
+  const renderRoster = () => {
+    if (!selectedTeamRoster || !teamRoster.length) {
+      return <div className="roster-container">No roster data available</div>;
+    }
+
+    // Group players by position groups
+    const positionGroups = {
+      'Pitchers': teamRoster.filter(p => p.position.abbreviation === 'P'),
+      'Catchers': teamRoster.filter(p => p.position.abbreviation === 'C'),
+      'Infielders': teamRoster.filter(p => ['1B', '2B', '3B', 'SS', 'IF'].includes(p.position.abbreviation)),
+      'Outfielders': teamRoster.filter(p => ['LF', 'CF', 'RF', 'OF'].includes(p.position.abbreviation)),
+      'Designated Hitters': teamRoster.filter(p => p.position.abbreviation === 'DH'),
+      'Other': teamRoster.filter(p => !['P', 'C', '1B', '2B', '3B', 'SS', 'IF', 'LF', 'CF', 'RF', 'OF', 'DH'].includes(p.position.abbreviation))
+    };
+
+    const groupOrder = ['Pitchers', 'Catchers', 'Infielders', 'Outfielders', 'Designated Hitters', 'Other'];
+    
+    return (
+      <div className="roster-container">
+        <div className="roster-header">
+          <div className="team-header">
+            <img 
+              src={getTeamLogoUrl(selectedTeamRoster.id)} 
+              alt={selectedTeamRoster.name}
+              className="roster-team-logo"
+            />
+            <h2>{selectedTeamRoster.name} Roster</h2>
+          </div>
+          <button 
+            className="back-button"
+            onClick={() => {
+              setActiveTab('standings');
+              setSelectedTeamRoster(null);
+              setTeamRoster([]);
+            }}
+          >
+            ← Back to Standings
+          </button>
+        </div>
+        
+        <div className="roster-positions">
+          {groupOrder.map(groupName => {
+            const players = positionGroups[groupName as keyof typeof positionGroups];
+            if (!players || players.length === 0) return null;
+            
+            return (
+              <div key={groupName} className="position-group">
+                <h3 className="position-title">{groupName}</h3>
+                <div className="players-grid">
+                  {players.map((player: any) => (
+                    <div 
+                      key={player.person.id} 
+                      className="roster-player-card"
+                      onClick={() => setSelectedPlayerId(player.person.id)}
+                    >
+                      <img
+                        src={`https://img.mlbstatic.com/mlb-photos/image/upload/v1/people/${player.person.id}/headshot/67/current.png`}
+                        alt={player.person.fullName}
+                        className="roster-player-photo"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                      <div className="roster-player-info">
+                        <div className="roster-player-name">{player.person.fullName}</div>
+                        <div className="roster-player-details">
+                          #{player.jerseyNumber} • {player.position.name}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   const renderMentaculous = () => {
-    const entries = Object.entries(mentaculous);
-    const totalPages = Math.ceil(entries.length / 32) || 1;
+    // Use the order array to sort mentaculous entries
+    const entries = order
+      .map(id => [id, mentaculous[id]] as [string, MentaculousPlayer])
+      .filter(([, entry]) => entry);
 
     const start = mentaculousPage * 32;
     const currentEntries = entries.slice(start, start + 32);
 
     return (
       <div className="mentaculous-container">
+        {renderPagination()}
+
         <div className="mentaculous-page notebook">
           <div className="notebook-title-line">
             <h2>Mentaculous</h2>
           </div>
-          <div className="notebook-lines">
+          <div className="notebook-lines" ref={linesContainerRef}>
             {Array.from({ length: 33 }).map((_, i) => {
-              if (i === 0)
-                return <div key="spacer" className="notebook-line empty" />;
-              const entry = currentEntries[i - 1];
-              if (entry) {
-                const [playerId, { playerName, homeRuns, teamName }] = entry;
-                const normalizeName = (name: string) =>
-                  Object.keys(teamAbbreviations).find(
-                    (key) => key.toLowerCase() === name.toLowerCase()
-                  );
-
-                const matchedKey = normalizeName(teamName);
-                const teamAbbr = matchedKey
-                  ? teamAbbreviations[matchedKey]
-                  : 'UNK';
-
+              if (i === 0) {
                 return (
+                  <div key="spacer" className="notebook-line empty" />
+                );
+              }
+
+              const entry = currentEntries[i - 1];
+              if (!entry) {
+                return (
+                  <div key={i} className="notebook-line empty" />
+                );
+              }
+
+              const [playerId, { playerName, homeRuns, teamName, teamId }] = entry;
+              const teamAbbr = getTeamAbbreviation(teamName);
+
+              return (
+                <div key={playerId} className="notebook-line.filled">
+                  {manualOverride && (
+                    <>
+                      {/* ↑↓ arrows */}
+                      <button className="arrow-btn" onClick={() => move(playerId, -10)} title="Move up 10">«</button>
+                      <button className="arrow-btn" onClick={() => move(playerId, -1)} title="Move up 1">↑</button>
+                      <button className="arrow-btn" onClick={() => move(playerId, +1)} title="Move down 1">↓</button>
+                      <button className="arrow-btn" onClick={() => move(playerId, +10)} title="Move down 10">»</button>
+                    </>
+                  )}
                   <div
-                    className={`notebook-line filled ${
-                      updatedPlayerId === parseInt(playerId)
-                        ? 'update-animate'
-                        : ''
-                    }`}
                     key={playerId}
+                    ref={(r) => { lineRefs.current[playerId] = r; }}
+                    className={`notebook-line filled ${updatedPlayerId === parseInt(playerId) ? 'update-animate' : ''
+                      }`}
                   >
                     <div className="notebook-left">
+                      {teamId && (
+                        <img
+                          className="team-logo"
+                          src={getTeamLogoUrl(Number(teamId))}
+                          alt={teamAbbr}
+                          width={24}
+                          height={24}
+                        />
+                      )}
                       <span className="notebook-abbr">{teamAbbr}</span>
                     </div>
-                    <div className="player-name">
-                      {playerName} –{' '}
-                      <span
-                        className={
-                          updatedPlayerId === parseInt(playerId)
-                            ? 'update-animate'
-                            : ''
-                        }
-                      >
-                        {homeRuns[homeRuns.length - 1]},
-                      </span>
-                    </div>
 
-                    <button
-                      className="view-button"
-                      onClick={() => setSelectedPlayerId(parseInt(playerId))}
-                    >
-                      View
-                    </button>
+                    <div className="player-info">
+                      <div className="player-name">
+                        <span className="mentaculous-font">{removeAccents(playerName)}</span> –{' '}
+                        <span
+                          className="hr-count-wrapper"
+                          onClick={() =>
+                            setTooltipOpenId((prev) =>
+                              prev === parseInt(playerId) ? null : parseInt(playerId)
+                            )
+                          }
+                        >
+                          {homeRuns.length}
+                          {tooltipOpenId === parseInt(playerId) && (
+                            <div className="tooltip-box">
+                              {homeRuns.map((hr: any, idx: number) => {
+                                const { date } = parseHrId(hr.hrId ?? hr);
+                                const formatted = new Date(date).toLocaleDateString(
+                                  undefined,
+                                  { month: 'short', day: 'numeric' }
+                                );
+                                const opponent = hr.opponent || 'Unknown';
+                                return (
+                                  <div key={idx} className="tooltip-line">
+                                    {formatted} {opponent}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="player-buttons">
+                        <button
+                          className="view-button"
+                          onClick={() => setSelectedPlayerId(parseInt(playerId))}
+                        >
+                          View
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                );
-              } else {
-                return <div key={i} className="notebook-line empty" />;
-              }
+                </div>
+              );
             })}
           </div>
         </div>
 
-        {/* Pagination Controls */}
-        <div className="pagination-controls">
-          <button
-            onClick={() => setMentaculousPage((prev) => Math.max(0, prev - 1))}
-            disabled={mentaculousPage === 0}
-          >
-            ← Prev
-          </button>
-          <span className="page-info">
-            Page {mentaculousPage + 1} of {totalPages}
-          </span>
-          <button
-            onClick={() =>
-              setMentaculousPage((prev) => Math.min(totalPages - 1, prev + 1))
-            }
-            disabled={mentaculousPage === totalPages - 1}
-          >
-            Next →
+        {renderPagination()}
+        <div className="manual-override-toggle">
+          <button onClick={() => setManualOverride(o => !o)}>
+            {manualOverride ? 'Disable Manual Override' : 'Enable Manual Override'}
           </button>
         </div>
       </div>
     );
   };
 
-  return (
-    <div className="app">
-      <div className="tab-header">
-        <button
-          className={activeTab === 'games' ? 'active' : ''}
-          onClick={() => setActiveTab('games')}
-        >
-          Games
-        </button>
-        <button
-          className={activeTab === 'mentaculous' ? 'active' : ''}
-          onClick={() => setActiveTab('mentaculous')}
-        >
-          Mentaculous
-        </button>
-      </div>
+  const [historicalPage, setHistoricalPage] = useState(0);
+  const [historicalTooltipId, setHistoricalTooltipId] = useState<string | null>(null);
 
-      {activeTab === 'games' && (
-        <>
-          <div className="date-selector">
-            <button onClick={() => changeDate(-1)}>←</button>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-            <button onClick={() => changeDate(1)}>→</button>
+  const renderHistorical = () => {
+    const { mentaculous: hist, mentorder: histOrder } = historical2025;
+    const entries = histOrder
+      .map(id => [id, hist[id]] as [string, any])
+      .filter(([, e]) => e);
+
+    const pageSize = 32;
+    const totalPages = Math.ceil(entries.length / pageSize);
+    const start = historicalPage * pageSize;
+    const currentEntries = entries.slice(start, start + pageSize);
+
+    return (
+      <div className="mentaculous-container">
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '8px 0' }}>
+          <button onClick={() => setHistoricalPage(p => Math.max(0, p - 1))} disabled={historicalPage === 0}>◀</button>
+          <span style={{ lineHeight: '32px' }}>Page {historicalPage + 1} / {totalPages}</span>
+          <button onClick={() => setHistoricalPage(p => Math.min(totalPages - 1, p + 1))} disabled={historicalPage >= totalPages - 1}>▶</button>
+        </div>
+
+        <div className="mentaculous-page notebook">
+          <div className="notebook-title-line">
+            <h2>Historical Mentaculi — 2025</h2>
           </div>
+          <div className="notebook-lines">
+            {Array.from({ length: 33 }).map((_, i) => {
+              if (i === 0) return <div key="spacer" className="notebook-line empty" />;
+              const entry = currentEntries[i - 1];
+              if (!entry) return <div key={i} className="notebook-line empty" />;
 
-          {!selectedGame && (
-            <div className="games-list">
-              {games.map((game) => {
-                const awayName = game.teams.away.team.name;
-                const homeName = game.teams.home.team.name;
+              const [playerId, { playerName, homeRuns, teamName, teamId }] = entry;
+              const teamAbbr = getTeamAbbreviation(teamName);
 
-                return (
-                  <div
-                    key={game.gamePk}
-                    className="game-item"
-                    onClick={() => {
-                      setSelectedGame(game);
-                      loadBoxScore(game.gamePk);
-                    }}
-                  >
-                    <div className="game-matchup">
-                      <div className="team-block">
-                        <div className="team-name">{awayName}</div>
-                      </div>
-                      <div className="vs-text">vs</div>
-                      <div className="team-block">
-                        <div className="team-name">{homeName}</div>
-                      </div>
-                    </div>
-                    <div className="game-status">
-                      {game.status.detailedState}
+              return (
+                <div key={playerId} className="notebook-line filled">
+                  <div className="notebook-left">
+                    {teamId && (
+                      <img
+                        className="team-logo"
+                        src={getTeamLogoUrl(Number(teamId))}
+                        alt={teamAbbr}
+                        width={24}
+                        height={24}
+                      />
+                    )}
+                    <span className="notebook-abbr">{teamAbbr}</span>
+                  </div>
+                  <div className="player-info">
+                    <div className="player-name">
+                      <span className="mentaculous-font">{removeAccents(playerName)}</span> –{' '}
+                      <span
+                        className="hr-count-wrapper"
+                        onClick={() => setHistoricalTooltipId(prev => prev === playerId ? null : playerId)}
+                      >
+                        {homeRuns.length}
+                        {historicalTooltipId === playerId && (
+                          <div className="tooltip-box">
+                            {homeRuns.map((hr: any, idx: number) => {
+                              const { date } = parseHrId(hr.hrId ?? hr);
+                              const formatted = new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                              return (
+                                <div key={idx} className="tooltip-line">
+                                  {formatted} {hr.opponent || 'Unknown'}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
-          {selectedGame && !boxScore && (
-            <div className="loading">Loading box score...</div>
-          )}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '8px 0' }}>
+          <button onClick={() => setHistoricalPage(p => Math.max(0, p - 1))} disabled={historicalPage === 0}>◀</button>
+          <span style={{ lineHeight: '32px' }}>Page {historicalPage + 1} / {totalPages}</span>
+          <button onClick={() => setHistoricalPage(p => Math.min(totalPages - 1, p + 1))} disabled={historicalPage >= totalPages - 1}>▶</button>
+        </div>
+      </div>
+    );
+  };
 
-          {selectedGame && boxScore && (
-            <div className="box-score">
+  const handleRemoveHomeRun = (playerId: string, hrId: string) => {
+    setMentaculous(prev => {
+      const prevPlayer = prev[playerId];
+      if (!prevPlayer) return prev;
+      const newHomeRuns = prevPlayer.homeRuns.filter(hr => hr.hrId !== hrId);
+      // If no HRs left, remove player from mentaculous and order
+      if (newHomeRuns.length === 0) {
+        const newMentaculous = { ...prev };
+        delete newMentaculous[playerId];
+        setOrder(o => o.filter(id => id !== playerId));
+        return newMentaculous;
+      }
+      return {
+        ...prev,
+        [playerId]: {
+          ...prevPlayer,
+          homeRuns: newHomeRuns,
+        },
+      };
+    });
+  };
+
+  // Add a home run to mentaculous for a player (restored async version with opponent lookup and navigation)
+  const handleAddToMentaculous = async (player: any, hr: any, teamName: string, teamId?: string) => {
+    const playerId = Number(player.person.id);
+    if (!hr?.hrId) return;
+
+    const hrDate = hr.hrId.split('_')[1];
+
+    // Try to find in existing games first
+    let matchingGame = games.find((g) => g.gameDate.startsWith(hrDate));
+
+    if (!matchingGame) {
+      try {
+        const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${hrDate}`);
+        const data = await res.json();
+
+        // Try to match the player's team to find the correct game
+        const gamesOnDate = data.dates?.[0]?.games ?? [];
+        matchingGame = gamesOnDate.find(
+          (g: any) =>
+            g.teams.away.team.name === teamName ||
+            g.teams.home.team.name === teamName
+        ) || null;
+      } catch (err) {
+        console.error('Failed to fetch game for HR date', hrDate, err);
+      }
+    }
+
+    let opponent = 'Unknown';
+    if (matchingGame) {
+      const isAway = matchingGame.teams.away.team.name === teamName;
+      opponent = isAway
+        ? `@ ${matchingGame.teams.home.team.name}`
+        : `vs ${matchingGame.teams.away.team.name}`;
+    }
+
+    setMentaculous(prev => {
+      // first grab whatever was there
+      const existing = prev[playerId];
+
+      // determine the base entry (either the old one, or a brand‐new one)
+      const base = existing ?? {
+        playerName: player.person.fullName,
+        teamName: teamName || "Unknown",
+        teamId,
+        homeRuns: [],
+        // only stamp here when there is no existing entry
+        addedAt: Date.now(),
+      };
+
+      // prevent duplicates
+      if (base.homeRuns.some((h: any) => h.hrId === hr.hrId)) {
+        return prev;
+      }
+
+      // now return a new object, preserving base.addedAt
+      return {
+        ...prev,
+        [playerId]: {
+          ...base,
+          teamId: base.teamId ?? teamId,
+          homeRuns: [...base.homeRuns, { hrId: hr.hrId, opponent }],
+          addedAt: base.addedAt,        // <-- keep the original
+        }
+      };
+    });
+
+    setOrder(prev => {
+      const strId = String(playerId);
+      return prev.includes(strId)
+        ? prev
+        : [...prev, strId];
+    });
+    // Calculate the new page for the player
+    setTimeout(() => {
+      setActiveTab('mentaculous');
+      setUpdatedPlayerId(playerId);
+
+      // Find the index of the player in the order
+      const strId = String(playerId);
+      const idx = order.includes(strId)
+        ? order.indexOf(strId)
+        : order.length; // If just added, will be at the end
+
+      const page = Math.floor(idx / 32);
+      setMentaculousPage(page);
+
+      setTimeout(() => setUpdatedPlayerId(null), 1000);
+    }, 0);
+  };
+
+  // Add this effect after games are loaded
+  useEffect(() => {
+    // Only fetch for in-progress games
+    const inProgressGames = games.filter(g => g.status.detailedState === 'In Progress');
+    if (inProgressGames.length === 0) return;
+    inProgressGames.forEach(game => {
+      fetch(`https://statsapi.mlb.com/api/v1.1/game/${game.gamePk}/feed/live`)
+        .then(res => res.json())
+        .then(data => {
+          const linescore = data.liveData?.linescore;
+          const currentPlay = data.liveData?.plays?.currentPlay;
+          setLiveInfo(prev => ({
+            ...prev,
+            [game.gamePk]: {
+              inning: linescore?.currentInning,
+              inningState: linescore?.inningState,
+              outs: linescore?.outs,
+              pitcher: currentPlay?.matchup?.pitcher?.fullName,
+              batter: currentPlay?.matchup?.batter?.fullName,
+              awayScore: linescore?.teams?.away?.runs,
+              homeScore: linescore?.teams?.home?.runs,
+            }
+          }));
+        });
+    });
+  }, [games]);
+
+  return (
+    <div className="app">
+      {!currentUser ? (
+        <UserSelection onUserSelect={setCurrentUser} />
+      ) : (
+        <>
+          <div className="header-controls">
+            {/* Main tabs for Games and Mentaculous */}
+            <div className="main-tabs">
               <button
-                onClick={() => {
-                  setSelectedGame(null);
-                  setBoxScore(null);
-                }}
+                className={activeTab === 'games' ? 'active' : ''}
+                onClick={() => setActiveTab('games')}
               >
-                ← Back to Games
+                Games
               </button>
-
-              <div className="view-toggle">
-                <button
-                  className={selectedTeam === 'away' ? 'active' : ''}
-                  onClick={() => setSelectedTeam('away')}
-                >
-                  {(() => {
-                    const teamName = boxScore.teams?.away?.team?.name;
-                    return (
-                      <>
-                        {teamName}
-                      </>
-                    );
-                  })()}
-                </button>
-                <button
-                  className={selectedTeam === 'home' ? 'active' : ''}
-                  onClick={() => setSelectedTeam('home')}
-                >
-                  {(() => {
-                    const teamName = boxScore.teams?.home?.team?.name;
-                    return (
-                      <>
-                        {teamName}
-                      </>
-                    );
-                  })()}
-                </button>
-              </div>
-
-              <div className="team-section">
-                {selectedTeam === 'away' && (
-                  <>
-                    {renderBattingStats(boxScore.teams?.away)}
-                    {renderPitchingStats(boxScore.teams?.away)}
-                  </>
-                )}
-                {selectedTeam === 'home' && (
-                  <>
-                    {renderBattingStats(boxScore.teams?.home)}
-                    {renderPitchingStats(boxScore.teams?.home)}
-                  </>
-                )}
-              </div>
+              <button
+                className={activeTab === 'mentaculous' ? 'active' : ''}
+                onClick={() => setActiveTab('mentaculous')}
+              >
+                Mentaculous ({currentUser})
+              </button>
             </div>
+            
+            {/* Dropdown menu for other options */}
+            <div className="menu-container">
+              <button 
+                className="menu-button"
+                onClick={() => setMenuOpen(!menuOpen)}
+              >
+                ☰ More
+              </button>
+              {menuOpen && (
+                <div className="menu-dropdown">
+                  <button
+                    className={activeTab === 'standings' ? 'active' : ''}
+                    onClick={() => {
+                      setActiveTab('standings');
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Standings
+                  </button>
+                  {selectedTeamRoster && (
+                    <button
+                      className={activeTab === 'roster' ? 'active' : ''}
+                      onClick={() => {
+                        setActiveTab('roster');
+                        setMenuOpen(false);
+                      }}
+                    >
+                      {selectedTeamRoster.name} Roster
+                    </button>
+                  )}
+                  {manualOverride && (
+                    <button
+                      className={activeTab === 'backend' ? 'active' : ''}
+                      onClick={() => {
+                        setActiveTab('backend');
+                        setMenuOpen(false);
+                      }}
+                    >
+                      Mentaculous Backend
+                    </button>
+                  )}
+                  <button
+                    className={activeTab === 'historical' ? 'active' : ''}
+                    onClick={() => {
+                      setActiveTab('historical');
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Historical Mentaculi
+                  </button>
+                  <button
+                    className="user-switch-btn"
+                    onClick={() => {
+                      setCurrentUser(null);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Switch User
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {activeTab === 'games' && (
+            <>
+              {!selectedGame && (
+                <>
+                  <div className="date-selector">
+                    <button onClick={() => changeDate(-1)}>←</button>
+                    <input
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                    />
+                    <button onClick={() => changeDate(1)}>→</button>
+                  </div>
+
+                  <div className="games-list">
+                    {games.map((game) => {
+                      const awayName = game.teams.away.team.name;
+                      const homeName = game.teams.home.team.name;
+                      const isFutureGame = game.status.detailedState === 'Scheduled' || game.status.detailedState === 'Pre-Game';
+                      const pitchers = pitcherInfo[game.gamePk];
+
+                      return (
+                        <div
+                          key={game.gamePk}
+                          className="game-item"
+                          onClick={() => {
+                            setSelectedGame(game);
+                            loadBoxScore(game.gamePk);
+                          }}
+                        >
+                          <div className="team-score-row">
+                            <div className="team-row">
+                              <img className="team-logo" src={getTeamLogoUrl(game.teams.away.team.id)} alt={awayName} />
+                              <div className="team-details">
+                                <div 
+                                  className="team-name clickable-team-name"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    fetchTeamRoster(game.teams.away.team.id);
+                                  }}
+                                >
+                                  {awayName}
+                                </div>
+                                <div className="team-record">
+                                  ({game.teams.away.leagueRecord.wins}–{game.teams.away.leagueRecord.losses})
+                                </div>
+                                {isFutureGame && (
+                                  <div className="pitcher-info">
+                                    {pitchers?.away ? (
+                                      <div 
+                                        className="pitcher-clickable"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedPlayerId(pitchers.away.id);
+                                        }}
+                                      >
+                                        <img 
+                                          src={`https://img.mlbstatic.com/mlb-photos/image/upload/v1/people/${pitchers.away.id}/headshot/67/current.png`}
+                                          alt={pitchers.away.fullName}
+                                          className="pitcher-photo"
+                                          onError={(e) => {
+                                            (e.target as HTMLImageElement).style.display = 'none';
+                                          }}
+                                        />
+                                        <div className="pitcher-details">
+                                          <div className="pitcher-name">{pitchers.away.fullName}</div>
+                                          {pitchers.away.stats && (
+                                            <div className="pitcher-stats">
+                                              ({pitchers.away.stats.wins}-{pitchers.away.stats.losses}, {pitchers.away.stats.era} ERA)
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="pitcher-details">
+                                        <div className="pitcher-name">TBD</div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="team-score">
+                              {game.status.detailedState === 'Final' ? game.teams.away.score : (game.status.detailedState === 'In Progress' ? (liveInfo[game.gamePk]?.awayScore ?? '-') : '')}
+                            </div>
+                          </div>
+
+                          <div className="team-score-row">
+                            <div className="team-row">
+                              <img className="team-logo" src={getTeamLogoUrl(game.teams.home.team.id)} alt={homeName} />
+                              <div className="team-details">
+                                <div 
+                                  className="team-name clickable-team-name"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    fetchTeamRoster(game.teams.home.team.id);
+                                  }}
+                                >
+                                  {homeName}
+                                </div>
+                                <div className="team-record">
+                                  ({game.teams.home.leagueRecord.wins}–{game.teams.home.leagueRecord.losses})
+                                </div>
+                                {isFutureGame && (
+                                  <div className="pitcher-info">
+                                    {pitchers?.home ? (
+                                      <div 
+                                        className="pitcher-clickable"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedPlayerId(pitchers.home.id);
+                                        }}
+                                      >
+                                        <img 
+                                          src={`https://img.mlbstatic.com/mlb-photos/image/upload/v1/people/${pitchers.home.id}/headshot/67/current.png`}
+                                          alt={pitchers.home.fullName}
+                                          className="pitcher-photo"
+                                          onError={(e) => {
+                                            (e.target as HTMLImageElement).style.display = 'none';
+                                          }}
+                                        />
+                                        <div className="pitcher-details">
+                                          <div className="pitcher-name">{pitchers.home.fullName}</div>
+                                          {pitchers.home.stats && (
+                                            <div className="pitcher-stats">
+                                              ({pitchers.home.stats.wins}-{pitchers.home.stats.losses}, {pitchers.home.stats.era} ERA)
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="pitcher-details">
+                                        <div className="pitcher-name">TBD</div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="team-score">
+                              {game.status.detailedState === 'Final' ? game.teams.home.score : (game.status.detailedState === 'In Progress' ? (liveInfo[game.gamePk]?.homeScore ?? '-') : '')}
+                            </div>
+                          </div>
+
+                          <div className="game-status">
+                            {isFutureGame ? 
+                              `${game.status.detailedState} - ${formatGameTime(game.gameDate)}` : 
+                              game.status.detailedState
+                            }
+                          </div>
+                          {game.status.detailedState === 'In Progress' && (
+                            <div className="game-live-info" style={{ marginTop: 8, fontSize: '0.95em', background: '#f3f6fa', borderRadius: 6, padding: 8 }}>
+                              <div>
+                                <strong>Inning:</strong> {liveInfo[game.gamePk]?.inningState ?? '-'} {liveInfo[game.gamePk]?.inning ?? '-'}
+                              </div>
+                              <div>
+                                <strong>Outs:</strong> {liveInfo[game.gamePk]?.outs ?? '-'}
+                              </div>
+                              <div>
+                                <strong>Pitcher:</strong> {liveInfo[game.gamePk]?.pitcher ?? '-'}
+                              </div>
+                              <div>
+                                <strong>Batter:</strong> {liveInfo[game.gamePk]?.batter ?? '-'}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              {selectedGame && !boxScore && (
+                <div className="loading">Loading box score...</div>
+              )}
+
+              {selectedGame && boxScore && (
+                <div className="box-score">
+                  <button
+                    onClick={() => {
+                      setSelectedGame(null);
+                      setBoxScore(null);
+                    }}
+                  >
+                    ← Back to Games
+                  </button>
+
+                  <div className="view-toggle">
+                    <button
+                      className={selectedTeam === 'away' ? 'active' : ''}
+                      onClick={() => setSelectedTeam('away')}
+                    >
+                      {(() => {
+                        const teamName = boxScore.teams?.away?.team?.name;
+                        return (
+                          <>
+                            {teamName}
+                          </>
+                        );
+                      })()}
+                    </button>
+                    <button
+                      className={selectedTeam === 'home' ? 'active' : ''}
+                      onClick={() => setSelectedTeam('home')}
+                    >
+                      {(() => {
+                        const teamName = boxScore.teams?.home?.team?.name;
+                        return (
+                          <>
+                            {teamName}
+                          </>
+                        );
+                      })()}
+                    </button>
+                  </div>
+
+                  <div className="team-section">
+                    {selectedTeam === 'away' && (
+                      <>
+                        {renderBattingStats(boxScore.teams?.away)}
+                        {renderPitchingStats(boxScore.teams?.away)}
+                      </>
+                    )}
+                    {selectedTeam === 'home' && (
+                      <>
+                        {renderBattingStats(boxScore.teams?.home)}
+                        {renderPitchingStats(boxScore.teams?.home)}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+          {activeTab === 'backend' && manualOverride && (
+            <div className="backend-tab">
+              <h2>Mentaculous Backend</h2>
+              {Object.entries(mentaculous).length === 0 ? (
+                <p>No entries yet.</p>
+              ) : (
+                Object.entries(mentaculous)
+                  .sort(([, a], [, b]) =>
+                    a.playerName.localeCompare(b.playerName))
+                  .map(([playerId, { playerName, homeRuns, teamName, teamId }]) => {
+                    // Find missing HR numbers
+                    const seasonTotal = homeRuns && homeRuns.length > 0 && homeRuns[0].seasonTotalHR
+                      ? homeRuns[0].seasonTotalHR
+                      : null;
+                    let maxMentaculousHR = 0;
+                    if (Array.isArray(homeRuns)) {
+                      maxMentaculousHR = Math.max(0, ...homeRuns.map((hr: HomeRun) => {
+                        if (hr.hrId) {
+                          const parts = hr.hrId.split('_');
+                          return Number(parts[2]) || 0;
+                        }
+                        return 0;
+                      }));
+                    }
+                    const seasonHRTotal = Math.max(seasonTotal || 0, maxMentaculousHR);
+                    const mentaculousHRNums = new Set(
+                      (homeRuns || []).map((hr: HomeRun) => {
+                        if (hr.hrId) {
+                          const parts = hr.hrId.split('_');
+                          return Number(parts[2]);
+                        }
+                        return null;
+                      }).filter((x: number | null): x is number => x != null)
+                    );
+                    const missingHRs: number[] = [];
+                    for (let n = 1; n <= seasonHRTotal; n++) {
+                      if (!mentaculousHRNums.has(n)) missingHRs.push(n);
+                    }
+                    // Use manualHRAdd state for this player
+                    const manualHRNum = manualHRAdd[playerId]?.num || '';
+                    const manualHRDate = manualHRAdd[playerId]?.date || '';
+                    return (
+                      <div key={playerId} className="backend-player-block">
+                        <h3>{playerName}</h3>
+                        <ul>
+                          {homeRuns.map((hr: HomeRun) => (
+                            <li key={hr.hrId} className="backend-hr-line">
+                              <code>{hr.hrId}</code>
+                              <button
+                                className="remove-button"
+                                style={{ marginLeft: '8px' }}
+                                onClick={() => handleRemoveHomeRun(playerId, hr.hrId)}
+                              >
+                                Delete
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                        <button
+                          className="remove-button"
+                          style={{ marginTop: '4px' }}
+                          onClick={() => {
+                            if (window.confirm(`Remove all ${playerName} entries?`)) {
+                              setMentaculous(prev => {
+                                const newMentaculous = { ...prev };
+                                delete newMentaculous[playerId];
+                                return newMentaculous;
+                              });
+                              setOrder(o => o.filter(id => id !== playerId));
+                            }
+                          }}
+                        >
+                          Delete All for {playerName}
+                        </button>
+                        {/* Show missing HRs and manual add UI */}
+                        {missingHRs.length > 0 && (
+                          <div className="missing-hrs-block">
+                            <div style={{ marginTop: 8, fontWeight: 'bold', color: 'red' }}>
+                              Missing HRs: {missingHRs.join(', ')}
+                            </div>
+                            <div style={{ marginTop: 4 }}>
+                              <label>
+                                HR Number:
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max={seasonHRTotal}
+                                  value={manualHRNum}
+                                  onChange={e => setManualHRAdd(prev => ({
+                                    ...prev,
+                                    [playerId]: { ...prev[playerId], num: e.target.value }
+                                  }))}
+                                  style={{ width: 50, marginLeft: 4 }}
+                                />
+                              </label>
+                              <label style={{ marginLeft: 8 }}>
+                                Date (YYYY-MM-DD):
+                                <input
+                                  type="date"
+                                  value={manualHRDate}
+                                  onChange={e => setManualHRAdd(prev => ({
+                                    ...prev,
+                                    [playerId]: { ...prev[playerId], date: e.target.value }
+                                  }))}
+                                  style={{ marginLeft: 4 }}
+                                />
+                              </label>
+                              <button
+                                style={{ marginLeft: 8 }}
+                                disabled={
+                                  !manualHRNum ||
+                                  !manualHRDate ||
+                                  !missingHRs.includes(Number(manualHRNum))
+                                }
+                                onClick={() => {
+                                  const hrId = `${playerId}_${manualHRDate}_${manualHRNum}`;
+                                  setMentaculous(prev => {
+                                    const prevPlayer = prev[playerId] || { homeRuns: [], playerName, teamName, teamId };
+                                    return {
+                                      ...prev,
+                                      [playerId]: {
+                                        ...prevPlayer,
+                                        homeRuns: [
+                                          ...prevPlayer.homeRuns,
+                                          { hrId, opponent: 'Manual', seasonTotalHR: seasonHRTotal },
+                                        ],
+                                        playerName,
+                                        teamName,
+                                        teamId,
+                                      },
+                                    };
+                                  });
+                                  if (!order.includes(playerId)) {
+                                    setOrder(o => [...o, playerId]);
+                                  }
+                                  setManualHRAdd(prev => ({ ...prev, [playerId]: { num: '', date: '' } }));
+                                }}
+                              >
+                                Add Missing HR
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+              )}
+            </div>
+          )}
+
+          {activeTab === 'standings' && renderStandings()}
+
+          {activeTab === 'roster' && renderRoster()}
+
+          {activeTab === 'mentaculous' && renderMentaculous()}
+
+          {activeTab === 'historical' && renderHistorical()}
+
+          {selectedPlayerId && (
+            <PlayerProfile
+              playerId={selectedPlayerId}
+              onClose={() => setSelectedPlayerId(null)}
+            />
           )}
         </>
-      )}
-
-      {activeTab === 'mentaculous' && renderMentaculous()}
-
-      {selectedPlayerId && (
-        <PlayerProfile
-          playerId={selectedPlayerId}
-          onClose={() => setSelectedPlayerId(null)}
-        />
       )}
     </div>
   );
