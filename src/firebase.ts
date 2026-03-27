@@ -1,43 +1,43 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBFxX5lb0SJXKIV78VQNVX664z3DoGhrRY",
-  authDomain: "mentaculous-3ff17.firebaseapp.com",
-  projectId: "mentaculous-3ff17",
-  storageBucket: "mentaculous-3ff17.firebasestorage.app",
-  messagingSenderId: "439497001232",
-  appId: "1:439497001232:web:bdf8702c1264d9b9fdbd95",
-};
-
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, 'default');
+const PROJECT_ID = 'mentaculous-3ff17';
+const BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/mentaculous_2026`;
 
 export async function fetchFromFirebase(userId: string): Promise<{ mentaculous: Record<string, any> | null; mentorder: string[] | null; updatedAt: string | null }> {
-  const docRef = doc(db, 'mentaculous_2026', userId);
-  const snap = await getDoc(docRef);
-  if (!snap.exists()) return { mentaculous: null, mentorder: null, updatedAt: null };
+  const res = await fetch(`${BASE_URL}/${encodeURIComponent(userId)}`);
+  if (!res.ok) return { mentaculous: null, mentorder: null, updatedAt: null };
 
-  const data = snap.data();
-  let mentaculous: any = data.mentaculous;
-  let mentorder: any = data.mentorder;
-  const updatedAt: string | null = data.updatedAt || null;
+  const data = await res.json();
+  const fields = data.fields || {};
 
-  if (typeof mentaculous === 'string') {
-    try { mentaculous = JSON.parse(mentaculous); } catch { mentaculous = {}; }
+  let mentaculous: any = null;
+  let mentorder: any = null;
+  let updatedAt: string | null = null;
+
+  if (fields.mentaculous?.stringValue) {
+    try { mentaculous = JSON.parse(fields.mentaculous.stringValue); } catch { mentaculous = {}; }
   }
-  if (typeof mentorder === 'string') {
-    try { mentorder = JSON.parse(mentorder); } catch { mentorder = []; }
+  if (fields.mentorder?.stringValue) {
+    try { mentorder = JSON.parse(fields.mentorder.stringValue); } catch { mentorder = []; }
+  }
+  if (fields.updatedAt?.stringValue) {
+    updatedAt = fields.updatedAt.stringValue;
   }
 
   return { mentaculous: mentaculous || {}, mentorder: mentorder || [], updatedAt };
 }
 
 export async function saveToFirebase(userId: string, mentaculousData: Record<string, any>, orderData: string[]): Promise<void> {
-  const docRef = doc(db, 'mentaculous_2026', userId);
-  await setDoc(docRef, {
-    mentaculous: JSON.stringify(mentaculousData),
-    mentorder: JSON.stringify(orderData),
-    updatedAt: new Date().toISOString(),
+  const now = new Date().toISOString();
+  const body = {
+    fields: {
+      mentaculous: { stringValue: JSON.stringify(mentaculousData) },
+      mentorder: { stringValue: JSON.stringify(orderData) },
+      updatedAt: { stringValue: now },
+    },
+  };
+  const res = await fetch(`${BASE_URL}/${encodeURIComponent(userId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
   });
+  if (!res.ok) throw new Error(`Firebase save failed: ${res.status}`);
 }
