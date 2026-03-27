@@ -320,11 +320,9 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
   }, [playerId]);
 
   return (
-    <div className="modal">
-      <div className="modal-content">
-        <button className="close-button" onClick={onClose}>
-          × Close
-        </button>
+    <div className="modal" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <button className="close-button" onClick={onClose}>×</button>
         {profile ? (
           <div className="player-profile">
             <img
