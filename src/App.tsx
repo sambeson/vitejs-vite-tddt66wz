@@ -2241,6 +2241,21 @@ function App() {
                   >
                     Switch User
                   </button>
+                  <button
+                    className="user-switch-btn"
+                    style={{ color: '#c0392b' }}
+                    onClick={() => {
+                      if (!currentUser) return;
+                      if (!window.confirm('Clear all local data for this user? (Firebase data is unaffected)')) return;
+                      localStorage.removeItem(`mentaculous_${currentUser}`);
+                      localStorage.removeItem(`mentaculousOrder_${currentUser}`);
+                      localStorage.removeItem(`mentaculousUpdatedAt_${currentUser}`);
+                      setMenuOpen(false);
+                      window.location.reload();
+                    }}
+                  >
+                    Clear Local Cache
+                  </button>
                 </div>
               )}
             </div>
