@@ -756,6 +756,18 @@ function App() {
     return () => clearTimeout(timer);
   }, [mentaculous, order, dataLoaded, currentUser]);
 
+  // Save immediately when app goes to background or closes (handles mobile force-close)
+  useEffect(() => {
+    if (!dataLoaded || !currentUser) return;
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        saveToFirebase(currentUser, mentaculous, order).catch(() => {});
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [mentaculous, order, dataLoaded, currentUser]);
+
   useEffect(() => {
     fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`)
       .then((res) => res.json())
