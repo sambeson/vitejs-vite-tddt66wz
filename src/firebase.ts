@@ -1,5 +1,5 @@
 const PROJECT_ID = 'mentaculous-3ff17';
-const API_KEY = 'AIzaSyBFxX5lb0SJXKIV78VQNVX664z3DoGhrRY';
+const API_KEY = import.meta.env.VITE_FIREBASE_API_KEY as string;
 const BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/mentaculous_2026`;
 
 export async function fetchFromFirebase(userId: string): Promise<{ mentaculous: Record<string, any> | null; mentorder: string[] | null; updatedAt: string | null }> {
