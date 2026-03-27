@@ -2514,7 +2514,7 @@ function App() {
                               </div>
                             </div>
                           )}
-                          {(totalForGame !== undefined || addedForGame > 0) && (
+                          {!isFutureGame && (totalForGame !== undefined || addedForGame > 0) && (
                             <div className={`hr-ticker${totalForGame !== undefined && addedForGame >= totalForGame ? ' hr-ticker-complete' : ''}`}>
                               {totalForGame !== undefined
                                 ? (addedForGame >= totalForGame ? 'complete' : `${addedForGame}/${totalForGame}`)
