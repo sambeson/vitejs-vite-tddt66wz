@@ -875,10 +875,10 @@ function App() {
 
         // Fetch both AL and NL standings separately (regular season and wild card)
         const [alResponse, nlResponse, alWildCardResponse, nlWildCardResponse] = await Promise.all([
-          fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=103&season=2025&standingsTypes=regularSeason'),
-          fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=104&season=2025&standingsTypes=regularSeason'),
-          fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=103&season=2025&standingsTypes=wildCard'),
-          fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=104&season=2025&standingsTypes=wildCard')
+          fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=103&season=2026&standingsTypes=regularSeason'),
+          fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=104&season=2026&standingsTypes=regularSeason'),
+          fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=103&season=2026&standingsTypes=wildCard'),
+          fetch('https://statsapi.mlb.com/api/v1/standings?leagueId=104&season=2026&standingsTypes=wildCard')
         ]);
         
         const [alData, nlData, alWildCardData, nlWildCardData] = await Promise.all([
