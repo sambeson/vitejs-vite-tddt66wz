@@ -742,30 +742,14 @@ function App() {
     });
   }
 
-  // Autosave to Firebase and localStorage after mentaculous/order changes, but only after dataLoaded
-  // localStorage (+ timestamp) updates immediately; Firebase write is debounced to avoid excessive writes
+  // Autosave to Firebase and localStorage on every change — no debounce to prevent data loss on force-close
   useEffect(() => {
     if (!dataLoaded || !currentUser) return;
     const now = new Date().toISOString();
     localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(mentaculous));
     localStorage.setItem(`mentaculousOrder_${currentUser}`, JSON.stringify(order));
     localStorage.setItem(`mentaculousUpdatedAt_${currentUser}`, now);
-    const timer = setTimeout(() => {
-      saveToFirebase(currentUser, mentaculous, order).catch(e => console.error('[Autosave] Firebase save failed:', e));
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [mentaculous, order, dataLoaded, currentUser]);
-
-  // Save immediately when app goes to background or closes (handles mobile force-close)
-  useEffect(() => {
-    if (!dataLoaded || !currentUser) return;
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        saveToFirebase(currentUser, mentaculous, order).catch(() => {});
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    saveToFirebase(currentUser, mentaculous, order).catch(e => console.error('[Autosave] Firebase save failed:', e));
   }, [mentaculous, order, dataLoaded, currentUser]);
 
   useEffect(() => {
