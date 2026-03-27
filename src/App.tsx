@@ -2128,6 +2128,11 @@ function App() {
       const page = Math.floor(idx / 32);
       setMentaculousPage(page);
 
+      // After page renders, scroll the player into view
+      setTimeout(() => {
+        lineRefs.current[strId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+
       setTimeout(() => setUpdatedPlayerId(null), 1000);
     }, 0);
   };
