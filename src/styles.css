@@ -9,6 +9,7 @@
   font-family: 'MentaculousFont';
   src: url('/Myfont-Regular.otf') format('opentype');
   font-weight: normal;
+  font-display: block;
   font-style: normal;
   font-display: swap;
 }
@@ -21,7 +22,7 @@
   font-family: 'MentaculousFont', 'Shadows Into Light', cursive, sans-serif;
   /* Add any additional styling for mentaculous names */
   font-weight: bolder;
-  font-size: 16px;
+  font-size: 14px;
   color: #161615d7; /* Gold color to make it stand out */
 }
 
@@ -157,6 +158,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  overflow-x: hidden;
   background-color: #f8f9fa;
 }
 
@@ -424,6 +426,8 @@
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   padding: 20px;
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 /* Toggle between hitting and pitching stats */
@@ -446,7 +450,7 @@
 }
 
 .stats-table {
-  width: 70%;
+  width: auto;
   border-collapse: collapse;
   margin: 20px 0;
   font-size: 10px;
@@ -457,12 +461,12 @@
   color: #495057;
   font-weight: 600;
   text-align: left;
-  padding: 12px;
+  padding: 8px 6px;
   border-bottom: 2px solid #dee2e6;
 }
 
 .stats-table td {
-  padding: 12px;
+  padding: 8px 6px;
   border-bottom: 1px solid #e9ecef;
   color: #212529;
 }
@@ -478,7 +482,7 @@
 }
 
 .batting-line td {
-  padding: 1px 12px 7px;
+  padding: 1px 6px 7px;
   font-family: 'SF Mono', Monaco, Menlo, Consolas, 'Liberation Mono',
     'Courier New', monospace;
 }
@@ -996,31 +1000,44 @@ button:focus {
 .page-info {
   font-size: 14px;
 }
-@keyframes eraseNumber {
-  0% {
-    background-color: #fff8e1;
-    color: #111;
-  }
-  100% {
-    color: transparent;
-    text-shadow: 0 0 2px #000;
-  }
+/* ── New player: name writes in left-to-right ── */
+@keyframes writeInName {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0%   0 0); }
 }
 
-@keyframes drawNumber {
-  0% {
-    color: transparent;
-    text-shadow: 0 0 2px #000;
-  }
-  100% {
-    color: #111;
-    text-shadow: none;
-  }
+.new-player-animate .player-name {
+  animation: writeInName 2s cubic-bezier(0.3, 0, 0.7, 1) forwards;
 }
 
-.update-animate .player-name span {
-  animation: eraseNumber 0.5s ease-out forwards, drawNumber 0.8s ease-in forwards;
-  animation-delay: 0s, 0.5s;
+/* ── Existing player: scratch old count, write new count ── */
+@keyframes eraseOld {
+  0%   { opacity: 1;   filter: blur(0px);  }
+  30%  { opacity: 0.8; filter: blur(1px);  }
+  60%  { opacity: 0.4; filter: blur(2.5px); }
+  100% { opacity: 0;   filter: blur(4px);  }
+}
+
+@keyframes writeNewCount {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0%   0 0); }
+}
+
+.hr-count-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.count-old {
+  display: inline-block;
+  animation: eraseOld 0.9s ease-in forwards;
+}
+
+.count-new {
+  display: inline-block;
+  position: absolute;
+  left: 0;
+  animation: writeNewCount 0.6s ease-out 0.9s both;
 }
 
 .remove-button {

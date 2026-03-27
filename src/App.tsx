@@ -589,6 +589,8 @@ function App() {
   const currentUserRef = useRef<string | null>(null);
   const [mentaculousPage, setMentaculousPage] = useState(0)
   const [updatedPlayerId, setUpdatedPlayerId] = useState<number | null>(null);
+  const [newPlayerId, setNewPlayerId] = useState<number | null>(null);
+  const prevCountRef = useRef<Record<string, number>>({});
   const [tooltipOpenId, setTooltipOpenId] = useState<number | null>(null);
   const [order, setOrder] = useState<string[]>([]);
   const lineRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -1856,8 +1858,7 @@ function App() {
                   <div
                     key={playerId}
                     ref={(r) => { lineRefs.current[playerId] = r; }}
-                    className={`notebook-line filled ${updatedPlayerId === parseInt(playerId) ? 'update-animate' : ''
-                      }`}
+                    className={`notebook-line filled ${updatedPlayerId === parseInt(playerId) ? 'update-animate' : ''} ${newPlayerId === parseInt(playerId) ? 'new-player-animate' : ''}`}
                   >
                     <div className="notebook-left">
                       {teamId && (
@@ -1874,7 +1875,7 @@ function App() {
 
                     <div className="player-info">
                       <div className="player-name">
-                        <span className="mentaculous-font">{removeAccents(playerName)}</span> –{' '}
+                        <span className="mentaculous-font" style={{ cursor: 'pointer' }} onClick={() => setSelectedPlayerId(parseInt(playerId))}>{removeAccents(playerName)}</span> –{' '}
                         <span
                           className="hr-count-wrapper"
                           onClick={() =>
@@ -1883,7 +1884,12 @@ function App() {
                             )
                           }
                         >
-                          {homeRuns.length}
+                          {updatedPlayerId === parseInt(playerId) ? (
+                            <>
+                              <span className="count-old">{prevCountRef.current[playerId]}</span>
+                              <span className="count-new">{homeRuns.length}</span>
+                            </>
+                          ) : homeRuns.length}
                           {tooltipOpenId === parseInt(playerId) && (
                             <div className="tooltip-box">
                               {homeRuns.map((hr: any, idx: number) => {
@@ -1905,12 +1911,6 @@ function App() {
                       </div>
 
                       <div className="player-buttons">
-                        <button
-                          className="view-button"
-                          onClick={() => setSelectedPlayerId(parseInt(playerId))}
-                        >
-                          View
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -2075,6 +2075,8 @@ function App() {
         : `vs ${matchingGame.teams.away.team.name}`;
     }
 
+    prevCountRef.current[String(playerId)] = mentaculous[String(playerId)]?.homeRuns?.length ?? 0;
+
     setMentaculous(prev => {
       // first grab whatever was there
       const existing = prev[playerId];
@@ -2113,16 +2115,20 @@ function App() {
         : [...prev, strId];
     });
     // Calculate the new page for the player
+    const strId = String(playerId);
+    const isNewPlayer = !order.includes(strId);
     setTimeout(() => {
       setActiveTab('mentaculous');
-      setUpdatedPlayerId(playerId);
 
-      // Find the index of the player in the order
-      const strId = String(playerId);
-      const idx = order.includes(strId)
-        ? order.indexOf(strId)
-        : order.length; // If just added, will be at the end
+      if (isNewPlayer) {
+        setNewPlayerId(playerId);
+        setTimeout(() => setNewPlayerId(null), 2100);
+      } else {
+        setUpdatedPlayerId(playerId);
+        setTimeout(() => setUpdatedPlayerId(null), 1600);
+      }
 
+      const idx = isNewPlayer ? order.length : order.indexOf(strId);
       const page = Math.floor(idx / 32);
       setMentaculousPage(page);
 
@@ -2130,8 +2136,6 @@ function App() {
       setTimeout(() => {
         lineRefs.current[strId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 100);
-
-      setTimeout(() => setUpdatedPlayerId(null), 1000);
     }, 0);
   };
 
