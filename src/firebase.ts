@@ -1,4 +1,5 @@
 const PROJECT_ID = 'mentaculous-3ff17';
+const API_KEY = 'AIzaSyBFxX5lb0SJXKIV78VQNVX664z3DoGhrRY';
 const BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/mentaculous_2026`;
 
 export async function fetchFromFirebase(userId: string): Promise<{ mentaculous: Record<string, any> | null; mentorder: string[] | null; updatedAt: string | null }> {
@@ -34,7 +35,7 @@ export async function saveToFirebase(userId: string, mentaculousData: Record<str
       updatedAt: { stringValue: now },
     },
   };
-  const res = await fetch(`${BASE_URL}/${encodeURIComponent(userId)}`, {
+  const res = await fetch(`${BASE_URL}/${encodeURIComponent(userId)}?key=${API_KEY}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
