@@ -52,6 +52,39 @@ function getTeamLogoUrl(teamId: number) {
   return `https://www.mlbstatic.com/team-logos/${teamId}.svg`;
 }
 
+const MLB_TEAM_COLORS: Record<number, { primary: string; text: string }> = {
+  108: { primary: '#BA0021', text: '#fff' }, // Angels
+  109: { primary: '#A71930', text: '#fff' }, // Diamondbacks
+  110: { primary: '#DF4601', text: '#fff' }, // Orioles
+  111: { primary: '#BD3039', text: '#fff' }, // Red Sox
+  112: { primary: '#0E3386', text: '#fff' }, // Cubs
+  113: { primary: '#C6011F', text: '#fff' }, // Reds
+  114: { primary: '#00385D', text: '#fff' }, // Guardians
+  115: { primary: '#33006F', text: '#fff' }, // Rockies
+  116: { primary: '#0C2340', text: '#FA4616' }, // Tigers
+  117: { primary: '#002D62', text: '#EB6E1F' }, // Astros
+  118: { primary: '#004687', text: '#C09A5B' }, // Royals
+  119: { primary: '#005A9C', text: '#fff' }, // Dodgers
+  120: { primary: '#AB0003', text: '#fff' }, // Nationals
+  121: { primary: '#002D72', text: '#FF5910' }, // Mets
+  133: { primary: '#003831', text: '#EFB21E' }, // Athletics
+  134: { primary: '#27251F', text: '#FDB827' }, // Pirates
+  135: { primary: '#2F241D', text: '#FFC425' }, // Padres
+  136: { primary: '#0C2C56', text: '#005C5C' }, // Mariners
+  137: { primary: '#27251F', text: '#FD5A1E' }, // Giants
+  138: { primary: '#C41E3A', text: '#fff' }, // Cardinals
+  139: { primary: '#092C5C', text: '#8FBCE6' }, // Rays
+  140: { primary: '#003278', text: '#fff' }, // Rangers
+  141: { primary: '#134A8E', text: '#fff' }, // Blue Jays
+  142: { primary: '#002B5C', text: '#D31145' }, // Twins
+  143: { primary: '#E81828', text: '#fff' }, // Phillies
+  144: { primary: '#CE1141', text: '#fff' }, // Braves
+  145: { primary: '#27251F', text: '#fff' }, // White Sox
+  146: { primary: '#00A3E0', text: '#fff' }, // Marlins
+  147: { primary: '#003087', text: '#fff' }, // Yankees
+  158: { primary: '#12284B', text: '#FFC52F' }, // Brewers
+};
+
 function getTeamAbbreviation(name: string = ''): string {
   return teamAbbreviationMap[name.trim().toLowerCase()] || 'UNK';
 }
@@ -579,6 +612,7 @@ function App() {
   const [games, setGames] = useState<any[]>([]);
   const [selectedGame, setSelectedGame] = useState(null);
   const [boxScore, setBoxScore] = useState<any>(null);
+  const [gameHRTotals, setGameHRTotals] = useState<Record<number, number>>({});
   const [selectedTeam, setSelectedTeam] = useState('away');
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('games');
@@ -591,6 +625,7 @@ function App() {
   const [updatedPlayerId, setUpdatedPlayerId] = useState<number | null>(null);
   const [newPlayerId, setNewPlayerId] = useState<number | null>(null);
   const prevCountRef = useRef<Record<string, number>>({});
+  const fetchedHRTotalsRef = useRef<Set<number>>(new Set());
   const [tooltipOpenId, setTooltipOpenId] = useState<number | null>(null);
   const [order, setOrder] = useState<string[]>([]);
   const lineRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -651,7 +686,7 @@ function App() {
       let parsed: Record<string, any> = {};
       let orderArr: string[] = [];
       try {
-        const { mentaculous: fbMentaculous, mentorder: fbOrder, updatedAt: fbUpdatedAt } = await fetchFromFirebase(currentUser);
+        const { mentaculous: fbMentaculous, mentorder: fbOrder, updatedAt: fbUpdatedAt } = await fetchFromFirebase(currentUser!);
         const lsUpdatedAt = localStorage.getItem(`mentaculousUpdatedAt_${currentUser}`);
 
         // Use localStorage when it has a newer timestamp than Firebase — this
@@ -758,6 +793,29 @@ function App() {
       .then((data) => setGames(data.dates[0]?.games || []))
       .catch((error) => console.error('Error fetching schedule:', error));
   }, [date]);
+
+  // Pre-fetch HR totals for Final/In-Progress games so the ticker shows without clicking
+  useEffect(() => {
+    const completedGames = games.filter(g =>
+      g.status.detailedState === 'Final' || g.status.detailedState === 'In Progress'
+    );
+    completedGames.forEach(async (game) => {
+      if (fetchedHRTotalsRef.current.has(game.gamePk)) return;
+      fetchedHRTotalsRef.current.add(game.gamePk);
+      try {
+        const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${game.gamePk}/boxscore`);
+        const data = await res.json();
+        const allPlayers = [
+          ...Object.values(data?.teams?.away?.players ?? {}),
+          ...Object.values(data?.teams?.home?.players ?? {}),
+        ] as any[];
+        const total = allPlayers.reduce((sum: number, p: any) => sum + (p.stats?.batting?.homeRuns ?? 0), 0);
+        setGameHRTotals(prev => ({ ...prev, [game.gamePk]: total }));
+      } catch {
+        fetchedHRTotalsRef.current.delete(game.gamePk); // allow retry
+      }
+    });
+  }, [games]);
 
   // Fetch starting pitcher information for future games
   useEffect(() => {
@@ -980,7 +1038,7 @@ function App() {
   };
 
 
-  const loadBoxScore = async (gamePk: number) => {
+  const loadBoxScore = async (gamePk: number, gameDate?: string) => {
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/boxscore`);
       const boxScore = await res.json();
@@ -989,7 +1047,7 @@ function App() {
       const homePlayers = boxScore?.teams?.home?.players ?? {};
       const allPlayers = [...Object.values(awayPlayers), ...Object.values(homePlayers)];
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = gameDate ? gameDate.slice(0, 10) : new Date().toISOString().split('T')[0];
 
       // Step 1: Filter players who hit a home run (season total increased)
       const playersWithHRs = allPlayers.filter((p: any) => {
@@ -1157,6 +1215,14 @@ function App() {
       } catch (error) {
         console.warn('❌ Could not fetch play-by-play data for pitching order:', error);
       }
+      // Count total HRs in this game from box score batting stats
+      const allPlayers2 = [
+        ...Object.values(boxScore?.teams?.away?.players ?? {}),
+        ...Object.values(boxScore?.teams?.home?.players ?? {}),
+      ] as any[];
+      const totalGameHRs = allPlayers2.reduce((sum: number, p: any) => sum + (p.stats?.batting?.homeRuns ?? 0), 0);
+      setGameHRTotals(prev => ({ ...prev, [gamePk]: totalGameHRs }));
+
       setBoxScore(boxScore);
     } catch (error) {
       console.error('Error loading box score:', error);
@@ -1471,7 +1537,6 @@ function App() {
               <th>Player</th>
               <th>AB</th>
               <th>R</th>
-              <th>H</th>
               <th>RBI</th>
               <th>BB</th>
               <th>SO</th>
@@ -1502,9 +1567,8 @@ function App() {
                         </span>
                       )}
                     </td>
-                    <td>{stats.atBats}</td>
+                    <td>{stats.hits}/{stats.atBats}</td>
                     <td>{stats.runs}</td>
-                    <td>{stats.hits}</td>
                     <td>{stats.rbi}</td>
                     <td>{stats.baseOnBalls}</td>
                     <td>{stats.strikeOuts}</td>
@@ -1513,7 +1577,7 @@ function App() {
                   </tr>
                   {battingLine && (
                     <tr className="batting-line">
-                      <td colSpan={9}>{battingLine}</td>
+                      <td colSpan={8}>{battingLine}</td>
                     </tr>
                   )}
                 </React.Fragment>
@@ -2047,8 +2111,11 @@ function App() {
 
     const hrDate = hr.hrId.split('_')[1];
 
-    // Try to find in existing games first
-    let matchingGame = games.find((g) => g.gameDate.startsWith(hrDate));
+    // Try to find in existing games first — match both date AND team
+    let matchingGame = games.find((g) =>
+      g.gameDate.startsWith(hrDate) &&
+      (g.teams.away.team.name === teamName || g.teams.home.team.name === teamName)
+    );
 
     if (!matchingGame) {
       try {
@@ -2288,6 +2355,19 @@ function App() {
                       const homeName = game.teams.home.team.name;
                       const isFutureGame = game.status.detailedState === 'Scheduled' || game.status.detailedState === 'Pre-Game';
                       const pitchers = pitcherInfo[game.gamePk];
+                      const gameDate = game.gameDate.slice(0, 10);
+                      const addedForGame = Object.values(mentaculous).reduce((sum: number, entry: any) => {
+                        const teamInGame = entry.teamName === awayName || entry.teamName === homeName;
+                        if (!teamInGame) return sum;
+                        const otherTeam = entry.teamName === awayName ? homeName : awayName;
+                        return sum + (entry.homeRuns ?? []).filter((hr: any) => {
+                          const { date } = parseHrId(hr.hrId ?? '');
+                          const dateMatches = date === gameDate;
+                          const opponentMatches = hr.opponent?.includes(otherTeam);
+                          return dateMatches || opponentMatches;
+                        }).length;
+                      }, 0);
+                      const totalForGame = gameHRTotals[game.gamePk];
 
                       return (
                         <div
@@ -2295,7 +2375,7 @@ function App() {
                           className="game-item"
                           onClick={() => {
                             setSelectedGame(game);
-                            loadBoxScore(game.gamePk);
+                            loadBoxScore(game.gamePk, game.gameDate);
                           }}
                         >
                           <div className="team-score-row">
@@ -2434,6 +2514,13 @@ function App() {
                               </div>
                             </div>
                           )}
+                          {(totalForGame !== undefined || addedForGame > 0) && (
+                            <div className={`hr-ticker${totalForGame !== undefined && addedForGame >= totalForGame ? ' hr-ticker-complete' : ''}`}>
+                              {totalForGame !== undefined
+                                ? (addedForGame >= totalForGame ? 'complete' : `${addedForGame}/${totalForGame}`)
+                                : `${addedForGame} HR${addedForGame !== 1 ? 's' : ''}`}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -2457,32 +2544,23 @@ function App() {
                   </button>
 
                   <div className="view-toggle">
-                    <button
-                      className={selectedTeam === 'away' ? 'active' : ''}
-                      onClick={() => setSelectedTeam('away')}
-                    >
-                      {(() => {
-                        const teamName = boxScore.teams?.away?.team?.name;
-                        return (
-                          <>
-                            {teamName}
-                          </>
-                        );
-                      })()}
-                    </button>
-                    <button
-                      className={selectedTeam === 'home' ? 'active' : ''}
-                      onClick={() => setSelectedTeam('home')}
-                    >
-                      {(() => {
-                        const teamName = boxScore.teams?.home?.team?.name;
-                        return (
-                          <>
-                            {teamName}
-                          </>
-                        );
-                      })()}
-                    </button>
+                    {(['away', 'home'] as const).map(side => {
+                      const team = boxScore.teams?.[side]?.team;
+                      const colors = MLB_TEAM_COLORS[team?.id] ?? { primary: '#041e42', text: '#fff' };
+                      const isActive = selectedTeam === side;
+                      return (
+                        <button
+                          key={side}
+                          onClick={() => setSelectedTeam(side)}
+                          style={isActive
+                            ? { backgroundColor: colors.primary, color: colors.text, borderColor: colors.primary }
+                            : { backgroundColor: 'transparent', color: colors.primary, borderColor: colors.primary }
+                          }
+                        >
+                          {team?.name}
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <div className="team-section">
