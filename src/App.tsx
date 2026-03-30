@@ -2364,9 +2364,7 @@ function App() {
                         const otherTeam = entry.teamName === awayName ? homeName : awayName;
                         return sum + (entry.homeRuns ?? []).filter((hr: any) => {
                           const { date } = parseHrId(hr.hrId ?? '');
-                          const dateMatches = date === gameDate;
-                          const opponentMatches = hr.opponent?.includes(otherTeam);
-                          return dateMatches || opponentMatches;
+                          return date === gameDate && hr.opponent?.includes(otherTeam);
                         }).length;
                       }, 0);
                       const totalForGame = gameHRTotals[game.gamePk];

@@ -282,9 +282,10 @@
 .modal-body {
   overflow-y: auto;
   overflow-x: hidden;
-  max-height: 90vh;
+  max-height: calc(90vh - 20px);
   padding: 1.5rem;
   padding-top: 2.75rem;
+  padding-bottom: 2rem;
 }
 
 .close-button {
