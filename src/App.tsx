@@ -174,7 +174,7 @@ function HomerEntry({
 
 export { HomerEntry };
 
-function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () => void }) {
+function PlayerProfile({ playerId, onClose, gameAbsStats }: { playerId: number; onClose: () => void; gameAbsStats?: { challenges: number; overturned: number } }) {
   const [profile, setProfile] = useState<any>(null);
   const [careerStats, setCareerStats] = useState<any>(null);
   const [seasonStats, setSeasonStats] = useState<{ hitting?: any[], pitching?: any[] }>({});
@@ -524,6 +524,13 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
               </div>
             )}
 
+            {gameAbsStats && gameAbsStats.challenges > 0 && (
+              <div className="transaction-history">
+                <h3>ABS Challenges</h3>
+                <p>{gameAbsStats.overturned}/{gameAbsStats.challenges} overturned ({Math.round(gameAbsStats.overturned / gameAbsStats.challenges * 100)}%)</p>
+              </div>
+            )}
+
             {/* Transaction History Section */}
             <div className="transaction-history">
               <h3>Transaction History</h3>
@@ -615,6 +622,7 @@ function App() {
   const [selectedGame, setSelectedGame] = useState(null);
   const [boxScore, setBoxScore] = useState<any>(null);
   const [gameHRTotals, setGameHRTotals] = useState<Record<number, number>>({});
+  const [absData, setAbsData] = useState<Record<number, {challenges: number, overturned: number}>>({});
   const [selectedTeam, setSelectedTeam] = useState('away');
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('games');
@@ -1225,6 +1233,30 @@ function App() {
       const totalGameHRs = allPlayers2.reduce((sum: number, p: any) => sum + (p.stats?.batting?.homeRuns ?? 0), 0);
       setGameHRTotals(prev => ({ ...prev, [gamePk]: totalGameHRs }));
 
+      // Fetch ABS challenge data from Baseball Savant
+      try {
+        const savantRes = await fetch(`https://baseballsavant.mlb.com/gf?game_pk=${gamePk}`);
+        const savantData = await savantRes.json();
+        if (savantData.hasAbs) {
+          const newAbsData: Record<number, {challenges: number, overturned: number}> = {};
+          for (const side of ['away_batters', 'home_batters'] as const) {
+            for (const pitches of Object.values(savantData[side] || {})) {
+              for (const pitch of pitches as any[]) {
+                if (pitch.is_abs_challenge && pitch.abs_challenge) {
+                  const id = pitch.abs_challenge.challenging_player_id;
+                  if (!newAbsData[id]) newAbsData[id] = { challenges: 0, overturned: 0 };
+                  newAbsData[id].challenges++;
+                  if (pitch.abs_challenge.is_overturned) newAbsData[id].overturned++;
+                }
+              }
+            }
+          }
+          setAbsData(newAbsData);
+        } else {
+          setAbsData({});
+        }
+      } catch { setAbsData({}); }
+
       setBoxScore(boxScore);
     } catch (error) {
       console.error('Error loading box score:', error);
@@ -1365,6 +1397,17 @@ function App() {
               SB— {steals.join('; ')}
             </div>
           )}
+          {(() => {
+            const absChallenges = Object.entries(allPlayers)
+              .filter(([_, p]: [string, any]) => absData[p.person.id]?.challenges > 0)
+              .map(([_, p]: [string, any]) => {
+                const abs = absData[p.person.id];
+                return `${getLastName(p.person)} ${abs.overturned}/${abs.challenges}`;
+              });
+            return absChallenges.length > 0 ? (
+              <div className="stat-line">ABS— {absChallenges.join('; ')}</div>
+            ) : null;
+          })()}
         </div>
 
         {team.baserunning && (
@@ -2743,6 +2786,7 @@ function App() {
             <PlayerProfile
               playerId={selectedPlayerId}
               onClose={() => setSelectedPlayerId(null)}
+              gameAbsStats={absData[selectedPlayerId]}
             />
           )}
         </>
