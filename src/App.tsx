@@ -605,6 +605,12 @@ function UserSelection({ onUserSelect }: { onUserSelect: (userId: string) => voi
           >
             Jalk
           </button>
+          <button
+            className="user-button mike"
+            onClick={() => onUserSelect('Mike')}
+          >
+            Mike
+          </button>
         </div>
       </div>
     </div>
@@ -623,6 +629,8 @@ function App() {
   const [boxScore, setBoxScore] = useState<any>(null);
   const [gameHRTotals, setGameHRTotals] = useState<Record<number, number>>({});
   const [absData, setAbsData] = useState<Record<number, {challenges: number, overturned: number}>>({});
+  const [absSeasonData, setAbsSeasonData] = useState<Record<string, {challenges: number, overturned: number}>>({});
+  const absSeasonFetchedRef = useRef(false);
   const [selectedTeam, setSelectedTeam] = useState('away');
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('games');
@@ -1257,6 +1265,34 @@ function App() {
         }
       } catch { setAbsData({}); }
 
+      // Fetch season ABS leaderboard once per session
+      if (!absSeasonFetchedRef.current) {
+        absSeasonFetchedRef.current = true;
+        try {
+          const csvRes = await fetch('https://baseballsavant.mlb.com/leaderboard/abs-challenges?csv=true');
+          const csvText = await csvRes.text();
+          const lines = csvText.trim().split('\n');
+          const headers = lines[0].split(',').map((h: string) => h.replace(/"/g, '').trim());
+          const nameIdx = headers.indexOf('entity_name');
+          const challengesIdx = headers.indexOf('n_challenges');
+          const overturnedIdx = headers.indexOf('n_overturns');
+          if (nameIdx >= 0 && challengesIdx >= 0 && overturnedIdx >= 0) {
+            const newSeasonData: Record<string, {challenges: number, overturned: number}> = {};
+            for (let i = 1; i < lines.length; i++) {
+              const values = lines[i].split(',').map((v: string) => v.replace(/"/g, '').trim());
+              const name = values[nameIdx];
+              const challenges = parseInt(values[challengesIdx]) || 0;
+              const overturned = parseInt(values[overturnedIdx]) || 0;
+              if (name) {
+                const normalized = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                newSeasonData[normalized] = { challenges, overturned };
+              }
+            }
+            setAbsSeasonData(newSeasonData);
+          }
+        } catch { /* season ABS data unavailable */ }
+      }
+
       setBoxScore(boxScore);
     } catch (error) {
       console.error('Error loading box score:', error);
@@ -1402,7 +1438,10 @@ function App() {
               .filter(([_, p]: [string, any]) => absData[p.person.id]?.challenges > 0)
               .map(([_, p]: [string, any]) => {
                 const abs = absData[p.person.id];
-                return `${getLastName(p.person)} ${abs.overturned}/${abs.challenges}`;
+                const normalizedName = (p.person.fullName ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                const season = absSeasonData[normalizedName];
+                const seasonStr = season ? ` (${season.overturned}/${season.challenges})` : '';
+                return `${getLastName(p.person)} ${abs.overturned}/${abs.challenges}${seasonStr}`;
               });
             return absChallenges.length > 0 ? (
               <div className="stat-line">ABS— {absChallenges.join('; ')}</div>
