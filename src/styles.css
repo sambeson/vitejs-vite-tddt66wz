@@ -844,10 +844,11 @@ button:focus {
   background: white;
   border: 1px solid #ccc;
   padding: 8px 12px;
-  font-size: 8px;
+  font-size: 12px;
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  white-space: normal;
+  white-space: nowrap;
+  min-width: 150px;
   max-width: min(300px, 90vw);
   margin-top: 6px;
 }
