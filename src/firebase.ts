@@ -14,10 +14,10 @@ export async function fetchFromFirebase(userId: string): Promise<{ mentaculous: 
   let updatedAt: string | null = null;
 
   if (fields.mentaculous?.stringValue) {
-    try { mentaculous = JSON.parse(fields.mentaculous.stringValue); } catch { mentaculous = {}; }
+    try { mentaculous = JSON.parse(fields.mentaculous.stringValue); } catch (e) { console.error('Firebase: failed to parse mentaculous JSON', e); mentaculous = {}; }
   }
   if (fields.mentorder?.stringValue) {
-    try { mentorder = JSON.parse(fields.mentorder.stringValue); } catch { mentorder = []; }
+    try { mentorder = JSON.parse(fields.mentorder.stringValue); } catch (e) { console.error('Firebase: failed to parse mentorder JSON', e); mentorder = []; }
   }
   if (fields.updatedAt?.stringValue) {
     updatedAt = fields.updatedAt.stringValue;
@@ -35,10 +35,13 @@ export async function saveToFirebase(userId: string, mentaculousData: Record<str
       updatedAt: { stringValue: now },
     },
   };
-  const res = await fetch(`${BASE_URL}/${encodeURIComponent(userId)}?key=${API_KEY}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  const res = await fetch(
+    `${BASE_URL}/${encodeURIComponent(userId)}?key=${API_KEY}&updateMask.fieldPaths=mentaculous&updateMask.fieldPaths=mentorder&updateMask.fieldPaths=updatedAt`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }
+  );
   if (!res.ok) throw new Error(`Firebase save failed: ${res.status}`);
 }

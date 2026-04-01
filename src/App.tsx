@@ -183,173 +183,98 @@ function PlayerProfile({ playerId, onClose, gameAbsStats }: { playerId: number; 
   const [loadingTransactions, setLoadingTransactions] = useState<boolean>(false);
 
   useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+
     // Fetch player bio info
-    fetch(`https://statsapi.mlb.com/api/v1/people/${playerId}`)
+    fetch(`https://statsapi.mlb.com/api/v1/people/${playerId}`, { signal })
       .then((res) => res.json())
       .then((data) => {
         if (data.people && data.people.length > 0) {
           const player = data.people[0];
           setProfile(player);
-
-          // Determine if this is a pitcher
           const position = player.primaryPosition?.name || '';
           const pitcherCheck = position.toLowerCase().includes('pitcher') ||
             position.toLowerCase() === 'p';
           setIsPitcher(pitcherCheck);
-
-          console.log(`Player ${player.fullName} is pitcher: ${pitcherCheck} (position: ${position})`);
         }
       })
-      .catch((err) =>
-        console.error('Error fetching player bio for', playerId, err)
-      );
+      .catch((err) => { if (err.name !== 'AbortError') console.error('Error fetching player bio for', playerId, err); });
 
-    // We'll fetch both hitting and pitching stats, then display based on isPitcher
-    // Fetch career hitting stats
-    fetch(
-      `https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=career&group=hitting`
-    )
+    fetch(`https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=career&group=hitting`, { signal })
       .then((res) => res.json())
       .then((data) => {
-        if (
-          data.stats &&
-          data.stats[0] &&
-          data.stats[0].splits &&
-          data.stats[0].splits.length > 0
-        ) {
-          setCareerStats((prev: any) => ({
-            ...prev,
-            hitting: data.stats[0].splits[0].stat
-          }));
+        if (data.stats?.[0]?.splits?.length > 0) {
+          setCareerStats((prev: any) => ({ ...prev, hitting: data.stats[0].splits[0].stat }));
         }
       })
-      .catch((err) =>
-        console.error('Error fetching career hitting stats for', playerId, err)
-      );
+      .catch((err) => { if (err.name !== 'AbortError') console.error('Error fetching career hitting stats for', playerId, err); });
 
-    // Fetch career pitching stats
-    fetch(
-      `https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=career&group=pitching`
-    )
+    fetch(`https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=career&group=pitching`, { signal })
       .then((res) => res.json())
       .then((data) => {
-        if (
-          data.stats &&
-          data.stats[0] &&
-          data.stats[0].splits &&
-          data.stats[0].splits.length > 0
-        ) {
-          setCareerStats((prev: any) => ({
-            ...prev,
-            pitching: data.stats[0].splits[0].stat
-          }));
+        if (data.stats?.[0]?.splits?.length > 0) {
+          setCareerStats((prev: any) => ({ ...prev, pitching: data.stats[0].splits[0].stat }));
         }
       })
-      .catch((err) =>
-        console.error('Error fetching career pitching stats for', playerId, err)
-      );
+      .catch((err) => { if (err.name !== 'AbortError') console.error('Error fetching career pitching stats for', playerId, err); });
 
-    // Fetch year-by-year hitting stats
-    fetch(
-      `https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=yearByYear&group=hitting`
-    )
+    fetch(`https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=yearByYear&group=hitting`, { signal })
       .then((res) => res.json())
       .then((data) => {
-        if (
-          data.stats &&
-          data.stats[0] &&
-          data.stats[0].splits &&
-          data.stats[0].splits.length > 0
-        ) {
-          setSeasonStats(prev => ({
-            ...prev,
-            hitting: data.stats[0].splits
-          }));
+        if (data.stats?.[0]?.splits?.length > 0) {
+          setSeasonStats(prev => ({ ...prev, hitting: data.stats[0].splits }));
         }
       })
-      .catch((err) =>
-        console.error('Error fetching year-by-year hitting stats for', playerId, err)
-      );
+      .catch((err) => { if (err.name !== 'AbortError') console.error('Error fetching year-by-year hitting stats for', playerId, err); });
 
-    // Fetch year-by-year pitching stats
-    fetch(
-      `https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=yearByYear&group=pitching`
-    )
+    fetch(`https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=yearByYear&group=pitching`, { signal })
       .then((res) => res.json())
       .then((data) => {
-        if (
-          data.stats &&
-          data.stats[0] &&
-          data.stats[0].splits &&
-          data.stats[0].splits.length > 0
-        ) {
-          setSeasonStats(prev => ({
-            ...prev,
-            pitching: data.stats[0].splits
-          }));
+        if (data.stats?.[0]?.splits?.length > 0) {
+          setSeasonStats(prev => ({ ...prev, pitching: data.stats[0].splits }));
         }
       })
-      .catch((err) =>
-        console.error('Error fetching year-by-year pitching stats for', playerId, err)
-      );
+      .catch((err) => { if (err.name !== 'AbortError') console.error('Error fetching year-by-year pitching stats for', playerId, err); });
 
-    // Fetch transaction history for the player
     const fetchTransactions = async () => {
       setLoadingTransactions(true);
       try {
         const response = await fetch(
-          `https://statsapi.mlb.com/api/v1/transactions?playerId=${playerId}&limit=100&order=desc`
+          `https://statsapi.mlb.com/api/v1/transactions?playerId=${playerId}&limit=100&order=desc`,
+          { signal }
         );
         const data = await response.json();
-        
         if (data.transactions) {
-          // Filter to only include meaningful MLB transactions (no number changes, etc.)
           const mlbTransactions = data.transactions.filter((transaction: any) => {
-            // Exclude number changes and other minor transactions
-            if (transaction.typeCode === 'NC' || // Number change
+            if (transaction.typeCode === 'NC' ||
                 transaction.description?.toLowerCase().includes('number') ||
                 transaction.description?.toLowerCase().includes('#')) {
               return false;
             }
-            
-            // Include major transaction types
-            const majorTransactionTypes = [
-              'SGN',  // Signed
-              'TRD',  // Traded
-              'REL',  // Released
-              'SE',   // Selected
-              'DFA',  // Designated for assignment
-              'CL',   // Claimed
-              'EXT',  // Contract extension
-              'PUR',  // Purchased
-              'FA'    // Free agent
-            ];
-            
-            // Check if fromTeam or toTeam is an MLB team (team IDs 108-158 are typically MLB)
-            const fromTeamIsMLB = transaction.fromTeam && 
+            const majorTransactionTypes = ['SGN', 'TRD', 'REL', 'SE', 'DFA', 'CL', 'EXT', 'PUR', 'FA'];
+            const fromTeamIsMLB = transaction.fromTeam &&
               (transaction.fromTeam.id >= 108 && transaction.fromTeam.id <= 158);
-            
-            const toTeamIsMLB = transaction.toTeam && 
+            const toTeamIsMLB = transaction.toTeam &&
               (transaction.toTeam.id >= 108 && transaction.toTeam.id <= 158);
-            
-            // Include if it's a major transaction type OR involves MLB teams
-            return majorTransactionTypes.includes(transaction.typeCode) || 
-                   fromTeamIsMLB || toTeamIsMLB;
+            return majorTransactionTypes.includes(transaction.typeCode) || fromTeamIsMLB || toTeamIsMLB;
           });
-          
           setTransactions(mlbTransactions);
         } else {
           setTransactions([]);
         }
-      } catch (err) {
-        console.error('Error fetching player transactions:', err);
-        setTransactions([]);
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error('Error fetching player transactions:', err);
+          setTransactions([]);
+        }
       } finally {
-        setLoadingTransactions(false);
+        if (!signal.aborted) setLoadingTransactions(false);
       }
     };
 
     fetchTransactions();
+    return () => controller.abort();
   }, [playerId]);
 
   return (
@@ -623,7 +548,7 @@ function UserSelection({ onUserSelect }: { onUserSelect: (userId: string) => voi
 
 function App() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(new Date().toLocaleDateString('en-CA'));
   const [games, setGames] = useState<any[]>([]);
   const [selectedGame, setSelectedGame] = useState(null);
   const [boxScore, setBoxScore] = useState<any>(null);
@@ -639,6 +564,7 @@ function App() {
   const orderRef = useRef<string[]>([]);
   const dataLoadedRef = useRef(false);
   const currentUserRef = useRef<string | null>(null);
+  const loadedDataHadEntriesRef = useRef(false);
   const [mentaculousPage, setMentaculousPage] = useState(0)
   const [updatedPlayerId, setUpdatedPlayerId] = useState<number | null>(null);
   const [newPlayerId, setNewPlayerId] = useState<number | null>(null);
@@ -670,6 +596,7 @@ function App() {
     const handleBeforeUnload = () => {
       const user = currentUserRef.current;
       if (!user || !dataLoadedRef.current) return;
+      if (Object.keys(mentaculousRef.current).length === 0 && loadedDataHadEntriesRef.current) return;
       const now = new Date().toISOString();
       localStorage.setItem(`mentaculous_${user}`, JSON.stringify(mentaculousRef.current));
       localStorage.setItem(`mentaculousOrder_${user}`, JSON.stringify(orderRef.current));
@@ -699,6 +626,7 @@ function App() {
     if (!currentUser) return; // Don't load data until user is selected
 
     let cancelled = false;
+    loadedDataHadEntriesRef.current = false;
     setDataLoaded(false);
     async function loadInitialData() {
       let parsed: Record<string, any> = {};
@@ -728,8 +656,6 @@ function App() {
           localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(parsed));
           if (fbUpdatedAt) localStorage.setItem(`mentaculousUpdatedAt_${currentUser}`, fbUpdatedAt);
         } else if (Object.keys(lsParsed).length) {
-          // localStorage is newer (user had unsaved changes when force-closed)
-          console.log('[Load] Using localStorage — it is newer than Firebase');
           parsed = lsParsed;
         } else if (fbMentaculous && Object.keys(fbMentaculous).length) {
           // No localStorage data at all, fall back to Firebase
@@ -770,6 +696,7 @@ function App() {
         }
       }
       if (cancelled) return;
+      loadedDataHadEntriesRef.current = Object.keys(parsed).length > 0;
       setMentaculous(parsed);
       setOrder(orderArr);
       setDataLoaded(true);
@@ -798,6 +725,11 @@ function App() {
   // Autosave to Firebase and localStorage on every change — no debounce to prevent data loss on force-close
   useEffect(() => {
     if (!dataLoaded || !currentUser) return;
+    // Safety guard: never overwrite non-empty data with empty {} (protects against race conditions)
+    if (Object.keys(mentaculous).length === 0 && loadedDataHadEntriesRef.current) {
+      console.warn('[Autosave] Refusing to save empty mentaculous when loaded data was non-empty');
+      return;
+    }
     const now = new Date().toISOString();
     localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(mentaculous));
     localStorage.setItem(`mentaculousOrder_${currentUser}`, JSON.stringify(order));
@@ -905,9 +837,6 @@ function App() {
           alWildCardResponse.json(),
           nlWildCardResponse.json()
         ]);
-        
-        console.log('AL standings:', alData);
-        console.log('NL standings:', nlData);
         
         const allTeams: any[] = [];
         
@@ -1186,7 +1115,6 @@ function App() {
                 // Store the complete season pitching stats for save info
                 player.seasonStats = player.seasonStats || {};
                 player.seasonStats.pitching = seasonStat;
-                console.log(`📊 Season stats for ${player.person.fullName}: ${seasonStat.saves} saves, ${seasonStat.era} ERA`);
               } else {
                 player.stats.pitching.seasonEra = '-';
               }
@@ -1202,8 +1130,6 @@ function App() {
         const playByPlayRes = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/playByPlay`);
         const playByPlayData = await playByPlayRes.json();
 
-        console.log('🏀 Play-by-play data fetched successfully for game:', gamePk);
-
         // Track when each pitcher first appeared
         const pitcherFirstAppearance = new Map();
         let playIndex = 0;
@@ -1212,12 +1138,9 @@ function App() {
           const pitcher = inning.matchup?.pitcher;
           if (pitcher && !pitcherFirstAppearance.has(pitcher.id)) {
             pitcherFirstAppearance.set(pitcher.id, playIndex);
-            console.log(`⚾ Pitcher ${pitcher.fullName} first appeared at play index ${playIndex}`);
           }
           playIndex++;
         }
-
-        console.log('🎯 Final pitcher order map:', Array.from(pitcherFirstAppearance.entries()));
 
         // Apply pitching order to players
         ['home', 'away'].forEach((teamKey) => {
@@ -1226,7 +1149,6 @@ function App() {
             const player = team.players[key];
             if (player.stats?.pitching && pitcherFirstAppearance.has(player.person.id)) {
               player.pitchingOrder = pitcherFirstAppearance.get(player.person.id);
-              console.log(`✅ Set pitchingOrder ${player.pitchingOrder} for ${player.person.fullName}`);
             }
           }
         });
@@ -1496,16 +1418,10 @@ function App() {
       .sort((a: any, b: any) => {
         // Only use explicit pitchingOrder if both players have it from play-by-play API
         if (a.pitchingOrder !== undefined && b.pitchingOrder !== undefined) {
-          console.log(`🔄 Sorting: ${a.person.fullName} (order: ${a.pitchingOrder}) vs ${b.person.fullName} (order: ${b.pitchingOrder})`);
           return a.pitchingOrder - b.pitchingOrder;
         }
-
-        // If either player doesn't have pitchingOrder, maintain original order
-        console.log(`⚠️ No pitching order for ${a.person.fullName} or ${b.person.fullName} - maintaining original order`);
         return 0;
       });
-
-    console.log('📋 Final pitcher order:', pitchers.map(p => `${p.person.fullName} (${p.pitchingOrder ?? 'no order'})`));
 
     return (
       <div className="team-stats">
@@ -1675,9 +1591,6 @@ function App() {
   };
 
   const renderStandings = () => {
-    console.log('Standings data in render:', standings);
-    console.log('Standings length:', standings.length);
-    
     if (!standings || standings.length === 0) {
       return (
         <div className="standings-container">
@@ -1698,9 +1611,6 @@ function App() {
       'National League Central': standings.filter(team => team.leagueName === 'National League' && team.divisionName === 'National League Central'),
       'National League West': standings.filter(team => team.leagueName === 'National League' && team.divisionName === 'National League West')
     };
-    
-    console.log('American League divisions:', americanLeague);
-    console.log('National League divisions:', nationalLeague);
     
     const renderDivisionTable = (divisionName: string, teams: any[]) => {
       const sortedTeams = teams.sort((a, b) => a.divisionRank - b.divisionRank);
@@ -2167,25 +2077,20 @@ function App() {
   };
 
   const handleRemoveHomeRun = (playerId: string, hrId: string) => {
-    setMentaculous(prev => {
-      const prevPlayer = prev[playerId];
-      if (!prevPlayer) return prev;
-      const newHomeRuns = prevPlayer.homeRuns.filter(hr => hr.hrId !== hrId);
-      // If no HRs left, remove player from mentaculous and order
-      if (newHomeRuns.length === 0) {
-        const newMentaculous = { ...prev };
-        delete newMentaculous[playerId];
-        setOrder(o => o.filter(id => id !== playerId));
-        return newMentaculous;
-      }
-      return {
-        ...prev,
-        [playerId]: {
-          ...prevPlayer,
-          homeRuns: newHomeRuns,
-        },
-      };
-    });
+    const prevPlayer = mentaculous[playerId];
+    if (!prevPlayer) return;
+    const newHomeRuns = prevPlayer.homeRuns.filter(hr => hr.hrId !== hrId);
+    if (newHomeRuns.length === 0) {
+      const newMentaculous = { ...mentaculous };
+      delete newMentaculous[playerId];
+      setMentaculous(newMentaculous);
+      setOrder(order.filter(id => id !== playerId));
+    } else {
+      setMentaculous({
+        ...mentaculous,
+        [playerId]: { ...prevPlayer, homeRuns: newHomeRuns },
+      });
+    }
   };
 
   // Add a home run to mentaculous for a player (restored async version with opponent lookup and navigation)
