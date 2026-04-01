@@ -565,6 +565,7 @@ function App() {
   const dataLoadedRef = useRef(false);
   const currentUserRef = useRef<string | null>(null);
   const loadedDataHadEntriesRef = useRef(false);
+  const loadedForUserRef = useRef<string | null>(null);
   const [mentaculousPage, setMentaculousPage] = useState(0)
   const [updatedPlayerId, setUpdatedPlayerId] = useState<number | null>(null);
   const [newPlayerId, setNewPlayerId] = useState<number | null>(null);
@@ -596,6 +597,7 @@ function App() {
     const handleBeforeUnload = () => {
       const user = currentUserRef.current;
       if (!user || !dataLoadedRef.current) return;
+      if (loadedForUserRef.current !== user) return;
       if (Object.keys(mentaculousRef.current).length === 0 && loadedDataHadEntriesRef.current) return;
       const now = new Date().toISOString();
       localStorage.setItem(`mentaculous_${user}`, JSON.stringify(mentaculousRef.current));
@@ -627,6 +629,7 @@ function App() {
 
     let cancelled = false;
     loadedDataHadEntriesRef.current = false;
+    loadedForUserRef.current = null;
     setDataLoaded(false);
     async function loadInitialData() {
       let parsed: Record<string, any> = {};
@@ -697,6 +700,7 @@ function App() {
       }
       if (cancelled) return;
       loadedDataHadEntriesRef.current = Object.keys(parsed).length > 0;
+      loadedForUserRef.current = currentUser;
       setMentaculous(parsed);
       setOrder(orderArr);
       setDataLoaded(true);
@@ -725,6 +729,9 @@ function App() {
   // Autosave to Firebase and localStorage on every change — no debounce to prevent data loss on force-close
   useEffect(() => {
     if (!dataLoaded || !currentUser) return;
+    // Safety guard: don't save if data hasn't been loaded for this user yet
+    // (prevents writing previous user's data to the new user's account on switch)
+    if (loadedForUserRef.current !== currentUser) return;
     // Safety guard: never overwrite non-empty data with empty {} (protects against race conditions)
     if (Object.keys(mentaculous).length === 0 && loadedDataHadEntriesRef.current) {
       console.warn('[Autosave] Refusing to save empty mentaculous when loaded data was non-empty');

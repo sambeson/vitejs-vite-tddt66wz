@@ -1,8 +1,6 @@
 /* ========================================
    FONT IMPORTS
    ======================================== */
-/* Import handwritten font */
-@import url('https://fonts.googleapis.com/css2?family=Shadows+Into+Light&display=swap');
 
 /* Import custom font for mentaculous names */
 @font-face {
@@ -23,7 +21,7 @@
   /* Add any additional styling for mentaculous names */
   font-weight: bolder;
   font-size: 14px;
-  color: #161615d7; /* Gold color to make it stand out */
+  color: #161615d7; /* Near-black with slight transparency */
 }
 
 /* ========================================
@@ -213,11 +211,6 @@
   align-items: flex-start;
 }
 
-.team-name {
-  font-weight: bold;
-  font-size: 16px;
-  color: #111;
-}
 
 /* ========================================
    TEAM DISPLAY COMPONENTS
@@ -266,12 +259,6 @@
   color: #555;
 }
 
-.vs-text {
-  font-weight: bold;
-  font-size: 1.1rem;
-  margin: 0 12px;
-  white-space: nowrap;
-}
 
 .modal-content {
   position: relative;
@@ -287,10 +274,8 @@
 .modal-body {
   overflow-y: auto;
   overflow-x: hidden;
-  max-height: calc(90vh - 20px);
-  padding: 1.5rem;
-  padding-top: 2.75rem;
-  padding-bottom: 2rem;
+  max-height: calc(90vh - 50px);
+  padding: 2.75rem 1.5rem 2rem;
 }
 
 .close-button {
@@ -430,6 +415,8 @@
 
 .team-name {
   font-weight: bold;
+  font-size: 16px;
+  color: #111;
   margin-top: 4px;
 }
 
@@ -451,6 +438,7 @@
   font-size: 14px;
   font-weight: bold;
   color: #666;
+  white-space: nowrap;
 }
 
 .game-status {
@@ -482,13 +470,9 @@
 .view-toggle button {
   padding: 10px 20px;
   border-radius: 6px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.view-toggle button {
-  border: 2px solid;
   font-weight: 600;
+  border: 2px solid #dee2e6;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 
 .stats-table {
@@ -537,6 +521,12 @@
 
 .clickable-name:hover {
   text-decoration: underline;
+}
+
+.clickable-name:focus-visible {
+  outline: 2px solid #0055cc;
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .position {
@@ -687,8 +677,8 @@ button:focus {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding-left: 0px;
-  gap: 0px;
+  padding-left: 0;
+  gap: 0;
   position: relative;
   margin-left: -14px;
   z-index: 2;
@@ -701,16 +691,6 @@ button:focus {
   font-weight: bold;
 }
 
-.notebook-line::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 1px;
-  background-color: #aad;
-  z-index: -1;
-}
 .notebook-line.empty {
   color: transparent;
 }
@@ -741,24 +721,7 @@ button:focus {
   padding-right: 1px;
 }
 
-.player-count {
-  color: #555;
-  margin-left: auto;
-}
 
-.view-button {
-  background: none;
-  border: none;
-  color: #0077cc;
-  cursor: pointer;
-  font-size: 10px;
-  margin-left: 1px;
-}
-
-
-.view-button:hover {
-  text-decoration: underline;
-}
 
 .arrow-btn {
   display: inline-flexbox;
@@ -783,7 +746,7 @@ button:focus {
   font-family:'Courier New', Courier, monospace, serif;
   position: relative;
   top: 18px;
-  width: calc(100%-100px);
+  width: calc(100% - 100px);
   padding-left: 70px;
   text-align: center;
 }
@@ -816,6 +779,7 @@ button:focus {
   color: #0077cc;
   cursor: pointer;
   font-size: 10px;
+  margin-left: 1px;
   padding: 0 8px;
 }
 
@@ -829,30 +793,6 @@ button:focus {
   margin-top: 4px;
 }
 
-.tab-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #dee2e6;
-  padding-bottom: 10px;
-}
-
-.tab-header button {
-  flex: 1;
-  padding: 12px;
-  font-size: 16px;
-  border-radius: 8px;
-  background-color: #f8f9fa;
-  color: #495057;
-  border: 1px solid #dee2e6;
-}
-
-.tab-header button.active {
-  background-color: #041e42;
-  color: white;
-  border-color: #041e42;
-}
 
 .player-headshot {
   width: 120px;
@@ -907,7 +847,8 @@ button:focus {
   font-size: 8px;
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  white-space: nowrap;
+  white-space: normal;
+  max-width: min(300px, 90vw);
   margin-top: 6px;
 }
 
@@ -1085,12 +1026,11 @@ button:focus {
 .remove-button {
   background-color: crimson;
   color: white;
-  font-size: 9px;
-  padding: 1px;
+  font-size: 11px;
+  padding: 4px 8px;
   border: none;
   border-radius: 3px;
   cursor: pointer;
- 
 }
 
 .remove-button:hover {
@@ -1364,9 +1304,10 @@ button:focus {
 }
 
 .standings-tab-button.active {
-  color: #2c3e50;
+  color: #1a6fc4;
   border-bottom-color: #3498db;
-  font-weight: 600;
+  font-weight: 700;
+  background-color: #eaf4fd;
 }
 
 /* Wild card specific styling */
@@ -1409,7 +1350,7 @@ button:focus {
 
 .league-standings {
   flex: 1;
-  min-width: 650px;
+  min-width: 300px;
   margin-bottom: 40px;
 }
 
