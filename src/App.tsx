@@ -636,43 +636,24 @@ function App() {
       let orderArr: string[] = [];
       try {
         const { mentaculous: fbMentaculous, mentorder: fbOrder, updatedAt: fbUpdatedAt } = await fetchFromFirebase(currentUser!);
-        const lsUpdatedAt = localStorage.getItem(`mentaculousUpdatedAt_${currentUser}`);
 
-        // Use localStorage when it has a newer timestamp than Firebase — this
-        // happens when the app was force-closed before the 1500ms debounce fired.
-        const lsIsNewer = lsUpdatedAt && fbUpdatedAt && lsUpdatedAt > fbUpdatedAt;
-
-        const mentaculousRaw = localStorage.getItem(`mentaculous_${currentUser}`);
-        const storedOrder = localStorage.getItem(`mentaculousOrder_${currentUser}`);
-        let lsParsed: Record<string, any> = {};
-        let lsOrder: string[] = [];
-        if (mentaculousRaw) {
-          try { lsParsed = JSON.parse(mentaculousRaw); } catch { lsParsed = {}; }
-        }
-        if (storedOrder) {
-          try { lsOrder = JSON.parse(storedOrder); } catch { lsOrder = []; }
-        }
-
-        if (fbMentaculous && Object.keys(fbMentaculous).length && !lsIsNewer) {
-          // Firebase is authoritative (it's newer or we have no timestamp to compare)
+        // Firebase is always authoritative when reachable. localStorage is only
+        // used as a fallback when the Firebase request fails (see catch block).
+        // Trusting localStorage timestamps caused cross-user contamination when
+        // a previous user's autosave wrote stale data to another user's LS key.
+        if (fbMentaculous && Object.keys(fbMentaculous).length) {
           parsed = fbMentaculous;
           localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(parsed));
           if (fbUpdatedAt) localStorage.setItem(`mentaculousUpdatedAt_${currentUser}`, fbUpdatedAt);
-        } else if (Object.keys(lsParsed).length) {
-          parsed = lsParsed;
-        } else if (fbMentaculous && Object.keys(fbMentaculous).length) {
-          // No localStorage data at all, fall back to Firebase
-          parsed = fbMentaculous;
-          localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(parsed));
-          if (fbUpdatedAt) localStorage.setItem(`mentaculousUpdatedAt_${currentUser}`, fbUpdatedAt);
+        } else {
+          // Firebase returned empty or null (new/cleared user) — wipe any stale localStorage
+          parsed = {};
+          localStorage.removeItem(`mentaculous_${currentUser}`);
+          localStorage.removeItem(`mentaculousOrder_${currentUser}`);
+          localStorage.removeItem(`mentaculousUpdatedAt_${currentUser}`);
         }
 
-        if (fbOrder && fbOrder.length && !lsIsNewer) {
-          orderArr = fbOrder;
-          localStorage.setItem(`mentaculousOrder_${currentUser}`, JSON.stringify(orderArr));
-        } else if (lsOrder.length) {
-          orderArr = lsOrder;
-        } else if (fbOrder && fbOrder.length) {
+        if (fbOrder && fbOrder.length) {
           orderArr = fbOrder;
           localStorage.setItem(`mentaculousOrder_${currentUser}`, JSON.stringify(orderArr));
         }
