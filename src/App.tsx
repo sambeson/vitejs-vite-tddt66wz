@@ -727,22 +727,23 @@ function App() {
   }
 
   // Autosave to Firebase and localStorage on every change — no debounce to prevent data loss on force-close
+  // NOTE: intentionally omits currentUser from deps and reads it via ref to prevent firing during user switch
   useEffect(() => {
-    if (!dataLoaded || !currentUser) return;
+    const user = currentUserRef.current;
+    if (!dataLoaded || !user) return;
     // Safety guard: don't save if data hasn't been loaded for this user yet
-    // (prevents writing previous user's data to the new user's account on switch)
-    if (loadedForUserRef.current !== currentUser) return;
+    if (loadedForUserRef.current !== user) return;
     // Safety guard: never overwrite non-empty data with empty {} (protects against race conditions)
     if (Object.keys(mentaculous).length === 0 && loadedDataHadEntriesRef.current) {
       console.warn('[Autosave] Refusing to save empty mentaculous when loaded data was non-empty');
       return;
     }
     const now = new Date().toISOString();
-    localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(mentaculous));
-    localStorage.setItem(`mentaculousOrder_${currentUser}`, JSON.stringify(order));
-    localStorage.setItem(`mentaculousUpdatedAt_${currentUser}`, now);
-    saveToFirebase(currentUser, mentaculous, order).catch(e => console.error('[Autosave] Firebase save failed:', e));
-  }, [mentaculous, order, dataLoaded, currentUser]);
+    localStorage.setItem(`mentaculous_${user}`, JSON.stringify(mentaculous));
+    localStorage.setItem(`mentaculousOrder_${user}`, JSON.stringify(order));
+    localStorage.setItem(`mentaculousUpdatedAt_${user}`, now);
+    saveToFirebase(user, mentaculous, order).catch(e => console.error('[Autosave] Firebase save failed:', e));
+  }, [mentaculous, order, dataLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`)
@@ -2305,6 +2306,11 @@ function App() {
                   <button
                     className="user-switch-btn"
                     onClick={() => {
+                      setMentaculous({});
+                      setOrder([]);
+                      setDataLoaded(false);
+                      loadedForUserRef.current = null;
+                      loadedDataHadEntriesRef.current = false;
                       setCurrentUser(null);
                       setMenuOpen(false);
                     }}
