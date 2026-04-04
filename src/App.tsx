@@ -184,25 +184,16 @@ function absPlayerTotals(data: AbsPlayerData): { challenges: number; overturned:
   );
 }
 
-function formatAbsEntry(
-  lastName: string,
-  data: AbsPlayerData,
-  season: { challenges: number; overturned: number } | undefined
-): string {
+function formatAbsEntry(lastName: string, data: AbsPlayerData): string {
   const roles = Object.entries(data.byRole) as [string, AbsRoleStats][];
-  const totals = absPlayerTotals(data);
-  const seasonStr =
-    season && season.challenges > totals.challenges
-      ? ` (${season.overturned}/${season.challenges})`
-      : '';
   if (roles.length === 1) {
     const [role, stats] = roles[0];
-    return `${lastName}(${role}) ${stats.overturned}/${stats.challenges}${seasonStr}`;
+    return `${lastName}(${role}) ${stats.overturned}/${stats.challenges}`;
   }
   const roleStr = roles
     .map(([role, stats]) => `${role}:${stats.overturned}/${stats.challenges}`)
     .join(' ');
-  return `${lastName} ${roleStr}${seasonStr}`;
+  return `${lastName} ${roleStr}`;
 }
 
 function PlayerProfile({ playerId, onClose, gameAbsStats }: { playerId: number; onClose: () => void; gameAbsStats?: AbsPlayerData }) {
@@ -605,8 +596,6 @@ function App() {
   const [boxScore, setBoxScore] = useState<any>(null);
   const [gameHRTotals, setGameHRTotals] = useState<Record<number, number>>({});
   const [absData, setAbsData] = useState<Record<number, AbsPlayerData>>({});
-  const [absSeasonData, setAbsSeasonData] = useState<Record<string, {challenges: number, overturned: number}>>({});
-  const absSeasonFetchedRef = useRef(false);
   const [selectedTeam, setSelectedTeam] = useState('away');
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('games');
@@ -1239,33 +1228,6 @@ function App() {
         }
       } catch { setAbsData({} as Record<number, AbsPlayerData>); }
 
-      // Fetch season ABS leaderboard once per session
-      if (!absSeasonFetchedRef.current) {
-        absSeasonFetchedRef.current = true;
-        try {
-          const csvRes = await fetch('https://baseballsavant.mlb.com/leaderboard/abs-challenges?csv=true');
-          const csvText = await csvRes.text();
-          const lines = csvText.trim().split('\n');
-          const headers = lines[0].split(',').map((h: string) => h.replace(/"/g, '').trim());
-          const nameIdx = headers.indexOf('entity_name');
-          const challengesIdx = headers.indexOf('n_challenges');
-          const overturnedIdx = headers.indexOf('n_overturns');
-          if (nameIdx >= 0 && challengesIdx >= 0 && overturnedIdx >= 0) {
-            const newSeasonData: Record<string, {challenges: number, overturned: number}> = {};
-            for (let i = 1; i < lines.length; i++) {
-              const values = lines[i].split(',').map((v: string) => v.replace(/"/g, '').trim());
-              const name = values[nameIdx];
-              const challenges = parseInt(values[challengesIdx]) || 0;
-              const overturned = parseInt(values[overturnedIdx]) || 0;
-              if (name) {
-                const normalized = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                newSeasonData[normalized] = { challenges, overturned };
-              }
-            }
-            setAbsSeasonData(newSeasonData);
-          }
-        } catch { /* season ABS data unavailable */ }
-      }
 
       setBoxScore(boxScore);
     } catch (error) {
@@ -1415,9 +1377,7 @@ function App() {
               })
               .map(([_, p]: [string, any]) => {
                 const data = absData[p.person.id];
-                const normalizedName = (p.person.fullName ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                const season = absSeasonData[normalizedName];
-                return formatAbsEntry(getLastName(p.person), data, season);
+                return formatAbsEntry(getLastName(p.person), data);
               });
             return absChallenges.length > 0 ? (
               <div className="stat-line">ABS— {absChallenges.join('; ')}</div>

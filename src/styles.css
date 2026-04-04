@@ -868,14 +868,14 @@ button:focus {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1rem;
-  font-size: 0.75rem;
+  font-size: 0.62rem;
   background-color: #f9f9f9;
 }
 
 .profile-stats-table th,
 .profile-stats-table td {
   border: 1px solid #ddd;
-  padding: 6px 4px;
+  padding: 3px 2px;
   text-align: center;
 }
 
