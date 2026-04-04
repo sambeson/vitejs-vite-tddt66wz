@@ -174,6 +174,37 @@ function HomerEntry({
 
 export { HomerEntry };
 
+type AbsRoleStats = { challenges: number; overturned: number };
+type AbsPlayerData = { byRole: Partial<Record<'B' | 'C' | 'P', AbsRoleStats>> };
+
+function absPlayerTotals(data: AbsPlayerData): { challenges: number; overturned: number } {
+  return Object.values(data.byRole).reduce(
+    (acc, r) => ({ challenges: acc.challenges + r!.challenges, overturned: acc.overturned + r!.overturned }),
+    { challenges: 0, overturned: 0 }
+  );
+}
+
+function formatAbsEntry(
+  lastName: string,
+  data: AbsPlayerData,
+  season: { challenges: number; overturned: number } | undefined
+): string {
+  const roles = Object.entries(data.byRole) as [string, AbsRoleStats][];
+  const totals = absPlayerTotals(data);
+  const seasonStr =
+    season && season.challenges > totals.challenges
+      ? ` (${season.overturned}/${season.challenges})`
+      : '';
+  if (roles.length === 1) {
+    const [role, stats] = roles[0];
+    return `${lastName}(${role}) ${stats.overturned}/${stats.challenges}${seasonStr}`;
+  }
+  const roleStr = roles
+    .map(([role, stats]) => `${role}:${stats.overturned}/${stats.challenges}`)
+    .join(' ');
+  return `${lastName} ${roleStr}${seasonStr}`;
+}
+
 function PlayerProfile({ playerId, onClose, gameAbsStats }: { playerId: number; onClose: () => void; gameAbsStats?: AbsPlayerData }) {
   const [profile, setProfile] = useState<any>(null);
   const [careerStats, setCareerStats] = useState<any>(null);
@@ -366,6 +397,7 @@ function PlayerProfile({ playerId, onClose, gameAbsStats }: { playerId: number; 
                 {isPitcher && seasonStats.pitching && Array.isArray(seasonStats.pitching) && seasonStats.pitching.length > 0 ? (
                   <>
                     <h3>Season-by-Season Pitching</h3>
+                    <div className="table-scroll-wrapper">
                     <table className="profile-stats-table">
                       <thead>
                         <tr>
@@ -403,10 +435,12 @@ function PlayerProfile({ playerId, onClose, gameAbsStats }: { playerId: number; 
                           ))}
                       </tbody>
                     </table>
+                    </div>
                   </>
                 ) : seasonStats.hitting && Array.isArray(seasonStats.hitting) && seasonStats.hitting.length > 0 ? (
                   <>
                     <h3>Season-by-Season Hitting</h3>
+                    <div className="table-scroll-wrapper">
                     <table className="profile-stats-table">
                       <thead>
                         <tr>
@@ -444,6 +478,7 @@ function PlayerProfile({ playerId, onClose, gameAbsStats }: { playerId: number; 
                           ))}
                       </tbody>
                     </table>
+                    </div>
                   </>
                 ) : null}
               </div>
@@ -526,37 +561,6 @@ type MentaculousPlayer = {
   homeRuns: HomeRun[];
   addedAt?: number;
 };
-
-type AbsRoleStats = { challenges: number; overturned: number };
-type AbsPlayerData = { byRole: Partial<Record<'B' | 'C' | 'P', AbsRoleStats>> };
-
-function absPlayerTotals(data: AbsPlayerData): { challenges: number; overturned: number } {
-  return Object.values(data.byRole).reduce(
-    (acc, r) => ({ challenges: acc.challenges + r!.challenges, overturned: acc.overturned + r!.overturned }),
-    { challenges: 0, overturned: 0 }
-  );
-}
-
-function formatAbsEntry(
-  lastName: string,
-  data: AbsPlayerData,
-  season: { challenges: number; overturned: number } | undefined
-): string {
-  const roles = Object.entries(data.byRole) as [string, AbsRoleStats][];
-  const totals = absPlayerTotals(data);
-  const seasonStr =
-    season && season.challenges > totals.challenges
-      ? ` (${season.overturned}/${season.challenges})`
-      : '';
-  if (roles.length === 1) {
-    const [role, stats] = roles[0];
-    return `${lastName}(${role}) ${stats.overturned}/${stats.challenges}${seasonStr}`;
-  }
-  const roleStr = roles
-    .map(([role, stats]) => `${role}:${stats.overturned}/${stats.challenges}`)
-    .join(' ');
-  return `${lastName} ${roleStr}${seasonStr}`;
-}
 
 // User Selection Component
 function UserSelection({ onUserSelect }: { onUserSelect: (userId: string) => void }) {

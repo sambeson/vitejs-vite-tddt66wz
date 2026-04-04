@@ -884,6 +884,11 @@ button:focus {
   font-weight: bold;
 }
 
+.table-scroll-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* ========================================
    TRANSACTION HISTORY SECTION
    Player transaction history in modals
