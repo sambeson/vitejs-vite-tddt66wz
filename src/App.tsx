@@ -174,29 +174,7 @@ function HomerEntry({
 
 export { HomerEntry };
 
-type AbsRoleStats = { challenges: number; overturned: number };
-type AbsPlayerData = { byRole: Partial<Record<'B' | 'C' | 'P', AbsRoleStats>> };
-
-function absPlayerTotals(data: AbsPlayerData): { challenges: number; overturned: number } {
-  return Object.values(data.byRole).reduce(
-    (acc, r) => ({ challenges: acc.challenges + r!.challenges, overturned: acc.overturned + r!.overturned }),
-    { challenges: 0, overturned: 0 }
-  );
-}
-
-function formatAbsEntry(lastName: string, data: AbsPlayerData): string {
-  const roles = Object.entries(data.byRole) as [string, AbsRoleStats][];
-  if (roles.length === 1) {
-    const [role, stats] = roles[0];
-    return `${lastName}(${role}) ${stats.overturned}/${stats.challenges}`;
-  }
-  const roleStr = roles
-    .map(([role, stats]) => `${role}:${stats.overturned}/${stats.challenges}`)
-    .join(' ');
-  return `${lastName} ${roleStr}`;
-}
-
-function PlayerProfile({ playerId, onClose, gameAbsStats }: { playerId: number; onClose: () => void; gameAbsStats?: AbsPlayerData }) {
+function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () => void }) {
   const [profile, setProfile] = useState<any>(null);
   const [careerStats, setCareerStats] = useState<any>(null);
   const [seasonStats, setSeasonStats] = useState<{ hitting?: any[], pitching?: any[] }>({});
@@ -475,29 +453,6 @@ function PlayerProfile({ playerId, onClose, gameAbsStats }: { playerId: number; 
               </div>
             )}
 
-            {gameAbsStats && Object.keys(gameAbsStats.byRole).length > 0 && (() => {
-              const roleLabel: Record<string, string> = { B: 'Batter', C: 'Catcher', P: 'Pitcher' };
-              const roles = Object.entries(gameAbsStats.byRole) as [string, AbsRoleStats][];
-              const totals = absPlayerTotals(gameAbsStats);
-              return (
-                <div className="transaction-history">
-                  <h3>ABS Challenges</h3>
-                  {roles.length === 1 ? (
-                    <p>
-                      {totals.overturned}/{totals.challenges} overturned ({Math.round(totals.overturned / totals.challenges * 100)}%)
-                      {' · '}{roleLabel[roles[0][0]]}
-                    </p>
-                  ) : (
-                    roles.map(([role, stats]) => (
-                      <p key={role}>
-                        {roleLabel[role]}: {stats.overturned}/{stats.challenges} overturned ({Math.round(stats.overturned / stats.challenges * 100)}%)
-                      </p>
-                    ))
-                  )}
-                </div>
-              );
-            })()}
-
             {/* Transaction History Section */}
             <div className="transaction-history">
               <h3>Transaction History</h3>
@@ -595,7 +550,6 @@ function App() {
   const [selectedGame, setSelectedGame] = useState(null);
   const [boxScore, setBoxScore] = useState<any>(null);
   const [gameHRTotals, setGameHRTotals] = useState<Record<number, number>>({});
-  const [absData, setAbsData] = useState<Record<number, AbsPlayerData>>({});
   const [selectedTeam, setSelectedTeam] = useState('away');
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('games');
@@ -1192,43 +1146,6 @@ function App() {
       const totalGameHRs = allPlayers2.reduce((sum: number, p: any) => sum + (p.stats?.batting?.homeRuns ?? 0), 0);
       setGameHRTotals(prev => ({ ...prev, [gamePk]: totalGameHRs }));
 
-      // Fetch ABS challenge data from Baseball Savant
-      try {
-        const savantRes = await fetch(`https://baseballsavant.mlb.com/gf?game_pk=${gamePk}`);
-        const savantData = await savantRes.json();
-        if (savantData.hasAbs) {
-          const newAbsData: Record<number, AbsPlayerData> = {};
-          for (const side of ['away_batters', 'home_batters'] as const) {
-            for (const [batterId, pitches] of Object.entries(savantData[side] || {})) {
-              for (const pitch of pitches as any[]) {
-                if (pitch.is_abs_challenge && pitch.abs_challenge) {
-                  const challengerId: number = pitch.abs_challenge.challenging_player_id;
-                  const isOverturned: boolean = !!pitch.abs_challenge.is_overturned;
-                  let role: 'B' | 'C' | 'P';
-                  if (challengerId === parseInt(batterId)) {
-                    role = 'B';
-                  } else if (pitch.pitcher_id && challengerId === pitch.pitcher_id) {
-                    role = 'P';
-                  } else {
-                    role = 'C';
-                  }
-                  if (!newAbsData[challengerId]) newAbsData[challengerId] = { byRole: {} };
-                  const existing = newAbsData[challengerId].byRole[role] ?? { challenges: 0, overturned: 0 };
-                  newAbsData[challengerId].byRole[role] = {
-                    challenges: existing.challenges + 1,
-                    overturned: existing.overturned + (isOverturned ? 1 : 0),
-                  };
-                }
-              }
-            }
-          }
-          setAbsData(newAbsData);
-        } else {
-          setAbsData({} as Record<number, AbsPlayerData>);
-        }
-      } catch { setAbsData({} as Record<number, AbsPlayerData>); }
-
-
       setBoxScore(boxScore);
     } catch (error) {
       console.error('Error loading box score:', error);
@@ -1369,20 +1286,6 @@ function App() {
               SB— {steals.join('; ')}
             </div>
           )}
-          {(() => {
-            const absChallenges = Object.entries(allPlayers)
-              .filter(([_, p]: [string, any]) => {
-                const data = absData[p.person.id];
-                return data && Object.keys(data.byRole).length > 0;
-              })
-              .map(([_, p]: [string, any]) => {
-                const data = absData[p.person.id];
-                return formatAbsEntry(getLastName(p.person), data);
-              });
-            return absChallenges.length > 0 ? (
-              <div className="stat-line">ABS— {absChallenges.join('; ')}</div>
-            ) : null;
-          })()}
         </div>
 
         {team.baserunning && (
@@ -2370,7 +2273,7 @@ function App() {
                         const otherTeam = entry.teamName === awayName ? homeName : awayName;
                         return sum + (entry.homeRuns ?? []).filter((hr: any) => {
                           const { date } = parseHrId(hr.hrId ?? '');
-                          return date === gameDate && hr.opponent?.includes(otherTeam);
+                          return date === gameDate && (hr.opponent === 'Manual' || hr.opponent?.includes(otherTeam));
                         }).length;
                       }, 0);
                       const totalForGame = gameHRTotals[game.gamePk];
@@ -2749,7 +2652,6 @@ function App() {
             <PlayerProfile
               playerId={selectedPlayerId}
               onClose={() => setSelectedPlayerId(null)}
-              gameAbsStats={absData[selectedPlayerId]}
             />
           )}
         </>
