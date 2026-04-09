@@ -550,6 +550,7 @@ function App() {
   const [selectedGame, setSelectedGame] = useState(null);
   const [boxScore, setBoxScore] = useState<any>(null);
   const [gameHRTotals, setGameHRTotals] = useState<Record<number, number>>({});
+  const [gameHRIds, setGameHRIds] = useState<Record<number, string[]>>({});
   const [selectedTeam, setSelectedTeam] = useState('away');
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('games');
@@ -744,6 +745,25 @@ function App() {
         ] as any[];
         const total = allPlayers.reduce((sum: number, p: any) => sum + (p.stats?.batting?.homeRuns ?? 0), 0);
         setGameHRTotals(prev => ({ ...prev, [game.gamePk]: total }));
+
+        // Compute hrIds for exact ticker matching
+        const playersWithHRs = allPlayers.filter((p: any) => (p.stats?.batting?.homeRuns ?? 0) > 0);
+        const gameDate = game.gameDate.slice(0, 10);
+        const hrIds: string[] = [];
+        await Promise.all(playersWithHRs.map(async (p: any) => {
+          try {
+            const sr = await fetch(`https://statsapi.mlb.com/api/v1/people/${p.person.id}/stats?stats=season&group=hitting`);
+            const sd = await sr.json();
+            const seasonTotal = sd?.stats?.[0]?.splits?.[0]?.stat?.homeRuns ?? 0;
+            const todayHRs: number = p.stats.batting.homeRuns;
+            for (let i = 0; i < todayHRs; i++) {
+              hrIds.push(`${p.person.id}_${gameDate}_${seasonTotal - i}`);
+            }
+          } catch { /* skip player */ }
+        }));
+        if (hrIds.length > 0) {
+          setGameHRIds(prev => ({ ...prev, [game.gamePk]: hrIds }));
+        }
       } catch {
         fetchedHRTotalsRef.current.delete(game.gamePk); // allow retry
       }
@@ -1145,6 +1165,14 @@ function App() {
       ] as any[];
       const totalGameHRs = allPlayers2.reduce((sum: number, p: any) => sum + (p.stats?.batting?.homeRuns ?? 0), 0);
       setGameHRTotals(prev => ({ ...prev, [gamePk]: totalGameHRs }));
+
+      // Store exact hrIds for this game for ticker matching
+      const hrIdsForGame: string[] = updatedPlayers.flatMap((p: any) =>
+        (p.homeRunProgress ?? []).map((hr: any) => hr.hrId)
+      );
+      if (hrIdsForGame.length > 0) {
+        setGameHRIds(prev => ({ ...prev, [gamePk]: hrIdsForGame }));
+      }
 
       setBoxScore(boxScore);
     } catch (error) {
@@ -2267,12 +2295,14 @@ function App() {
                       const isFutureGame = game.status.detailedState === 'Scheduled' || game.status.detailedState === 'Pre-Game';
                       const pitchers = pitcherInfo[game.gamePk];
                       const gameDate = game.gameDate.slice(0, 10);
+                      const knownHRIds = gameHRIds[game.gamePk];
                       const addedForGame = Object.values(mentaculous).reduce((sum: number, entry: any) => {
                         const teamInGame = entry.teamName === awayName || entry.teamName === homeName;
                         if (!teamInGame) return sum;
-                        const otherTeam = entry.teamName === awayName ? homeName : awayName;
                         return sum + (entry.homeRuns ?? []).filter((hr: any) => {
+                          if (knownHRIds) return knownHRIds.includes(hr.hrId);
                           const { date } = parseHrId(hr.hrId ?? '');
+                          const otherTeam = entry.teamName === awayName ? homeName : awayName;
                           return date === gameDate && (hr.opponent === 'Manual' || hr.opponent?.includes(otherTeam));
                         }).length;
                       }, 0);
