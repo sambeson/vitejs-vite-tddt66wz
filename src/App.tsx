@@ -566,6 +566,11 @@ function App() {
   const [boxScore, setBoxScore] = useState<any>(null);
   const [gameHRTotals, setGameHRTotals] = useState<Record<number, number>>({});
   const [gameHRIds, setGameHRIds] = useState<Record<number, string[]>>({});
+  // @ts-ignore - prospectTop100 will be used in future tasks to display prospect badges
+  const [prospectTop100, setProspectTop100] = useState<Set<number>>(new Set());
+  // @ts-ignore - prospectByTeam reserved for future team-based prospect tracking
+  const [prospectByTeam, setProspectByTeam] = useState<Record<number, Set<number>>>({});
+  const prospectTop100FetchedRef = useRef(false);
   const [selectedTeam, setSelectedTeam] = useState('away');
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('games');
@@ -595,6 +600,34 @@ function App() {
   const [selectedTeamRoster, setSelectedTeamRoster] = useState<any>(null);
   const [teamRoster, setTeamRoster] = useState<any[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Fetch top-100 prospects on mount
+  useEffect(() => {
+    if (prospectTop100FetchedRef.current) return;
+    prospectTop100FetchedRef.current = true;
+
+    const cached = getCached<number[]>('prospects_top100', 24);
+    if (cached) {
+      setProspectTop100(new Set(cached));
+      return;
+    }
+
+    // Verify endpoint: /api/v1/draft/prospects may not return active-roster player IDs.
+    // If this fetch returns no useful data, the ★ badge will simply never display.
+    fetch('https://statsapi.mlb.com/api/v1/draft/prospects?limit=100')
+      .then(r => r.json())
+      .then(data => {
+        const ids: number[] = (data?.prospects ?? [])
+          .map((p: any) => p?.person?.id)
+          .filter(Boolean);
+        if (ids.length > 0) {
+          setCached('prospects_top100', ids);
+          setProspectTop100(new Set(ids));
+        }
+        // If 0 results: silently skip — ★ badge not available
+      })
+      .catch(() => { /* silently ignore — badges are non-critical */ });
+  }, []);
 
   // Keep refs in sync for beforeunload handler (closures can't capture latest state)
   useEffect(() => { mentaculousRef.current = mentaculous; }, [mentaculous]);
