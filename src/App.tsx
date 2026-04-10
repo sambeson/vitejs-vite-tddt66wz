@@ -1473,6 +1473,7 @@ function App() {
                     >
                       {player.person.fullName}
                     </span>
+                    {prospectBadge(Number(player.person.id), team.team.id)}
                     {gameSave && (
                       <span className="save-indicator"> (SV, {seasonSaves})</span>
                     )}
