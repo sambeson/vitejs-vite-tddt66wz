@@ -46,7 +46,10 @@ Each team's top-30 is fetched (or loaded from cache) when that team's box score 
 - No tooltip
 
 ### Known Limitation
-`prospectByTeam` is only populated when a team's box score has been loaded (or a valid cache entry exists). Players in the Leaders/Records tab whose team has never been box-score-loaded will show no badge at all (neither ★ nor ◆, regardless of prospect status). This is acceptable — badges in those lists are a bonus that appears naturally as the user browses games.
+`prospectTop100` is loaded independently (not tied to box score loads), so `★` displays for any top-100 player anywhere in the app once the top-100 fetch completes. `prospectByTeam`, however, is populated per box score load — so `◆` (team-specific badge) will be absent for players whose team's box score has never been loaded in the current session or valid cache. This is acceptable — ◆ badges appear naturally as the user browses games.
+
+### Eviction Policy
+When a fresh team prospect fetch occurs (cache expired or missing), the existing `prospectByTeam[teamId]` entry is **replaced**, not merged. This ensures stale prospect status (e.g., a player removed from a prospect list) does not persist.
 
 ---
 
@@ -87,7 +90,7 @@ Fetched on first visit to the Leaders tab, then on category change if not yet ca
 ### Pagination / Show All
 - Default view: top 25 (loaded from top-25 cache entry on return visits)
 - "Show all" fetches limit=999, held in React state only (not localStorage)
-- `showAll` flag resets to `false` on any category switch, sub-tab switch, or data reload (including year-fallback completing)
+- `showAll` flag resets to `false` on any category switch or sub-tab switch
 - "Show all" button hidden if top-25 result has fewer than 26 entries
 - Back button returns to top 25 view and resets `showAll` flag
 - Switching categories always resets to top-25 view
@@ -108,7 +111,9 @@ Clicking a player name sets `selectedPlayerId` and opens the existing `PlayerPro
 New tab `records` in the main nav.
 
 ### Sub-tabs
-**Career** (always present) and **Single Season** (conditional — implement only if API verification confirms `statType=season` without a `season` param returns all-time single-season bests, not current-season data. If verification fails, Records tab is Career-only).
+**Career** (always present) and **Single Season** (conditional).
+
+The Single Season sub-tab is a **pre-ship build-time decision**: before releasing, the implementer must manually test the `statType=season` endpoint without a `season` param to confirm it returns all-time single-season bests (e.g., Bonds 73 HR) rather than the current partial season. If it returns current-season data, the Single Season sub-tab is hard-coded out before shipping and the Records tab ships as Career-only. There is no runtime check — the sub-tab is either in the build or it isn't.
 
 ### Categories (same for both sub-tabs)
 **Batting:** HR, AVG, RBI, R, H, SB, OBP, SLG, OPS, BB, 2B, 3B
@@ -142,10 +147,9 @@ Pitching rate stats (ERA, WHIP, K9) require a minimum innings qualifier. Use the
 - "Show all" button hidden if top-25 result has fewer than 26 entries
 
 ### Sub-tab / Category Navigation
-- Switching between Career and Single Season resets the selected category to the default (HR for batting, SO for pitching) and resets `showAll` to false
-- Switching the Batting/Pitching toggle resets category to its default and resets `showAll` to false
+- Switching between Career and Single Season resets the selected category to the default for whichever Batting/Pitching toggle is currently active (HR if Batting, SO if Pitching), and resets `showAll` to false
+- Switching the Batting/Pitching toggle resets category to the new toggle's default (HR for Batting, SO for Pitching) and resets `showAll` to false
 - Switching categories resets to top-25 view and resets `showAll` to false
-- `showAll` also resets on any data reload
 
 ### Historical Players Without Modals
 Each API response entry includes a `person` object with `id` and `fullName`. If `person` or `person.id` is absent, render the name as **plain non-interactive text** (no click handler, no `selectedPlayerId` trigger) using whatever name string is available in the response. If no name is available at all, skip the row entirely. Players who have a `person.id` but sparse profile data are rendered as tappable — the `PlayerProfile` component handles the empty-profile case gracefully.
