@@ -1538,6 +1538,16 @@ function App() {
       .join(', ');
   };
 
+  const prospectBadge = (playerId: number, teamId: number): React.ReactNode => {
+    if (prospectTop100.has(playerId)) {
+      return <sup style={{ fontSize: '0.65em', color: '#FFD700', marginLeft: 1 }}>★</sup>;
+    }
+    if (prospectByTeam[teamId]?.has(playerId)) {
+      return <sup style={{ fontSize: '0.65em', color: '#4A90D9', marginLeft: 1 }}>◆</sup>;
+    }
+    return null;
+  };
+
   const renderBattingStats = (team: any) => {
     const players = Object.entries(team.players || {})
       .filter(([_, p]: [string, any]) => p.stats?.batting?.plateAppearances > 0)
@@ -1575,6 +1585,7 @@ function App() {
                       >
                         {player.person.fullName}
                       </span>
+                      {prospectBadge(Number(player.person.id), team.team.id)}
                       {player.position.abbreviation !== 'P' && (
                         <span className="position">
                           {' '}
