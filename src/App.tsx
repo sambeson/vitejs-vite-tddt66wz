@@ -1220,6 +1220,30 @@ function App() {
         setGameHRIds(prev => ({ ...prev, [gamePk]: hrIdsForGame }));
       }
 
+      // Fetch org prospect lists for both teams in this game
+      const awayTeamId: number = boxScore?.teams?.away?.team?.id;
+      const homeTeamId: number = boxScore?.teams?.home?.team?.id;
+      for (const teamId of [awayTeamId, homeTeamId].filter(Boolean)) {
+        const cacheKey = `prospects_${teamId}`;
+        const cached = getCached<number[]>(cacheKey, 24);
+        if (cached) {
+          setProspectByTeam(prev => ({ ...prev, [teamId]: new Set(cached) }));
+          continue;
+        }
+        fetch(`https://statsapi.mlb.com/api/v1/teams/${teamId}/roster?rosterType=prospect`)
+          .then(r => r.json())
+          .then(data => {
+            const ids: number[] = (data?.roster ?? [])
+              .map((p: any) => p?.person?.id)
+              .filter(Boolean);
+            if (ids.length > 0) {
+              setCached(cacheKey, ids);
+              setProspectByTeam(prev => ({ ...prev, [teamId]: new Set(ids) }));
+            }
+          })
+          .catch(() => { /* silently ignore */ });
+      }
+
       setBoxScore(boxScore);
     } catch (error) {
       console.error('Error loading box score:', error);
