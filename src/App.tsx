@@ -539,8 +539,23 @@ function UserSelection({ onUserSelect }: { onUserSelect: (userId: string) => voi
   );
 }
 
+function getCached<T>(key: string, ttlHours: number): T | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > ttlHours * 3600 * 1000) return null;
+    return data as T;
+  } catch {
+    return null;
+  }
+}
 
-
+function setCached<T>(key: string, data: T): void {
+  try {
+    localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+  } catch { /* storage full — skip cache */ }
+}
 
 
 function App() {
