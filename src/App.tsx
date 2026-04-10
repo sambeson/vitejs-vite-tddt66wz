@@ -566,9 +566,9 @@ function App() {
   const [boxScore, setBoxScore] = useState<any>(null);
   const [gameHRTotals, setGameHRTotals] = useState<Record<number, number>>({});
   const [gameHRIds, setGameHRIds] = useState<Record<number, string[]>>({});
-  // @ts-ignore - prospectTop100 will be used in future tasks to display prospect badges
+  // @ts-expect-error - prospectTop100 set via future fetch but unused in current component
   const [prospectTop100, setProspectTop100] = useState<Set<number>>(new Set());
-  // @ts-ignore - prospectByTeam reserved for future team-based prospect tracking
+  // @ts-expect-error - prospectByTeam reserved for future team-based prospect tracking
   const [prospectByTeam, setProspectByTeam] = useState<Record<number, Set<number>>>({});
   const prospectTop100FetchedRef = useRef(false);
   const [selectedTeam, setSelectedTeam] = useState('away');
