@@ -1265,6 +1265,71 @@ function App() {
     setDate(currentDate.toISOString().split('T')[0]);
   };
 
+  const fetchLeaders = async (category: string, group: 'hitting' | 'pitching', showAll = false) => {
+    if (showAll && leadersAllData.length > 0) {
+      setLeadersShowAll(true);
+      return;
+    }
+    const limit = showAll ? 999 : 25;
+    if (!showAll) {
+      const year = new Date().getFullYear();
+      // Try current year cache first
+      for (const yr of [year, year - 1]) {
+        const cacheKey = `leaders_${category}_${yr}`;
+        const cached = getCached<{ year: number; leaders: any[] }>(cacheKey, 24);
+        if (cached && cached.leaders.length > 0) {
+          setLeadersData(cached.leaders);
+          setLeadersYear(cached.year);
+          setLeadersShowAll(false);
+          setLeadersAllData([]);
+          return;
+        }
+      }
+    }
+
+    setLeadersLoading(true);
+    setLeadersError(false);
+    const year = new Date().getFullYear();
+
+    try {
+      let data: any = null;
+      let actualYear = year;
+      for (const yr of [year, year - 1]) {
+        const res = await fetch(
+          `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${category}&season=${yr}&limit=${limit}&statGroup=${group}`
+        );
+        const json = await res.json();
+        const leaders = json?.leagueLeaders?.[0]?.leaders ?? [];
+        if (leaders.length > 0) {
+          data = leaders;
+          actualYear = yr;
+          break;
+        }
+      }
+
+      if (!data || data.length === 0) {
+        setLeadersError(true);
+        setLeadersLoading(false);
+        return;
+      }
+
+      if (showAll) {
+        setLeadersAllData(data);
+        setLeadersShowAll(true);
+      } else {
+        setCached(`leaders_${category}_${actualYear}`, { year: actualYear, leaders: data });
+        setLeadersData(data);
+        setLeadersYear(actualYear);
+        setLeadersShowAll(false);
+        setLeadersAllData([]);
+      }
+    } catch {
+      setLeadersError(true);
+    } finally {
+      setLeadersLoading(false);
+    }
+  };
+
   // Helper function to format game time
   const formatGameTime = (gameDate: string) => {
     try {
