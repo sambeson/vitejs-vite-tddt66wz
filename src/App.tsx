@@ -569,6 +569,14 @@ function App() {
   const [prospectTop100, setProspectTop100] = useState<Set<number>>(new Set());
   const [prospectByTeam, setProspectByTeam] = useState<Record<number, Set<number>>>({});
   const prospectTop100FetchedRef = useRef(false);
+  const [leadersTab, setLeadersTab] = useState<'batting' | 'pitching'>('batting');
+  const [leadersCategory, setLeadersCategory] = useState('homeRuns');
+  const [leadersData, setLeadersData] = useState<any[]>([]);
+  const [leadersShowAll, setLeadersShowAll] = useState(false);
+  const [leadersAllData, setLeadersAllData] = useState<any[]>([]);
+  const [leadersLoading, setLeadersLoading] = useState(false);
+  const [leadersError, setLeadersError] = useState(false);
+  const [leadersYear, setLeadersYear] = useState<number | null>(null);
   const [selectedTeam, setSelectedTeam] = useState('away');
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('games');
@@ -1538,6 +1546,39 @@ function App() {
       })
       .join(', ');
   };
+
+  const BATTING_LEADER_CATEGORIES: { key: string; label: string }[] = [
+    { key: 'homeRuns', label: 'HR' },
+    { key: 'battingAverage', label: 'AVG' },
+    { key: 'runsBattedIn', label: 'RBI' },
+    { key: 'runs', label: 'R' },
+    { key: 'hits', label: 'H' },
+    { key: 'stolenBases', label: 'SB' },
+    { key: 'onBasePercentage', label: 'OBP' },
+    { key: 'sluggingPercentage', label: 'SLG' },
+    { key: 'onBasePlusSlugging', label: 'OPS' },
+    { key: 'baseOnBalls', label: 'BB' },
+    { key: 'strikeOuts', label: 'SO' },
+    { key: 'doubles', label: '2B' },
+    { key: 'triples', label: '3B' },
+  ];
+
+  const PITCHING_LEADER_CATEGORIES: { key: string; label: string }[] = [
+    { key: 'earnedRunAverage', label: 'ERA' },
+    { key: 'wins', label: 'W' },
+    { key: 'strikeOuts', label: 'SO' },
+    { key: 'saves', label: 'SV' },
+    { key: 'walksAndHitsPerInningPitched', label: 'WHIP' },
+    { key: 'inningsPitched', label: 'IP' },
+    { key: 'holds', label: 'HLD' },
+    { key: 'completeGames', label: 'CG' },
+    { key: 'shutouts', label: 'SHO' },
+    { key: 'baseOnBalls', label: 'BB' },
+    { key: 'hitsPerNine', label: 'H9' },
+    { key: 'homeRunsPer9', label: 'HR9' },
+    { key: 'strikeoutsPer9Inn', label: 'K9' },
+    { key: 'strikeoutWalkRatio', label: 'K/BB' },
+  ];
 
   const prospectBadge = (playerId: number, teamId: number): React.ReactNode => {
     if (prospectTop100.has(playerId)) {
