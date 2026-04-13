@@ -1670,3 +1670,119 @@ button:focus {
   }
 }
 
+
+/* === Leaders / Records Tab === */
+.leaders-container {
+  padding: 12px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.leaders-subtabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.leaders-subtabs button {
+  padding: 6px 14px;
+  border-radius: 16px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.leaders-subtabs button.active {
+  background: #041e42;
+  color: #fff;
+  border-color: #041e42;
+}
+
+.leaders-pills {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.leaders-pill {
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  background: #f5f5f5;
+  cursor: pointer;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.leaders-pill.active {
+  background: #041e42;
+  color: #fff;
+  border-color: #041e42;
+}
+
+.leaders-year-label {
+  font-size: 0.75rem;
+  color: #888;
+  margin-bottom: 6px;
+}
+
+.leaders-status {
+  padding: 20px;
+  text-align: center;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.leaders-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.leaders-table tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+.leaders-rank {
+  width: 32px;
+  text-align: right;
+  padding: 5px 8px;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.leaders-name {
+  padding: 5px 8px;
+  font-size: 0.88rem;
+}
+
+.leaders-team {
+  padding: 5px 4px;
+  font-size: 0.78rem;
+  color: #555;
+  width: 40px;
+}
+
+.leaders-value {
+  padding: 5px 8px;
+  font-size: 0.88rem;
+  font-weight: bold;
+  text-align: right;
+}
+
+.leaders-show-all {
+  display: block;
+  margin: 12px auto 0;
+  padding: 6px 18px;
+  border-radius: 14px;
+  border: 1px solid #041e42;
+  background: #fff;
+  color: #041e42;
+  cursor: pointer;
+  font-size: 0.82rem;
+}

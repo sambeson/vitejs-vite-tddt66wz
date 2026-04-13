@@ -641,6 +641,13 @@ function App() {
   useEffect(() => { dataLoadedRef.current = dataLoaded; }, [dataLoaded]);
   useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
 
+  useEffect(() => {
+    if (activeTab !== 'leaders') return;
+    const group = leadersTab === 'batting' ? 'hitting' : 'pitching';
+    fetchLeaders(leadersCategory, group);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, leadersCategory, leadersTab]);
+
   // beforeunload: flush latest state to localStorage immediately on force close
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -2121,6 +2128,8 @@ function App() {
     );
   };
 
+  const renderRecords = () => <div className="leaders-container">Records coming soon</div>;
+
   const renderLeaders = () => {
     const categories = leadersTab === 'batting' ? BATTING_LEADER_CATEGORIES : PITCHING_LEADER_CATEGORIES;
     const displayData = leadersShowAll ? leadersAllData : leadersData;
@@ -2504,6 +2513,24 @@ function App() {
                     }}
                   >
                     Standings
+                  </button>
+                  <button
+                    className={activeTab === 'leaders' ? 'active' : ''}
+                    onClick={() => {
+                      setActiveTab('leaders');
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Leaders
+                  </button>
+                  <button
+                    className={activeTab === 'records' ? 'active' : ''}
+                    onClick={() => {
+                      setActiveTab('records');
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Records
                   </button>
                   {selectedTeamRoster && (
                     <button
@@ -2967,6 +2994,10 @@ function App() {
           )}
 
           {activeTab === 'standings' && renderStandings()}
+
+          {activeTab === 'leaders' && renderLeaders()}
+
+          {activeTab === 'records' && renderRecords()}
 
           {activeTab === 'roster' && renderRoster()}
 
