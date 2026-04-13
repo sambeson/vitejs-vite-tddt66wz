@@ -577,6 +577,14 @@ function App() {
   const [leadersLoading, setLeadersLoading] = useState(false);
   const [leadersError, setLeadersError] = useState(false);
   const [leadersYear, setLeadersYear] = useState<number | null>(null);
+  const [recordsSubtab, setRecordsSubtab] = useState<'career' | 'season'>('career');
+  const [recordsGroup, setRecordsGroup] = useState<'batting' | 'pitching'>('batting');
+  const [recordsCategory, setRecordsCategory] = useState('homeRuns');
+  const [recordsData, setRecordsData] = useState<any[]>([]);
+  const [recordsShowAll, setRecordsShowAll] = useState(false);
+  const [recordsAllData, setRecordsAllData] = useState<any[]>([]);
+  const [recordsLoading, setRecordsLoading] = useState(false);
+  const [recordsError, setRecordsError] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState('away');
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('games');
@@ -1337,6 +1345,62 @@ function App() {
     }
   };
 
+  const fetchRecords = async (
+    category: string,
+    statType: 'career' | 'season',
+    group: 'hitting' | 'pitching',
+    showAll = false
+  ) => {
+    if (showAll && recordsAllData.length > 0) {
+      setRecordsShowAll(true);
+      return;
+    }
+    const limit = showAll ? 999 : 25;
+    const ttlHours = 24 * 7; // 7 days
+
+    if (!showAll) {
+      const cacheKey = `records_${statType}_${category}`;
+      const cached = getCached<any[]>(cacheKey, ttlHours);
+      if (cached && cached.length > 0) {
+        setRecordsData(cached);
+        setRecordsShowAll(false);
+        setRecordsAllData([]);
+        return;
+      }
+    }
+
+    setRecordsLoading(true);
+    setRecordsError(false);
+
+    try {
+      const res = await fetch(
+        `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${category}&statType=${statType}&limit=${limit}&statGroup=${group}`
+      );
+      const json = await res.json();
+      const leaders = json?.leagueLeaders?.[0]?.leaders ?? [];
+
+      if (leaders.length === 0) {
+        setRecordsError(true);
+        setRecordsLoading(false);
+        return;
+      }
+
+      if (showAll) {
+        setRecordsAllData(leaders);
+        setRecordsShowAll(true);
+      } else {
+        setCached(`records_${statType}_${category}`, leaders);
+        setRecordsData(leaders);
+        setRecordsShowAll(false);
+        setRecordsAllData([]);
+      }
+    } catch {
+      setRecordsError(true);
+    } finally {
+      setRecordsLoading(false);
+    }
+  };
+
   // Helper function to format game time
   const formatGameTime = (gameDate: string) => {
     try {
@@ -1650,6 +1714,32 @@ function App() {
     { key: 'homeRunsPer9', label: 'HR9' },
     { key: 'strikeoutsPer9Inn', label: 'K9' },
     { key: 'strikeoutWalkRatio', label: 'K/BB' },
+  ];
+
+  const BATTING_RECORD_CATEGORIES: { key: string; label: string }[] = [
+    { key: 'homeRuns', label: 'HR' },
+    { key: 'battingAverage', label: 'AVG' },
+    { key: 'runsBattedIn', label: 'RBI' },
+    { key: 'runs', label: 'R' },
+    { key: 'hits', label: 'H' },
+    { key: 'stolenBases', label: 'SB' },
+    { key: 'onBasePercentage', label: 'OBP' },
+    { key: 'sluggingPercentage', label: 'SLG' },
+    { key: 'onBasePlusSlugging', label: 'OPS' },
+    { key: 'baseOnBalls', label: 'BB' },
+    { key: 'doubles', label: '2B' },
+    { key: 'triples', label: '3B' },
+  ];
+
+  const PITCHING_RECORD_CATEGORIES: { key: string; label: string }[] = [
+    { key: 'strikeOuts', label: 'SO' },
+    { key: 'wins', label: 'W' },
+    { key: 'earnedRunAverage', label: 'ERA' },
+    { key: 'saves', label: 'SV' },
+    { key: 'walksAndHitsPerInningPitched', label: 'WHIP' },
+    { key: 'inningsPitched', label: 'IP' },
+    { key: 'strikeoutsPer9Inn', label: 'K9' },
+    { key: 'shutouts', label: 'SHO' },
   ];
 
   const prospectBadge = (playerId: number, teamId: number): React.ReactNode => {
