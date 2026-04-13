@@ -656,6 +656,16 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, leadersCategory, leadersTab]);
 
+  useEffect(() => {
+    if (activeTab !== 'records') return;
+    fetchRecords(
+      recordsCategory,
+      recordsSubtab,
+      recordsGroup === 'batting' ? 'hitting' : 'pitching'
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, recordsCategory, recordsSubtab, recordsGroup]);
+
   // beforeunload: flush latest state to localStorage immediately on force close
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -2218,7 +2228,128 @@ function App() {
     );
   };
 
-  const renderRecords = () => <div className="leaders-container">Records coming soon</div>;
+  const renderRecords = () => {
+    const categories = recordsGroup === 'batting' ? BATTING_RECORD_CATEGORIES : PITCHING_RECORD_CATEGORIES;
+    const displayData = recordsShowAll ? recordsAllData : recordsData;
+
+    const switchGroup = (g: 'batting' | 'pitching') => {
+      const def = g === 'batting' ? 'homeRuns' : 'strikeOuts';
+      setRecordsGroup(g);
+      setRecordsCategory(def);
+      setRecordsShowAll(false);
+      setRecordsAllData([]);
+      setRecordsData([]);
+    };
+
+    const switchSubtab = (st: 'career' | 'season') => {
+      // Derive default from the CURRENT group value, not the captured `defaultCategory` render-time var
+      const def = recordsGroup === 'batting' ? 'homeRuns' : 'strikeOuts';
+      setRecordsSubtab(st);
+      setRecordsCategory(def);
+      setRecordsShowAll(false);
+      setRecordsAllData([]);
+      setRecordsData([]);
+    };
+
+    return (
+      <div className="leaders-container">
+        <div className="leaders-subtabs">
+          <button
+            className={recordsSubtab === 'career' ? 'active' : ''}
+            onClick={() => switchSubtab('career')}
+          >
+            Career
+          </button>
+          <button
+            className={recordsSubtab === 'season' ? 'active' : ''}
+            onClick={() => switchSubtab('season')}
+          >
+            Single Season
+          </button>
+        </div>
+
+        <div className="leaders-subtabs">
+          <button
+            className={recordsGroup === 'batting' ? 'active' : ''}
+            onClick={() => switchGroup('batting')}
+          >
+            Batting
+          </button>
+          <button
+            className={recordsGroup === 'pitching' ? 'active' : ''}
+            onClick={() => switchGroup('pitching')}
+          >
+            Pitching
+          </button>
+        </div>
+
+        <div className="leaders-pills">
+          {categories.map(cat => (
+            <button
+              key={cat.key}
+              className={`leaders-pill${recordsCategory === cat.key ? ' active' : ''}`}
+              onClick={() => {
+                if (cat.key === recordsCategory) return;
+                setRecordsCategory(cat.key);
+                setRecordsShowAll(false);
+                setRecordsAllData([]);
+                setRecordsData([]);
+              }}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {recordsLoading && <div className="leaders-status">Loading...</div>}
+        {recordsError && <div className="leaders-status">Failed to load</div>}
+
+        {!recordsLoading && !recordsError && displayData.length > 0 && (
+          <>
+            <table className="leaders-table">
+              <tbody>
+                {displayData.map((entry: any, i: number) => (
+                  <tr key={i}>
+                    <td className="leaders-rank">{entry.rank ?? i + 1}</td>
+                    <td className="leaders-name">
+                      {entry.person?.id ? (
+                        <span
+                          className="clickable-name"
+                          onClick={() => setSelectedPlayerId(Number(entry.person.id))}
+                        >
+                          {entry.person.fullName}
+                        </span>
+                      ) : (
+                        <span>{entry.person?.fullName ?? entry.value ?? '—'}</span>
+                      )}
+                    </td>
+                    <td className="leaders-team">{entry.team?.abbreviation ?? '—'}</td>
+                    <td className="leaders-value">{entry.value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!recordsShowAll && recordsData.length > 25 && (
+              <button
+                className="leaders-show-all"
+                onClick={() => fetchRecords(recordsCategory, recordsSubtab, recordsGroup === 'batting' ? 'hitting' : 'pitching', true)}
+              >
+                Show all
+              </button>
+            )}
+            {recordsShowAll && (
+              <button
+                className="leaders-show-all"
+                onClick={() => setRecordsShowAll(false)}
+              >
+                Show top 25
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    );
+  };
 
   const renderLeaders = () => {
     const categories = leadersTab === 'batting' ? BATTING_LEADER_CATEGORIES : PITCHING_LEADER_CATEGORIES;
