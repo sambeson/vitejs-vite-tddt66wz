@@ -576,7 +576,6 @@ function App() {
   const [leadersYear, setLeadersYear] = useState<number | null>(null);
   const [recordsGroup, setRecordsGroup] = useState<'batting' | 'pitching'>('batting');
   const [recordsCategory, setRecordsCategory] = useState('homeRuns');
-  const [recordsPlayerPool, setRecordsPlayerPool] = useState<'All' | 'Active'>('All');
   const [recordsData, setRecordsData] = useState<any[]>([]);
   const [recordsShowAll, setRecordsShowAll] = useState(false);
   const [recordsAllData, setRecordsAllData] = useState<any[]>([]);
@@ -629,11 +628,10 @@ function App() {
     if (activeTab !== 'records') return;
     fetchRecords(
       recordsCategory,
-      recordsGroup === 'batting' ? 'hitting' : 'pitching',
-      recordsPlayerPool
+      recordsGroup === 'batting' ? 'hitting' : 'pitching'
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, recordsCategory, recordsGroup, recordsPlayerPool]);
+  }, [activeTab, recordsCategory, recordsGroup]);
 
   // beforeunload: flush latest state to localStorage immediately on force close
   useEffect(() => {
@@ -1303,7 +1301,6 @@ function App() {
   const fetchRecords = async (
     category: string,
     group: 'hitting' | 'pitching',
-    playerPool: 'All' | 'Active',
     showAll = false
   ) => {
     if (showAll && recordsAllData.length > 0) {
@@ -1314,7 +1311,7 @@ function App() {
     const ttlHours = 24 * 7; // 7 days
 
     if (!showAll) {
-      const cacheKey = `records_${playerPool}_${category}`;
+      const cacheKey = `records_${category}`;
       const cached = getCached<any[]>(cacheKey, ttlHours);
       if (cached && cached.length > 0) {
         setRecordsData(cached);
@@ -1328,9 +1325,8 @@ function App() {
     setRecordsError(false);
 
     try {
-      const poolParam = playerPool === 'Active' ? '&playerPool=Active' : '';
       const res = await fetch(
-        `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${category}&statType=career&limit=${limit}&statGroup=${group}${poolParam}`
+        `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${category}&statType=career&limit=${limit}&statGroup=${group}`
       );
       const json = await res.json();
       const leaders = json?.leagueLeaders?.[0]?.leaders ?? [];
@@ -1345,7 +1341,7 @@ function App() {
         setRecordsAllData(leaders);
         setRecordsShowAll(true);
       } else {
-        setCached(`records_${playerPool}_${category}`, leaders);
+        setCached(`records_${category}`, leaders);
         setRecordsData(leaders);
         setRecordsShowAll(false);
         setRecordsAllData([]);
@@ -2183,21 +2179,6 @@ function App() {
       <div className="leaders-container">
         <div className="leaders-subtabs">
           <button
-            className={recordsPlayerPool === 'All' ? 'active' : ''}
-            onClick={() => { setRecordsPlayerPool('All'); resetData(); }}
-          >
-            All Time
-          </button>
-          <button
-            className={recordsPlayerPool === 'Active' ? 'active' : ''}
-            onClick={() => { setRecordsPlayerPool('Active'); resetData(); }}
-          >
-            Active
-          </button>
-        </div>
-
-        <div className="leaders-subtabs">
-          <button
             className={recordsGroup === 'batting' ? 'active' : ''}
             onClick={() => switchGroup('batting')}
           >
@@ -2260,7 +2241,7 @@ function App() {
             {!recordsShowAll && recordsData.length > 0 && (
               <button
                 className="leaders-show-all"
-                onClick={() => fetchRecords(recordsCategory, recordsGroup === 'batting' ? 'hitting' : 'pitching', recordsPlayerPool, true)}
+                onClick={() => fetchRecords(recordsCategory, recordsGroup === 'batting' ? 'hitting' : 'pitching', true)}
               >
                 Show all
               </button>
