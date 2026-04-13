@@ -567,7 +567,6 @@ function App() {
   const [gameHRTotals, setGameHRTotals] = useState<Record<number, number>>({});
   const [gameHRIds, setGameHRIds] = useState<Record<number, string[]>>({});
   const [prospectTop100, setProspectTop100] = useState<Set<number>>(new Set());
-  const [prospectByTeam, setProspectByTeam] = useState<Record<number, Set<number>>>({});
   const prospectTop100FetchedRef = useRef(false);
   const [leadersTab, setLeadersTab] = useState<'batting' | 'pitching'>('batting');
   const [leadersCategory, setLeadersCategory] = useState('homeRuns');
@@ -1252,30 +1251,6 @@ function App() {
         setGameHRIds(prev => ({ ...prev, [gamePk]: hrIdsForGame }));
       }
 
-      // Fetch org prospect lists for both teams in this game
-      const awayTeamId: number = boxScore?.teams?.away?.team?.id;
-      const homeTeamId: number = boxScore?.teams?.home?.team?.id;
-      for (const teamId of [awayTeamId, homeTeamId].filter(Boolean)) {
-        const cacheKey = `prospects_${teamId}`;
-        const cached = getCached<number[]>(cacheKey, 24);
-        if (cached) {
-          setProspectByTeam(prev => ({ ...prev, [teamId]: new Set(cached) }));
-          continue;
-        }
-        fetch(`https://statsapi.mlb.com/api/v1/teams/${teamId}/roster?rosterType=prospect`)
-          .then(r => r.json())
-          .then(data => {
-            const ids: number[] = (data?.roster ?? [])
-              .map((p: any) => p?.person?.id)
-              .filter(Boolean);
-            if (ids.length > 0) {
-              setCached(cacheKey, ids);
-              setProspectByTeam(prev => ({ ...prev, [teamId]: new Set(ids) }));
-            }
-          })
-          .catch(() => { /* silently ignore */ });
-      }
-
       setBoxScore(boxScore);
     } catch (error) {
       console.error('Error loading box score:', error);
@@ -1751,12 +1726,9 @@ function App() {
     { key: 'shutouts', label: 'SHO' },
   ];
 
-  const prospectBadge = (playerId: number, teamId: number): React.ReactNode => {
+  const prospectBadge = (playerId: number, _teamId: number): React.ReactNode => {
     if (prospectTop100.has(playerId)) {
       return <sup style={{ fontSize: '0.65em', color: '#FFD700', marginLeft: 1 }}>★</sup>;
-    }
-    if (prospectByTeam[teamId]?.has(playerId)) {
-      return <sup style={{ fontSize: '0.65em', color: '#4A90D9', marginLeft: 1 }}>◆</sup>;
     }
     return null;
   };

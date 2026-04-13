@@ -1689,6 +1689,7 @@ button:focus {
   border-radius: 16px;
   border: 1px solid #ccc;
   background: #fff;
+  color: #333;
   cursor: pointer;
   font-size: 0.85rem;
 }
