@@ -577,7 +577,6 @@ function App() {
   const [leadersLoading, setLeadersLoading] = useState(false);
   const [leadersError, setLeadersError] = useState(false);
   const [leadersYear, setLeadersYear] = useState<number | null>(null);
-  const [recordsSubtab, setRecordsSubtab] = useState<'career' | 'season'>('career');
   const [recordsGroup, setRecordsGroup] = useState<'batting' | 'pitching'>('batting');
   const [recordsCategory, setRecordsCategory] = useState('homeRuns');
   const [recordsData, setRecordsData] = useState<any[]>([]);
@@ -660,11 +659,11 @@ function App() {
     if (activeTab !== 'records') return;
     fetchRecords(
       recordsCategory,
-      recordsSubtab,
+      'career',
       recordsGroup === 'batting' ? 'hitting' : 'pitching'
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, recordsCategory, recordsSubtab, recordsGroup]);
+  }, [activeTab, recordsCategory, recordsGroup]);
 
   // beforeunload: flush latest state to localStorage immediately on force close
   useEffect(() => {
@@ -2241,33 +2240,8 @@ function App() {
       setRecordsData([]);
     };
 
-    const switchSubtab = (st: 'career' | 'season') => {
-      // Derive default from the CURRENT group value, not the captured `defaultCategory` render-time var
-      const def = recordsGroup === 'batting' ? 'homeRuns' : 'strikeOuts';
-      setRecordsSubtab(st);
-      setRecordsCategory(def);
-      setRecordsShowAll(false);
-      setRecordsAllData([]);
-      setRecordsData([]);
-    };
-
     return (
       <div className="leaders-container">
-        <div className="leaders-subtabs">
-          <button
-            className={recordsSubtab === 'career' ? 'active' : ''}
-            onClick={() => switchSubtab('career')}
-          >
-            Career
-          </button>
-          <button
-            className={recordsSubtab === 'season' ? 'active' : ''}
-            onClick={() => switchSubtab('season')}
-          >
-            Single Season
-          </button>
-        </div>
-
         <div className="leaders-subtabs">
           <button
             className={recordsGroup === 'batting' ? 'active' : ''}
@@ -2332,7 +2306,7 @@ function App() {
             {!recordsShowAll && recordsData.length > 25 && (
               <button
                 className="leaders-show-all"
-                onClick={() => fetchRecords(recordsCategory, recordsSubtab, recordsGroup === 'batting' ? 'hitting' : 'pitching', true)}
+                onClick={() => fetchRecords(recordsCategory, 'career', recordsGroup === 'batting' ? 'hitting' : 'pitching', true)}
               >
                 Show all
               </button>
