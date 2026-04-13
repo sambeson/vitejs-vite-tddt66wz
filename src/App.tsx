@@ -2121,6 +2121,114 @@ function App() {
     );
   };
 
+  const renderLeaders = () => {
+    const categories = leadersTab === 'batting' ? BATTING_LEADER_CATEGORIES : PITCHING_LEADER_CATEGORIES;
+    const displayData = leadersShowAll ? leadersAllData : leadersData;
+    const currentYear = new Date().getFullYear();
+
+    return (
+      <div className="leaders-container">
+        <div className="leaders-subtabs">
+          <button
+            className={leadersTab === 'batting' ? 'active' : ''}
+            onClick={() => {
+              setLeadersTab('batting');
+              setLeadersCategory('homeRuns');
+              setLeadersShowAll(false);
+              setLeadersAllData([]);
+              setLeadersData([]);
+            }}
+          >
+            Batting
+          </button>
+          <button
+            className={leadersTab === 'pitching' ? 'active' : ''}
+            onClick={() => {
+              setLeadersTab('pitching');
+              setLeadersCategory('earnedRunAverage');
+              setLeadersShowAll(false);
+              setLeadersAllData([]);
+              setLeadersData([]);
+            }}
+          >
+            Pitching
+          </button>
+        </div>
+
+        <div className="leaders-pills">
+          {categories.map(cat => (
+            <button
+              key={cat.key}
+              className={`leaders-pill${leadersCategory === cat.key ? ' active' : ''}`}
+              onClick={() => {
+                if (cat.key === leadersCategory) return;
+                setLeadersCategory(cat.key);
+                setLeadersShowAll(false);
+                setLeadersAllData([]);
+                setLeadersData([]);
+              }}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {leadersYear && leadersYear !== currentYear && (
+          <div className="leaders-year-label">({leadersYear} season)</div>
+        )}
+
+        {leadersLoading && <div className="leaders-status">Loading...</div>}
+        {leadersError && <div className="leaders-status">Failed to load</div>}
+
+        {!leadersLoading && !leadersError && displayData.length > 0 && (
+          <>
+            <table className="leaders-table">
+              <tbody>
+                {displayData.map((entry: any, i: number) => (
+                  <tr key={i}>
+                    <td className="leaders-rank">{entry.rank ?? i + 1}</td>
+                    <td className="leaders-name">
+                      {entry.person?.id ? (
+                        <span
+                          className="clickable-name"
+                          onClick={() => setSelectedPlayerId(Number(entry.person.id))}
+                        >
+                          {entry.person.fullName}
+                        </span>
+                      ) : (
+                        <span>{entry.person?.fullName ?? '—'}</span>
+                      )}
+                    </td>
+                    <td className="leaders-team">{entry.team?.abbreviation ?? '—'}</td>
+                    <td className="leaders-value">{entry.value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!leadersShowAll && leadersData.length > 25 && (
+              <button
+                className="leaders-show-all"
+                onClick={() => fetchLeaders(leadersCategory, leadersTab === 'batting' ? 'hitting' : 'pitching', true)}
+              >
+                Show all
+              </button>
+            )}
+            {leadersShowAll && (
+              <button
+                className="leaders-show-all"
+                onClick={() => {
+                  setLeadersShowAll(false);
+                }}
+              >
+                Show top 25
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    );
+  };
+
   const [historicalPage, setHistoricalPage] = useState(0);
   const [historicalTooltipId, setHistoricalTooltipId] = useState<string | null>(null);
 
