@@ -566,8 +566,6 @@ function App() {
   const [boxScore, setBoxScore] = useState<any>(null);
   const [gameHRTotals, setGameHRTotals] = useState<Record<number, number>>({});
   const [gameHRIds, setGameHRIds] = useState<Record<number, string[]>>({});
-  const [prospectTop100, setProspectTop100] = useState<Set<number>>(new Set());
-  const prospectTop100FetchedRef = useRef(false);
   const [leadersTab, setLeadersTab] = useState<'batting' | 'pitching'>('batting');
   const [leadersCategory, setLeadersCategory] = useState('homeRuns');
   const [leadersData, setLeadersData] = useState<any[]>([]);
@@ -612,34 +610,6 @@ function App() {
   const [selectedTeamRoster, setSelectedTeamRoster] = useState<any>(null);
   const [teamRoster, setTeamRoster] = useState<any[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  // Fetch top-100 prospects on mount
-  useEffect(() => {
-    if (prospectTop100FetchedRef.current) return;
-    prospectTop100FetchedRef.current = true;
-
-    const cached = getCached<number[]>('prospects_top100', 24);
-    if (cached) {
-      setProspectTop100(new Set(cached));
-      return;
-    }
-
-    // Verify endpoint: /api/v1/draft/prospects may not return active-roster player IDs.
-    // If this fetch returns no useful data, the ★ badge will simply never display.
-    fetch('https://statsapi.mlb.com/api/v1/draft/prospects?limit=100')
-      .then(r => r.json())
-      .then(data => {
-        const ids: number[] = (data?.prospects ?? [])
-          .map((p: any) => p?.person?.id)
-          .filter(Boolean);
-        if (ids.length > 0) {
-          setCached('prospects_top100', ids);
-          setProspectTop100(new Set(ids));
-        }
-        // If 0 results: silently skip — ★ badge not available
-      })
-      .catch(() => { /* silently ignore — badges are non-critical */ });
-  }, []);
 
   // Keep refs in sync for beforeunload handler (closures can't capture latest state)
   useEffect(() => { mentaculousRef.current = mentaculous; }, [mentaculous]);
@@ -1601,7 +1571,6 @@ function App() {
                     >
                       {player.person.fullName}
                     </span>
-                    {prospectBadge(Number(player.person.id), team.team.id)}
                     {gameSave && (
                       <span className="save-indicator"> (SV, {seasonSaves})</span>
                     )}
@@ -1726,13 +1695,6 @@ function App() {
     { key: 'shutouts', label: 'SHO' },
   ];
 
-  const prospectBadge = (playerId: number, _teamId: number): React.ReactNode => {
-    if (prospectTop100.has(playerId)) {
-      return <sup style={{ fontSize: '0.65em', color: '#FFD700', marginLeft: 1 }}>★</sup>;
-    }
-    return null;
-  };
-
   const renderBattingStats = (team: any) => {
     const players = Object.entries(team.players || {})
       .filter(([_, p]: [string, any]) => p.stats?.batting?.plateAppearances > 0)
@@ -1770,8 +1732,7 @@ function App() {
                       >
                         {player.person.fullName}
                       </span>
-                      {prospectBadge(Number(player.person.id), team.team.id)}
-                      {player.position.abbreviation !== 'P' && (
+                        {player.position.abbreviation !== 'P' && (
                         <span className="position">
                           {' '}
                           {player.position.abbreviation}
