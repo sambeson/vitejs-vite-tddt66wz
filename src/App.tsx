@@ -498,6 +498,7 @@ type HomeRun = {
   hrId: string;
   opponent?: string;
   seasonTotalHR?: number;
+  careerHRNumber?: number;
 };
 
 type MentaculousPlayer = {
@@ -785,6 +786,48 @@ function App() {
     localStorage.setItem(`mentaculousUpdatedAt_${user}`, now);
     saveToFirebase(user, mentaculous, order).catch(e => console.error('[Autosave] Firebase save failed:', e));
   }, [mentaculous, order, dataLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Backfill careerHRNumber for HRs added before this field existed.
+  // Runs once after data is loaded. Fetches career + season stats per player,
+  // computes careerHRNumber for each stored HR, and patches mentaculous state.
+  useEffect(() => {
+    if (!dataLoaded) return;
+    const currentYear = new Date().getFullYear();
+    const playersToBackfill = Object.entries(mentaculous).filter(([, player]) =>
+      player.homeRuns.some(hr => hr.careerHRNumber == null)
+    );
+    if (playersToBackfill.length === 0) return;
+
+    (async () => {
+      const updates: Record<string, MentaculousPlayer> = {};
+      await Promise.all(playersToBackfill.map(async ([playerId, player]) => {
+        try {
+          const res = await fetch(
+            `https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=stats(type=[career,season],group=hitting)&season=${currentYear}`
+          );
+          const data = await res.json();
+          const statsArr: any[] = data.people?.[0]?.stats ?? [];
+          const careerStat = statsArr.find((s: any) => s.type?.displayName === 'career');
+          const seasonStat = statsArr.find((s: any) => s.type?.displayName === 'season');
+          const careerTotal: number = careerStat?.splits?.[0]?.stat?.homeRuns ?? 0;
+          const seasonTotal: number = seasonStat?.splits?.[0]?.stat?.homeRuns ?? 0;
+          if (!careerTotal) return;
+
+          const patchedHRs = player.homeRuns.map(hr => {
+            if (hr.careerHRNumber != null) return hr;
+            const seasonHRNum = Number(hr.hrId.split('_')[2] ?? 0);
+            const computed = careerTotal - (seasonTotal - seasonHRNum);
+            return { ...hr, careerHRNumber: computed > 0 ? computed : undefined };
+          });
+          updates[playerId] = { ...player, homeRuns: patchedHRs };
+        } catch { /* skip this player silently */ }
+      }));
+
+      if (Object.keys(updates).length > 0) {
+        setMentaculous(prev => ({ ...prev, ...updates }));
+      }
+    })();
+  }, [dataLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`)
@@ -2056,6 +2099,17 @@ function App() {
     );
   };
 
+  // Returns asterisk string for a player's HR milestone hit this season.
+  // e.g. 100th career HR → "*", 200th → "**", 300th → "***"
+  const getMilestoneAsterisks = (homeRuns: HomeRun[]): string => {
+    for (const hr of homeRuns) {
+      if (hr.careerHRNumber && hr.careerHRNumber % 100 === 0) {
+        return '*'.repeat(hr.careerHRNumber / 100);
+      }
+    }
+    return '';
+  };
+
   const renderMentaculous = () => {
     // Use the order array to sort mentaculous entries
     const entries = order
@@ -2134,9 +2188,9 @@ function App() {
                           {updatedPlayerId === parseInt(playerId) ? (
                             <>
                               <span className="count-old">{prevCountRef.current[playerId]}</span>
-                              <span className="count-new">{homeRuns.length}</span>
+                              <span className="count-new">{homeRuns.length}{getMilestoneAsterisks(homeRuns)}</span>
                             </>
-                          ) : homeRuns.length}
+                          ) : <>{homeRuns.length}{getMilestoneAsterisks(homeRuns)}</>}
                           {tooltipOpenId === parseInt(playerId) && (
                             <div className="tooltip-box">
                               {homeRuns.map((hr: any, idx: number) => {
@@ -2557,7 +2611,7 @@ function App() {
         [playerId]: {
           ...base,
           teamId: base.teamId ?? teamId,
-          homeRuns: [...base.homeRuns, { hrId: hr.hrId, opponent }],
+          homeRuns: [...base.homeRuns, { hrId: hr.hrId, opponent, careerHRNumber: hr.careerHRNumber }],
           addedAt: base.addedAt,        // <-- keep the original
         }
       };
