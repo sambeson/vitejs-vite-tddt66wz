@@ -24,6 +24,11 @@
   color: #161615d7; /* Near-black with slight transparency */
 }
 
+.mentaculous-leader {
+  color: #b8860b; /* dark gold — stands out in the notebook without clashing */
+  font-size: 15px;
+}
+
 /* ========================================
    USER SELECTION MODAL STYLES
    Controls the initial user selection overlay

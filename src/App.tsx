@@ -2178,10 +2178,9 @@ function App() {
 
                     <div className="player-info">
                       <div className="player-name">
-                        <span className="mentaculous-font" style={{ cursor: 'pointer', fontWeight: isLeader ? 'bold' : undefined }} onClick={() => setSelectedPlayerId(parseInt(playerId))}>{removeAccents(playerName)}</span> –{' '}
+                        <span className={`mentaculous-font${isLeader ? ' mentaculous-leader' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setSelectedPlayerId(parseInt(playerId))}>{removeAccents(playerName)}</span> –{' '}
                         <span
-                          className="hr-count-wrapper"
-                          style={{ fontWeight: isLeader ? 'bold' : undefined }}
+                          className={`hr-count-wrapper${isLeader ? ' mentaculous-leader' : ''}`}
                           onClick={() =>
                             setTooltipOpenId((prev) =>
                               prev === parseInt(playerId) ? null : parseInt(playerId)
