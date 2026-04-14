@@ -716,7 +716,6 @@ function App() {
 
         if (fbOrder && fbOrder.length) {
           orderArr = fbOrder;
-          localStorage.setItem(`mentaculousOrder_${currentUser}`, JSON.stringify(orderArr));
         }
 
         if (!orderArr.length) {
@@ -740,6 +739,20 @@ function App() {
             .map(([id]) => id);
         }
       }
+
+      // Reconcile order against parsed: remove stale IDs, append any new ones by addedAt.
+      // This fixes arbitrary ordering when the saved order has stale entries from a
+      // prior season, or when addedAt is missing (V8 sorts numeric keys arbitrarily).
+      const parsedKeySet = new Set(Object.keys(parsed));
+      const cleanOrder = orderArr.filter((id: string) => parsedKeySet.has(id));
+      const orderedSet = new Set(cleanOrder);
+      const missingIds = Object.entries(parsed)
+        .filter(([id]) => !orderedSet.has(id))
+        .sort(([, a], [, b]) => ((a as any).addedAt ?? 0) - ((b as any).addedAt ?? 0))
+        .map(([id]) => id);
+      orderArr = [...cleanOrder, ...missingIds];
+      localStorage.setItem(`mentaculousOrder_${currentUser}`, JSON.stringify(orderArr));
+
       if (cancelled) return;
       loadedDataHadEntriesRef.current = Object.keys(parsed).length > 0;
       loadedForUserRef.current = currentUser;
