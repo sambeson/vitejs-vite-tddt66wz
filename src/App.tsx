@@ -2120,6 +2120,15 @@ function App() {
     const currentEntries = entries.slice(start, start + 32);
     const maxHRs = Math.max(0, ...currentEntries.map(([, p]) => p.homeRuns.length));
 
+    // Team HR leaders: max HRs per team across all entries (not just current page)
+    const teamMaxHRs: Record<string, number> = {};
+    for (const [, p] of entries) {
+      const t = p.teamName;
+      if (!teamMaxHRs[t] || p.homeRuns.length > teamMaxHRs[t]) {
+        teamMaxHRs[t] = p.homeRuns.length;
+      }
+    }
+
     return (
       <div className="mentaculous-container">
         {renderPagination()}
@@ -2146,6 +2155,7 @@ function App() {
               const [playerId, { playerName, homeRuns, teamName, teamId }] = entry;
               const teamAbbr = getTeamAbbreviation(teamName);
               const isLeader = homeRuns.length > 0 && homeRuns.length === maxHRs;
+              const isTeamLeader = homeRuns.length > 0 && homeRuns.length === teamMaxHRs[teamName];
 
               return (
                 <div key={playerId} className="notebook-line.filled">
@@ -2173,7 +2183,7 @@ function App() {
                           height={24}
                         />
                       )}
-                      <span className="notebook-abbr">{teamAbbr}</span>
+                      <span className="notebook-abbr" style={{ color: isTeamLeader ? '#041e42' : undefined, fontSize: isTeamLeader ? '17px' : undefined }}>{teamAbbr}</span>
                     </div>
 
                     <div className="player-info">
