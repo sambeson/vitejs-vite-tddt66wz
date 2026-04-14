@@ -672,6 +672,25 @@ function App() {
     loadedDataHadEntriesRef.current = false;
     loadedForUserRef.current = null;
     setDataLoaded(false);
+    // Filter out HRs from previous seasons so stale data doesn't pollute a new season.
+    // hrId format: `${playerId}_${date}_${seasonHR}` — date is YYYY-MM-DD, year at index [0..3].
+    function filterToCurrentSeason(data: Record<string, any>): Record<string, any> {
+      const currentYear = String(new Date().getFullYear());
+      const result: Record<string, any> = {};
+      for (const [id, player] of Object.entries(data)) {
+        const hrs = (player as any).homeRuns ?? [];
+        const currentHRs = hrs.filter((hr: any) => {
+          const hrId: string = typeof hr === 'string' ? hr : (hr.hrId ?? '');
+          const datePart = hrId.split('_')[1] ?? '';
+          return datePart.startsWith(currentYear);
+        });
+        if (currentHRs.length > 0) {
+          result[id] = { ...(player as any), homeRuns: currentHRs };
+        }
+      }
+      return result;
+    }
+
     async function loadInitialData() {
       let parsed: Record<string, any> = {};
       let orderArr: string[] = [];
@@ -683,7 +702,7 @@ function App() {
         // Trusting localStorage timestamps caused cross-user contamination when
         // a previous user's autosave wrote stale data to another user's LS key.
         if (fbMentaculous && Object.keys(fbMentaculous).length) {
-          parsed = fbMentaculous;
+          parsed = filterToCurrentSeason(fbMentaculous);
           localStorage.setItem(`mentaculous_${currentUser}`, JSON.stringify(parsed));
           if (fbUpdatedAt) localStorage.setItem(`mentaculousUpdatedAt_${currentUser}`, fbUpdatedAt);
         } else {
@@ -708,7 +727,7 @@ function App() {
         console.warn('Firebase load failed, falling back to localStorage:', e);
         const mentaculousRaw = localStorage.getItem(`mentaculous_${currentUser}`);
         if (mentaculousRaw) {
-          try { parsed = JSON.parse(mentaculousRaw); } catch { parsed = {}; }
+          try { parsed = filterToCurrentSeason(JSON.parse(mentaculousRaw)); } catch { parsed = {}; }
         }
         const storedOrder = localStorage.getItem(`mentaculousOrder_${currentUser}`);
         if (storedOrder) {
