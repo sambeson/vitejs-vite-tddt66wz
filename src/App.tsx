@@ -2118,6 +2118,7 @@ function App() {
 
     const start = mentaculousPage * 32;
     const currentEntries = entries.slice(start, start + 32);
+    const maxHRs = Math.max(0, ...currentEntries.map(([, p]) => p.homeRuns.length));
 
     return (
       <div className="mentaculous-container">
@@ -2144,6 +2145,7 @@ function App() {
 
               const [playerId, { playerName, homeRuns, teamName, teamId }] = entry;
               const teamAbbr = getTeamAbbreviation(teamName);
+              const isLeader = homeRuns.length > 0 && homeRuns.length === maxHRs;
 
               return (
                 <div key={playerId} className="notebook-line.filled">
@@ -2176,9 +2178,10 @@ function App() {
 
                     <div className="player-info">
                       <div className="player-name">
-                        <span className="mentaculous-font" style={{ cursor: 'pointer' }} onClick={() => setSelectedPlayerId(parseInt(playerId))}>{removeAccents(playerName)}</span> –{' '}
+                        <span className="mentaculous-font" style={{ cursor: 'pointer', fontWeight: isLeader ? 'bold' : undefined }} onClick={() => setSelectedPlayerId(parseInt(playerId))}>{removeAccents(playerName)}</span> –{' '}
                         <span
                           className="hr-count-wrapper"
+                          style={{ fontWeight: isLeader ? 'bold' : undefined }}
                           onClick={() =>
                             setTooltipOpenId((prev) =>
                               prev === parseInt(playerId) ? null : parseInt(playerId)
