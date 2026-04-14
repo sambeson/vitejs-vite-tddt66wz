@@ -2183,7 +2183,7 @@ function App() {
                           height={24}
                         />
                       )}
-                      <span className="notebook-abbr" style={{ color: isTeamLeader ? '#041e42' : undefined, fontSize: isTeamLeader ? '17px' : undefined }}>{teamAbbr}</span>
+                      <span className="notebook-abbr" style={{ fontStyle: isTeamLeader ? 'italic' : undefined }}>{teamAbbr}</span>
                     </div>
 
                     <div className="player-info">
