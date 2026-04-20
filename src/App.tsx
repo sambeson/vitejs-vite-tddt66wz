@@ -1478,18 +1478,25 @@ function App() {
         const cached = getCached<LeaderEntry[]>(cacheKey, 24);
         if (cached) { top500[stat.key] = cached; return; }
         try {
-          const res = await fetch(
-            `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${stat.key}&statType=career&limit=500&statGroup=${stat.group}`
-          );
-          const data = await res.json();
-          const leaders: LeaderEntry[] = (data.leagueLeaders?.[0]?.leaders ?? []).map((l: any) => ({
-            rank: l.rank,
-            personId: l.person?.id,
-            fullName: l.person?.fullName,
-            value: Number(l.value),
-          }));
-          top500[stat.key] = leaders;
-          setCached(cacheKey, leaders);
+          // MLB API caps at 100 per page — paginate to get up to 500
+          const allLeaders: LeaderEntry[] = [];
+          const pageSize = 100;
+          for (let offset = 0; offset < 500; offset += pageSize) {
+            const res = await fetch(
+              `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${stat.key}&statType=career&limit=${pageSize}&offset=${offset}&statGroup=${stat.group}`
+            );
+            const data = await res.json();
+            const page: LeaderEntry[] = (data.leagueLeaders?.[0]?.leaders ?? []).map((l: any) => ({
+              rank: l.rank,
+              personId: l.person?.id,
+              fullName: l.person?.fullName,
+              value: Number(l.value),
+            }));
+            allLeaders.push(...page);
+            if (page.length < pageSize) break; // no more pages
+          }
+          top500[stat.key] = allLeaders;
+          setCached(cacheKey, allLeaders);
         } catch { top500[stat.key] = []; }
       }));
 
