@@ -1461,7 +1461,10 @@ function App() {
     }
   };
 
-  const fetchMilestones = async () => {
+  const fetchMilestones = async (bustTopListCache = false) => {
+    if (bustTopListCache) {
+      MILESTONE_STATS.forEach(stat => localStorage.removeItem(`milestone_top500_${stat.key}`));
+    }
     setMilestonesLoading(true);
     setMilestonesError(false);
     try {
@@ -2582,7 +2585,7 @@ function App() {
           </div>
         ))}
         <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-          <button className="leaders-show-all" onClick={fetchMilestones}>Refresh</button>
+          <button className="leaders-show-all" onClick={() => fetchMilestones(true)}>Refresh</button>
         </div>
       </div>
     );
