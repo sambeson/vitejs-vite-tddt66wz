@@ -546,6 +546,7 @@ type MilestoneEvent = {
   statKey: string;
   statLabel: string;
   crossingValue: number;     // career total at the crossing game
+  crossingRank: number;      // all-time rank at the moment of the crossing
   seasonValue: number;       // season total at the crossing game
   passedPersonId: number;    // MLB person ID of the all-time leader they passed
   passedName: string;        // name of the all-time leader they passed
@@ -1622,12 +1623,16 @@ function App() {
                 }
               }
 
+              // Rank at the moment of crossing: # of top-500 entries with a higher value than crossingValue
+              const crossingRank = list.filter(e => e.personId !== Number(playerId) && e.value >= crossingValue).length + 1;
+
               events.push({
                 playerId,
                 playerName: player.playerName,
                 statKey: stat.key,
                 statLabel: stat.label,
                 crossingValue,
+                crossingRank,
                 seasonValue,
                 passedPersonId: p.personId,
                 passedName: p.fullName,
@@ -2673,8 +2678,9 @@ function App() {
                   <div className="milestone-stat-sep">·</div>
                   <div className="milestone-stat-block">
                     <span className="milestone-stat-num">{rep.crossingValue.toLocaleString()}</span>
-                    <span className="milestone-stat-sub">at crossing</span>
+                    <span className="milestone-stat-sub">career then</span>
                   </div>
+                  <div className="milestone-card-rank">#{rep.crossingRank} at the time</div>
                   {ranking && (
                     <>
                       <div className="milestone-stat-sep">·</div>
