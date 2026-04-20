@@ -1523,18 +1523,19 @@ function App() {
       await Promise.all(playerIds.map(async (playerId) => {
         const player = mentaculous[playerId];
         try {
-          // Career + season totals
-          const statsRes = await fetch(
-            `https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=stats(type=[career,season],group=[hitting,pitching])&season=${currentSeason}`
-          );
-          const statsData = await statsRes.json();
-          const statsArr: any[] = statsData.people?.[0]?.stats ?? [];
+          // Fetch hitting and pitching stats separately — the combined group=[hitting,pitching]
+          // hydrate param does not reliably return pitching data
+          const [hittingStatsData, pitchingStatsData] = await Promise.all([
+            fetch(`https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=stats(type=[career,season],group=[hitting])&season=${currentSeason}`).then(r => r.json()),
+            fetch(`https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=stats(type=[career,season],group=[pitching])&season=${currentSeason}`).then(r => r.json()),
+          ]);
+          const hittingStatsArr: any[] = hittingStatsData.people?.[0]?.stats ?? [];
+          const pitchingStatsArr: any[] = pitchingStatsData.people?.[0]?.stats ?? [];
 
-          // MLB API returns displayName with capital first letter ('Hitting', 'Pitching', 'Career', 'Season')
           const getStatVal = (type: string, group: string, key: string): number => {
-            const entry = statsArr.find((s: any) =>
-              s.type?.displayName?.toLowerCase() === type.toLowerCase() &&
-              s.group?.displayName?.toLowerCase() === group.toLowerCase()
+            const arr = group.toLowerCase() === 'pitching' ? pitchingStatsArr : hittingStatsArr;
+            const entry = arr.find((s: any) =>
+              s.type?.displayName?.toLowerCase() === type.toLowerCase()
             );
             return Number(entry?.splits?.[0]?.stat?.[key] ?? 0);
           };
