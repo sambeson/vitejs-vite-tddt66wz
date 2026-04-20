@@ -2667,7 +2667,16 @@ function App() {
                   ))}
                 </div>
                 <div className="milestone-card-stats">
-                  <div className="milestone-card-rank">moved to #{rep.crossingRank} all-time</div>
+                  <div className="milestone-stat-block">
+                    <span className="milestone-stat-num">{rep.seasonValue.toLocaleString()}</span>
+                    <span className="milestone-stat-sub">on the season</span>
+                  </div>
+                  <div className="milestone-stat-sep">·</div>
+                  <div className="milestone-stat-block">
+                    <span className="milestone-stat-num">{rep.crossingValue.toLocaleString()}</span>
+                    <span className="milestone-stat-sub">career</span>
+                  </div>
+                  <div className="milestone-card-rank">moved to #{Math.min(...sorted.map(ev => ev.crossingRank))} all-time</div>
                 </div>
               </div>
             );
