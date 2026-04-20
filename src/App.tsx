@@ -1557,6 +1557,13 @@ function App() {
           const hittingLog = await fetchGameLog('hitting');
           const pitchingLog = await fetchGameLog('pitching');
 
+          // Debug: log pitching stats for every player so we can see what's coming back
+          const pitchingCareerSO = getStatVal('career', 'pitching', 'strikeOuts');
+          const pitchingCareerSV = getStatVal('career', 'pitching', 'saves');
+          if (pitchingCareerSO || pitchingCareerSV) {
+            console.log(`[milestones] ${player.playerName} (${playerId}) pitching: career SO=${pitchingCareerSO} SV=${pitchingCareerSV} pitchingLog=${pitchingLog.length} entries`);
+          }
+
           for (const stat of MILESTONE_STATS) {
             const groupName = stat.group;
             const career = getStatVal('career', groupName, stat.key);
@@ -1564,6 +1571,7 @@ function App() {
             // season may be 0 if the player hasn't appeared yet this year — that's fine,
             // it just means preSeasonCareer === career and no crossings will be found
             const season = getStatVal('season', groupName, stat.key);
+            console.log(`[milestones] ${player.playerName} ${stat.label}: career=${career} season=${season} top500entries=${(top500[stat.key] ?? []).length}`);
 
             const preSeasonCareer = career - season;
             const list = top500[stat.key] ?? [];
