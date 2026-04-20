@@ -1468,159 +1468,189 @@ function App() {
 
   const fetchMilestones = async (bustTopListCache = false) => {
     if (bustTopListCache) {
-      MILESTONE_STATS.forEach(stat => localStorage.removeItem(`milestone_top500_${stat.leaderKey ?? stat.key}`));
+      MILESTONE_STATS.forEach(stat => {
+        const apiKey = stat.leaderKey ?? stat.key;
+        localStorage.removeItem(`milestone_top500_${apiKey}`);
+        localStorage.removeItem(`milestone_season100_${apiKey}_${new Date().getFullYear()}`);
+      });
     }
     setMilestonesLoading(true);
     setMilestonesError(false);
     try {
       const currentSeason = new Date().getFullYear();
-
-      // Step 1: fetch top 500 for each stat (cached 24h)
       type LeaderEntry = { rank: number; personId: number; fullName: string; value: number };
+
+      // Step 1: fetch career top-500 AND current season top-100 for every stat in parallel.
+      // Career list  → gives us career totals and who's in the top 500.
+      // Season list  → tells us who has been active this season and what their season total is.
+      // No per-player stat fetches needed — career = career_list value, season = season_list value.
       const top500: Record<string, LeaderEntry[]> = {};
+      const seasonLeaders: Record<string, LeaderEntry[]> = {};
+
       await Promise.all(MILESTONE_STATS.map(async (stat) => {
         const apiKey = stat.leaderKey ?? stat.key;
-        const cacheKey = `milestone_top500_${apiKey}`;
-        const cached = getCached<LeaderEntry[]>(cacheKey, 24);
-        if (cached) { top500[stat.key] = cached; return; }
-        try {
-          // MLB API caps at 100 per page — paginate to get up to 500
-          const allLeaders: LeaderEntry[] = [];
-          const pageSize = 100;
-          for (let offset = 0; offset < 500; offset += pageSize) {
-            const res = await fetch(
-              `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${apiKey}&statType=career&limit=${pageSize}&offset=${offset}&statGroup=${stat.group}`
-            );
-            const data = await res.json();
-            const page: LeaderEntry[] = (data.leagueLeaders?.[0]?.leaders ?? []).map((l: any) => ({
-              rank: l.rank,
-              personId: l.person?.id,
-              fullName: l.person?.fullName,
-              value: Number(l.value),
-            }));
-            allLeaders.push(...page);
-            if (page.length < pageSize) break; // no more pages
-          }
-          top500[stat.key] = allLeaders;
-          setCached(cacheKey, allLeaders);
-        } catch { top500[stat.key] = []; }
-      }));
 
-      // Step 2: for each mentaculous player, fetch career+season totals AND game log
-      const playerIds = Object.keys(mentaculous);
-      const events: MilestoneEvent[] = [];
-
-      await Promise.all(playerIds.map(async (playerId) => {
-        const player = mentaculous[playerId];
-        try {
-          // Fetch hitting and pitching stats separately — the combined group=[hitting,pitching]
-          // hydrate param does not reliably return pitching data
-          const [hittingStatsData, pitchingStatsData] = await Promise.all([
-            fetch(`https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=stats(type=[career,season],group=[hitting])&season=${currentSeason}`).then(r => r.json()),
-            fetch(`https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=stats(type=[career,season],group=[pitching])&season=${currentSeason}`).then(r => r.json()),
-          ]);
-          const hittingStatsArr: any[] = hittingStatsData.people?.[0]?.stats ?? [];
-          const pitchingStatsArr: any[] = pitchingStatsData.people?.[0]?.stats ?? [];
-
-          const getStatVal = (type: string, group: string, key: string): number => {
-            const arr = group.toLowerCase() === 'pitching' ? pitchingStatsArr : hittingStatsArr;
-            const entry = arr.find((s: any) =>
-              s.type?.displayName?.toLowerCase() === type.toLowerCase()
-            );
-            return Number(entry?.splits?.[0]?.stat?.[key] ?? 0);
-          };
-
-          // Game logs: fetch hitting + pitching (cached 1h — updates daily)
-          const fetchGameLog = async (group: 'hitting' | 'pitching') => {
-            const cacheKey = `milestone_gamelog_${playerId}_${group}_${currentSeason}`;
-            const cached = getCached<{ date: string; cumulative: Record<string, number> }[]>(cacheKey, 1);
-            if (cached) return cached;
-            try {
+        // Career top-500 (paginated, cached 24h)
+        const careerCacheKey = `milestone_top500_${apiKey}`;
+        const cachedCareer = getCached<LeaderEntry[]>(careerCacheKey, 24);
+        if (cachedCareer) {
+          top500[stat.key] = cachedCareer;
+        } else {
+          try {
+            const allLeaders: LeaderEntry[] = [];
+            const pageSize = 100;
+            for (let offset = 0; offset < 500; offset += pageSize) {
               const res = await fetch(
-                `https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=gameLog&group=${group}&season=${currentSeason}`
+                `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${apiKey}&statType=career&limit=${pageSize}&offset=${offset}&statGroup=${stat.group}`
               );
               const data = await res.json();
-              const splits: any[] = data.stats?.[0]?.splits ?? [];
-              // Build cumulative running totals in date order
-              const running: Record<string, number> = {};
-              const result = splits.map((s: any) => {
-                for (const [k, v] of Object.entries(s.stat ?? {})) {
-                  running[k] = (running[k] ?? 0) + Number(v);
-                }
-                return { date: s.date as string, cumulative: { ...running } };
-              });
-              setCached(cacheKey, result);
-              return result;
-            } catch { return []; }
-          };
-
-          const hittingLog = await fetchGameLog('hitting');
-          const pitchingLog = await fetchGameLog('pitching');
-
-          // Debug: log pitching stats for every player so we can see what's coming back
-          const pitchingCareerSO = getStatVal('career', 'pitching', 'strikeOuts');
-          const pitchingCareerSV = getStatVal('career', 'pitching', 'saves');
-          if (pitchingCareerSO || pitchingCareerSV) {
-            console.log(`[milestones] ${player.playerName} (${playerId}) pitching: career SO=${pitchingCareerSO} SV=${pitchingCareerSV} pitchingLog=${pitchingLog.length} entries`);
-          }
-
-          for (const stat of MILESTONE_STATS) {
-            const groupName = stat.group;
-            const career = getStatVal('career', groupName, stat.key);
-            if (!career) continue;
-            // season may be 0 if the player hasn't appeared yet this year — that's fine,
-            // it just means preSeasonCareer === career and no crossings will be found
-            const season = getStatVal('season', groupName, stat.key);
-            console.log(`[milestones] ${player.playerName} ${stat.label}: career=${career} season=${season} top500entries=${(top500[stat.key] ?? []).length}`);
-
-            const preSeasonCareer = career - season;
-            const list = top500[stat.key] ?? [];
-            const gameLog = groupName === 'hitting' ? hittingLog : pitchingLog;
-
-            const passed = list.filter(
-              (e) => e.personId !== Number(playerId) &&
-                     e.value > preSeasonCareer &&
-                     e.value < career  // strictly less: ties don't count as passing
-            );
-
-            for (const p of passed) {
-              // Find the first game where cumulative season total strictly exceeds p.value - preSeasonCareer
-              // so crossingValue is always > p.value (a real pass, not a tie)
-              const needed = p.value - preSeasonCareer;
-              let crossDate: string | null = null;
-              let crossingValue = p.value + 1;
-              let seasonValue = needed + 1;
-              for (const entry of gameLog) {
-                const cumSeason = entry.cumulative[stat.key] ?? 0;
-                if (cumSeason > needed) {  // strictly greater: first game they went above p.value
-                  crossDate = entry.date;
-                  crossingValue = preSeasonCareer + cumSeason;
-                  seasonValue = cumSeason;
-                  break;
-                }
-              }
-
-              // Rank at the moment of crossing: # of top-500 entries with a higher value than crossingValue
-              const crossingRank = list.filter(e => e.personId !== Number(playerId) && e.value >= crossingValue).length + 1;
-
-              events.push({
-                playerId,
-                playerName: player.playerName,
-                statKey: stat.key,
-                statLabel: stat.label,
-                crossingValue,
-                crossingRank,
-                seasonValue,
-                passedPersonId: p.personId,
-                passedName: p.fullName,
-                passedValue: p.value,
-                passedRank: p.rank,
-                date: crossDate,
-              });
+              const page: LeaderEntry[] = (data.leagueLeaders?.[0]?.leaders ?? []).map((l: any) => ({
+                rank: l.rank, personId: l.person?.id, fullName: l.person?.fullName, value: Number(l.value),
+              }));
+              allLeaders.push(...page);
+              if (page.length < pageSize) break;
             }
-          }
-        } catch { /* skip this player */ }
+            top500[stat.key] = allLeaders;
+            setCached(careerCacheKey, allLeaders);
+          } catch { top500[stat.key] = []; }
+        }
+
+        // Season top-100 (cached 1h)
+        const seasonCacheKey = `milestone_season100_${apiKey}_${currentSeason}`;
+        const cachedSeason = getCached<LeaderEntry[]>(seasonCacheKey, 1);
+        if (cachedSeason) {
+          seasonLeaders[stat.key] = cachedSeason;
+        } else {
+          try {
+            // Paginate until empty to catch everyone with even 1 of this stat (1 AB / 1 BF equivalent)
+            const allSeason: LeaderEntry[] = [];
+            const pageSize = 100;
+            for (let offset = 0; offset < 5000; offset += pageSize) {
+              const res = await fetch(
+                `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${apiKey}&statType=season&season=${currentSeason}&limit=${pageSize}&offset=${offset}&statGroup=${stat.group}`
+              );
+              const data = await res.json();
+              const page: LeaderEntry[] = (data.leagueLeaders?.[0]?.leaders ?? []).map((l: any) => ({
+                rank: l.rank, personId: l.person?.id, fullName: l.person?.fullName, value: Number(l.value),
+              }));
+              allSeason.push(...page);
+              if (page.length < pageSize) break;
+            }
+            seasonLeaders[stat.key] = allSeason;
+            setCached(seasonCacheKey, allSeason);
+          } catch { seasonLeaders[stat.key] = []; }
+        }
       }));
+
+      // Step 2: find every player who crossed someone this season.
+      // For each stat: cross-reference career list with season list.
+      // A player can only cross someone if they appear in the season leaders (they've been active).
+      // preSeasonCareer = careerTotal - seasonTotal → find entries in career list between those two values.
+      const events: MilestoneEvent[] = [];
+
+      // Game log helper — fetches cumulative per-game running totals (cached 1h)
+      const fetchGameLog = async (personId: number, group: 'hitting' | 'pitching') => {
+        const cacheKey = `milestone_gamelog_${personId}_${group}_${currentSeason}`;
+        const cached = getCached<{ date: string; cumulative: Record<string, number> }[]>(cacheKey, 1);
+        if (cached) return cached;
+        try {
+          const res = await fetch(
+            `https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=gameLog&group=${group}&season=${currentSeason}`
+          );
+          const data = await res.json();
+          const splits: any[] = data.stats?.[0]?.splits ?? [];
+          const running: Record<string, number> = {};
+          const result = splits.map((s: any) => {
+            for (const [k, v] of Object.entries(s.stat ?? {})) {
+              running[k] = (running[k] ?? 0) + Number(v);
+            }
+            return { date: s.date as string, cumulative: { ...running } };
+          });
+          setCached(cacheKey, result);
+          return result;
+        } catch { return []; }
+      };
+
+      // Collect all (personId, group) pairs that need game logs — only players who actually crossed someone
+      type NeedLog = { personId: number; group: 'hitting' | 'pitching'; fullName: string };
+      const needLogs: NeedLog[] = [];
+
+      for (const stat of MILESTONE_STATS) {
+        const careerList = top500[stat.key] ?? [];
+        const seasonMap = new Map<number, number>();
+        for (const s of seasonLeaders[stat.key] ?? []) seasonMap.set(s.personId, s.value);
+
+        for (const player of careerList) {
+          const season = seasonMap.get(player.personId) ?? 0;
+          if (!season) continue; // not active this season
+
+          const preSeasonCareer = player.value - season;
+          const passed = careerList.filter(
+            e => e.personId !== player.personId && e.value > preSeasonCareer && e.value < player.value
+          );
+          if (passed.length > 0 && !needLogs.find(n => n.personId === player.personId && n.group === stat.group)) {
+            needLogs.push({ personId: player.personId, group: stat.group, fullName: player.fullName });
+          }
+        }
+      }
+
+      // Fetch all needed game logs in parallel
+      const gameLogCache = new Map<string, { date: string; cumulative: Record<string, number> }[]>();
+      await Promise.all(needLogs.map(async ({ personId, group }) => {
+        const log = await fetchGameLog(personId, group);
+        gameLogCache.set(`${personId}_${group}`, log);
+      }));
+
+      // Step 3: compute crossing events
+      for (const stat of MILESTONE_STATS) {
+        const careerList = top500[stat.key] ?? [];
+        const seasonMap = new Map<number, number>();
+        for (const s of seasonLeaders[stat.key] ?? []) seasonMap.set(s.personId, s.value);
+
+        for (const player of careerList) {
+          const season = seasonMap.get(player.personId) ?? 0;
+          if (!season) continue;
+
+          const preSeasonCareer = player.value - season;
+          const passed = careerList.filter(
+            e => e.personId !== player.personId && e.value > preSeasonCareer && e.value < player.value
+          );
+          if (passed.length === 0) continue;
+
+          const gameLog = gameLogCache.get(`${player.personId}_${stat.group}`) ?? [];
+
+          for (const p of passed) {
+            const needed = p.value - preSeasonCareer;
+            let crossDate: string | null = null;
+            let crossingValue = p.value + 1;
+            let seasonValue = needed + 1;
+            for (const entry of gameLog) {
+              const cumSeason = entry.cumulative[stat.key] ?? 0;
+              if (cumSeason > needed) {
+                crossDate = entry.date;
+                crossingValue = preSeasonCareer + cumSeason;
+                seasonValue = cumSeason;
+                break;
+              }
+            }
+            const crossingRank = careerList.filter(e => e.personId !== player.personId && e.value >= crossingValue).length + 1;
+            events.push({
+              playerId: String(player.personId),
+              playerName: player.fullName,
+              statKey: stat.key,
+              statLabel: stat.label,
+              crossingValue,
+              crossingRank,
+              seasonValue,
+              passedPersonId: p.personId,
+              passedName: p.fullName,
+              passedValue: p.value,
+              passedRank: p.rank,
+              date: crossDate,
+            });
+          }
+        }
+      }
 
       // Sort most recent first, then by player name, then by stat
       events.sort((a, b) => {
