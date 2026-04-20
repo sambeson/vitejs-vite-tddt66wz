@@ -1942,11 +1942,14 @@ button:focus {
   font-size: 0.75rem;
   font-weight: 600;
   color: #555;
-  flex-shrink: 0;
-  white-space: nowrap;
+  flex-shrink: 1;
+  white-space: normal;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .milestone-card-tied {
   font-weight: 400;
   color: #888;
+  white-space: normal;
 }
