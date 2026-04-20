@@ -855,8 +855,10 @@ function App() {
       g.status.detailedState === 'Final' || g.status.detailedState === 'In Progress'
     );
     completedGames.forEach(async (game) => {
-      if (fetchedHRTotalsRef.current.has(game.gamePk)) return;
-      fetchedHRTotalsRef.current.add(game.gamePk);
+      const isLive = game.status.detailedState === 'In Progress';
+      // Don't cache live games so they re-fetch on each poll as new HRs happen
+      if (!isLive && fetchedHRTotalsRef.current.has(game.gamePk)) return;
+      if (!isLive) fetchedHRTotalsRef.current.add(game.gamePk);
       try {
         const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${game.gamePk}/boxscore`);
         const data = await res.json();
@@ -867,26 +869,23 @@ function App() {
         const total = allPlayers.reduce((sum: number, p: any) => sum + (p.stats?.batting?.homeRuns ?? 0), 0);
         setGameHRTotals(prev => ({ ...prev, [game.gamePk]: total }));
 
-        // Compute hrIds for exact ticker matching
+        // Compute hrIds using seasonStats from the box score (season total as of that game),
+        // NOT a separate current-season fetch which would be stale for past games.
         const playersWithHRs = allPlayers.filter((p: any) => (p.stats?.batting?.homeRuns ?? 0) > 0);
         const gameDate = game.gameDate.slice(0, 10);
         const hrIds: string[] = [];
-        await Promise.all(playersWithHRs.map(async (p: any) => {
-          try {
-            const sr = await fetch(`https://statsapi.mlb.com/api/v1/people/${p.person.id}/stats?stats=season&group=hitting`);
-            const sd = await sr.json();
-            const seasonTotal = sd?.stats?.[0]?.splits?.[0]?.stat?.homeRuns ?? 0;
-            const todayHRs: number = p.stats.batting.homeRuns;
-            for (let i = 0; i < todayHRs; i++) {
-              hrIds.push(`${p.person.id}_${gameDate}_${seasonTotal - i}`);
-            }
-          } catch { /* skip player */ }
-        }));
+        for (const p of playersWithHRs) {
+          const seasonTotal: number = (p as any).seasonStats?.batting?.homeRuns ?? 0;
+          const todayHRs: number = (p as any).stats.batting.homeRuns;
+          for (let i = 0; i < todayHRs; i++) {
+            hrIds.push(`${(p as any).person.id}_${gameDate}_${seasonTotal - i}`);
+          }
+        }
         if (hrIds.length > 0) {
           setGameHRIds(prev => ({ ...prev, [game.gamePk]: hrIds }));
         }
       } catch {
-        fetchedHRTotalsRef.current.delete(game.gamePk); // allow retry
+        if (!isLive) fetchedHRTotalsRef.current.delete(game.gamePk); // allow retry
       }
     });
   }, [games]);
@@ -2844,6 +2843,7 @@ function App() {
                       const awayName = game.teams.away.team.name;
                       const homeName = game.teams.home.team.name;
                       const isFutureGame = game.status.detailedState === 'Scheduled' || game.status.detailedState === 'Pre-Game';
+                      const isLive = game.status.detailedState === 'In Progress';
                       const pitchers = pitcherInfo[game.gamePk];
                       const gameDate = game.gameDate.slice(0, 10);
                       const knownHRIds = gameHRIds[game.gamePk];
@@ -3005,9 +3005,9 @@ function App() {
                             </div>
                           )}
                           {!isFutureGame && (totalForGame !== undefined || addedForGame > 0) && (
-                            <div className={`hr-ticker${totalForGame !== undefined && addedForGame >= totalForGame ? ' hr-ticker-complete' : ''}`}>
+                            <div className={`hr-ticker${!isLive && totalForGame !== undefined && addedForGame >= totalForGame ? ' hr-ticker-complete' : ''}`}>
                               {totalForGame !== undefined
-                                ? (addedForGame >= totalForGame ? 'complete' : `${addedForGame}/${totalForGame}`)
+                                ? (isLive || addedForGame < totalForGame ? `${addedForGame}/${totalForGame}` : 'complete')
                                 : `${addedForGame} HR${addedForGame !== 1 ? 's' : ''}`}
                             </div>
                           )}
