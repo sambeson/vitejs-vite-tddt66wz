@@ -2577,45 +2577,60 @@ function App() {
         <p style={{ textAlign: 'center', fontSize: '0.85em', color: '#666', marginBottom: '1.5rem' }}>
           Top-500 all-time passings · most recent first
         </p>
-        {milestoneEvents.map((ev, i) => (
-          <div key={i} className="milestone-card">
-            <div className="milestone-card-header">
-              <div className="milestone-card-left">
-                <span className="milestone-stat-badge">{ev.statLabel}</span>
-                <span className="milestone-player-name" onClick={() => setSelectedPlayerId(Number(ev.playerId))}>
-                  {ev.playerName}
-                </span>
+        {(() => {
+          // Group events by player + stat + date so multiple passings in the same game share one card
+          const groups: { key: string; events: MilestoneEvent[] }[] = [];
+          const seen = new Map<string, MilestoneEvent[]>();
+          for (const ev of milestoneEvents) {
+            const k = `${ev.playerId}__${ev.statKey}__${ev.date ?? 'unknown'}`;
+            if (!seen.has(k)) { seen.set(k, []); groups.push({ key: k, events: seen.get(k)! }); }
+            seen.get(k)!.push(ev);
+          }
+          return groups.map(({ key, events: grp }) => {
+            const rep = grp[0];
+            // Sort passed players by rank ascending within the group
+            const sorted = [...grp].sort((a, b) => a.passedRank - b.passedRank);
+            return (
+              <div key={key} className="milestone-card">
+                <div className="milestone-card-header">
+                  <div className="milestone-card-left">
+                    <span className="milestone-stat-badge">{rep.statLabel}</span>
+                    <span className="milestone-player-name" onClick={() => setSelectedPlayerId(Number(rep.playerId))}>
+                      {rep.playerName}
+                    </span>
+                  </div>
+                  {rep.date && <span className="milestone-date">{formatDate(rep.date)}</span>}
+                </div>
+                <div className="milestone-card-passed">
+                  passed{' '}
+                  {sorted.map((ev, pi) => (
+                    <span key={ev.passedPersonId}>
+                      <strong
+                        className="milestone-passed-name"
+                        onClick={() => setSelectedPlayerId(ev.passedPersonId)}
+                      >
+                        {ev.passedName}
+                      </strong>
+                      <span className="milestone-rank-chip">#{ev.passedRank}</span>
+                      {pi < sorted.length - 1 && <span style={{ color: '#bbb' }}> · </span>}
+                    </span>
+                  ))}
+                </div>
+                <div className="milestone-card-stats">
+                  <div className="milestone-stat-block">
+                    <span className="milestone-stat-num">{rep.seasonValue.toLocaleString()}</span>
+                    <span className="milestone-stat-sub">this season</span>
+                  </div>
+                  <div className="milestone-stat-sep">·</div>
+                  <div className="milestone-stat-block">
+                    <span className="milestone-stat-num">{rep.crossingValue.toLocaleString()}</span>
+                    <span className="milestone-stat-sub">career</span>
+                  </div>
+                </div>
               </div>
-              {ev.date && <span className="milestone-date">{formatDate(ev.date)}</span>}
-            </div>
-            <div className="milestone-card-passed">
-              passed{' '}
-              <strong
-                className="milestone-passed-name"
-                onClick={() => setSelectedPlayerId(ev.passedPersonId)}
-              >
-                {ev.passedName}
-              </strong>
-              <span className="milestone-rank-chip">#{ev.passedRank} all-time</span>
-            </div>
-            <div className="milestone-card-stats">
-              <div className="milestone-stat-block">
-                <span className="milestone-stat-num">{ev.seasonValue.toLocaleString()}</span>
-                <span className="milestone-stat-sub">this season</span>
-              </div>
-              <div className="milestone-stat-sep">·</div>
-              <div className="milestone-stat-block">
-                <span className="milestone-stat-num">{ev.crossingValue.toLocaleString()}</span>
-                <span className="milestone-stat-sub">career</span>
-              </div>
-              <div className="milestone-stat-sep milestone-stat-sep--vs">vs</div>
-              <div className="milestone-stat-block milestone-stat-block--muted">
-                <span className="milestone-stat-num">{ev.passedValue.toLocaleString()}</span>
-                <span className="milestone-stat-sub">{ev.passedName.split(' ').slice(-1)[0]}'s career</span>
-              </div>
-            </div>
-          </div>
-        ))}
+            );
+          });
+        })()}
         <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
           <button className="leaders-show-all" onClick={() => fetchMilestones(true)}>Refresh</button>
         </div>
