@@ -545,7 +545,8 @@ type MilestoneEvent = {
   playerName: string;
   statKey: string;
   statLabel: string;
-  crossingValue: number;     // the career value at which they crossed (passedValue + 1... or the game-log value)
+  crossingValue: number;     // career total at the crossing game
+  seasonValue: number;       // season total at the crossing game
   passedName: string;        // name of the all-time leader they passed
   passedValue: number;       // that person's career total
   passedRank: number;        // their rank in the top 500
@@ -1569,11 +1570,13 @@ function App() {
               const needed = p.value - preSeasonCareer; // season stat count needed to cross
               let crossDate: string | null = null;
               let crossingValue = p.value + 1; // at minimum they had p.value+1 career at crossing
+              let seasonValue = needed + 1;
               for (const entry of gameLog) {
                 const cumSeason = entry.cumulative[stat.key] ?? 0;
                 if (cumSeason >= needed) {
                   crossDate = entry.date;
                   crossingValue = preSeasonCareer + cumSeason;
+                  seasonValue = cumSeason;
                   break;
                 }
               }
@@ -1584,6 +1587,7 @@ function App() {
                 statKey: stat.key,
                 statLabel: stat.label,
                 crossingValue,
+                seasonValue,
                 passedName: p.fullName,
                 passedValue: p.value,
                 passedRank: p.rank,
@@ -2583,10 +2587,10 @@ function App() {
               </span>
               <span className="milestone-stat-label">{ev.statLabel}</span>
               <span className="milestone-text">
-                passed <strong>{ev.passedName}</strong> (#{ev.passedRank} all-time) with{' '}
+                passed <strong>{ev.passedName}</strong> (#{ev.passedRank} all-time, {ev.passedValue.toLocaleString()} career {ev.statLabel}) —{' '}
                 <span className="milestone-career-val" style={{ display: 'inline', minWidth: 'auto' }}>
-                  {ev.crossingValue.toLocaleString()}
-                </span>{' '}career {ev.statLabel}
+                  {ev.seasonValue.toLocaleString()}
+                </span>{' '}{ev.statLabel} on the season ({ev.crossingValue.toLocaleString()} career)
               </span>
             </div>
           </div>
