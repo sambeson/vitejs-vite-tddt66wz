@@ -1937,3 +1937,62 @@ button:focus {
   color: #bbb;
   letter-spacing: 0.04em;
 }
+
+/* Current rankings section */
+.milestone-rankings-section {
+  background: #f8f9fb;
+  border: 1px solid #dde3ec;
+  border-radius: 8px;
+  margin: 0 12px 8px;
+  padding: 10px 14px;
+}
+
+.milestone-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.milestone-ranking-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid #eee;
+  flex-wrap: wrap;
+  font-size: 0.84rem;
+}
+
+.milestone-ranking-row:last-child {
+  border-bottom: none;
+}
+
+.milestone-ranking-player {
+  font-weight: 700;
+  color: #041e42;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.milestone-ranking-player:hover {
+  text-decoration: underline;
+}
+
+.milestone-ranking-val {
+  font-weight: 700;
+  color: #b8860b;
+  flex-shrink: 0;
+}
+
+.milestone-ranking-rank {
+  color: #555;
+  flex-shrink: 0;
+}
+
+.milestone-ranking-tied {
+  color: #888;
+  font-size: 0.8rem;
+}

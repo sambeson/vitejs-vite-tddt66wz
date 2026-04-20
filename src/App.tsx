@@ -554,6 +554,16 @@ type MilestoneEvent = {
   date: string | null;       // YYYY-MM-DD when the crossing happened
 };
 
+type MilestoneRanking = {
+  playerId: string;
+  playerName: string;
+  statKey: string;
+  statLabel: string;
+  careerValue: number;
+  currentRank: number | null;  // null = not in top 500
+  tiedWith: { personId: number; fullName: string; value: number }[];
+};
+
 const MILESTONE_STATS: { key: string; label: string; group: 'hitting' | 'pitching'; leaderKey?: string }[] = [
   { key: 'homeRuns',     label: 'HR',  group: 'hitting' },
   { key: 'rbi',         label: 'RBI', group: 'hitting' },
@@ -610,6 +620,7 @@ function App() {
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [recordsError, setRecordsError] = useState(false);
   const [milestoneEvents, setMilestoneEvents] = useState<MilestoneEvent[]>([]);
+  const [milestoneRankings, setMilestoneRankings] = useState<MilestoneRanking[]>([]);
   const [milestonesLoading, setMilestonesLoading] = useState(false);
   const [milestonesError, setMilestonesError] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState('away');
@@ -1507,6 +1518,7 @@ function App() {
       // Step 2: for each mentaculous player, fetch career+season totals AND game log
       const playerIds = Object.keys(mentaculous);
       const events: MilestoneEvent[] = [];
+      const rankings: MilestoneRanking[] = [];
 
       await Promise.all(playerIds.map(async (playerId) => {
         const player = mentaculous[playerId];
@@ -1518,9 +1530,11 @@ function App() {
           const statsData = await statsRes.json();
           const statsArr: any[] = statsData.people?.[0]?.stats ?? [];
 
+          // MLB API returns displayName with capital first letter ('Hitting', 'Pitching', 'Career', 'Season')
           const getStatVal = (type: string, group: string, key: string): number => {
             const entry = statsArr.find((s: any) =>
-              s.type?.displayName === type && s.group?.displayName === group
+              s.type?.displayName?.toLowerCase() === type.toLowerCase() &&
+              s.group?.displayName?.toLowerCase() === group.toLowerCase()
             );
             return Number(entry?.splits?.[0]?.stat?.[key] ?? 0);
           };
@@ -1556,6 +1570,28 @@ function App() {
             const groupName = stat.group;
             const career = getStatVal('career', groupName, stat.key);
             const season = getStatVal('season', groupName, stat.key);
+
+            // Current all-time ranking for this player+stat
+            if (career > 0) {
+              const list = top500[stat.key] ?? [];
+              const tiedWith = list.filter(
+                (e) => e.value === career && e.personId !== Number(playerId)
+              );
+              const ahead = list.filter((e) => e.value > career);
+              const currentRank = ahead.length < list.length ? ahead.length + 1 : null;
+              if (currentRank !== null || tiedWith.length > 0) {
+                rankings.push({
+                  playerId,
+                  playerName: player.playerName,
+                  statKey: stat.key,
+                  statLabel: stat.label,
+                  careerValue: career,
+                  currentRank,
+                  tiedWith: tiedWith.map(e => ({ personId: e.personId, fullName: e.fullName, value: e.value })),
+                });
+              }
+            }
+
             if (!career || !season) continue;
 
             const preSeasonCareer = career - season;
@@ -1610,6 +1646,10 @@ function App() {
         return a.playerName.localeCompare(b.playerName) || a.statLabel.localeCompare(b.statLabel);
       });
 
+      rankings.sort((a, b) =>
+        a.playerName.localeCompare(b.playerName) || a.statLabel.localeCompare(b.statLabel)
+      );
+      setMilestoneRankings(rankings);
       setMilestoneEvents(events);
     } catch {
       setMilestonesError(true);
@@ -2574,7 +2614,46 @@ function App() {
         <h2 style={{ textAlign: 'center', marginBottom: '1rem' }}>
           Milestone Tracker — {new Date().getFullYear()}
         </h2>
-        <p style={{ textAlign: 'center', fontSize: '0.85em', color: '#666', marginBottom: '1.5rem' }}>
+
+        {/* Current all-time rankings */}
+        {milestoneRankings.length > 0 && (
+          <div className="milestone-rankings-section">
+            <div className="milestone-section-title">Current All-Time Rankings</div>
+            {milestoneRankings.map((r, i) => (
+              <div key={i} className="milestone-ranking-row">
+                <span
+                  className="milestone-ranking-player"
+                  onClick={() => setSelectedPlayerId(Number(r.playerId))}
+                >
+                  {r.playerName}
+                </span>
+                <span className="milestone-stat-badge" style={{ flexShrink: 0 }}>{r.statLabel}</span>
+                <span className="milestone-ranking-val">{r.careerValue.toLocaleString()}</span>
+                <span className="milestone-ranking-rank">
+                  {r.currentRank !== null ? `#${r.currentRank} all-time` : 'outside top 500'}
+                </span>
+                {r.tiedWith.length > 0 && (
+                  <span className="milestone-ranking-tied">
+                    tied with{' '}
+                    {r.tiedWith.map((t, ti) => (
+                      <span key={t.personId}>
+                        <span
+                          className="milestone-passed-name"
+                          onClick={() => setSelectedPlayerId(t.personId)}
+                        >
+                          {t.fullName}
+                        </span>
+                        {ti < r.tiedWith.length - 1 && ', '}
+                      </span>
+                    ))}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <p style={{ textAlign: 'center', fontSize: '0.85em', color: '#666', marginBottom: '1.5rem', marginTop: '1.5rem' }}>
           Top-500 all-time passings · most recent first
         </p>
         {(() => {
