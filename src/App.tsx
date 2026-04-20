@@ -540,6 +540,29 @@ function UserSelection({ onUserSelect }: { onUserSelect: (userId: string) => voi
   );
 }
 
+type MilestoneEvent = {
+  playerId: string;
+  playerName: string;
+  statKey: string;
+  statLabel: string;
+  careerValue: number;       // player's current career total
+  passedName: string;        // name of the all-time leader they passed
+  passedValue: number;       // that person's career total
+  passedRank: number;        // their rank in the top 250
+};
+
+const MILESTONE_STATS: { key: string; label: string; group: 'hitting' | 'pitching' }[] = [
+  { key: 'homeRuns',     label: 'HR',  group: 'hitting' },
+  { key: 'rbi',         label: 'RBI', group: 'hitting' },
+  { key: 'runs',        label: 'R',   group: 'hitting' },
+  { key: 'stolenBases', label: 'SB',  group: 'hitting' },
+  { key: 'triples',     label: '3B',  group: 'hitting' },
+  { key: 'doubles',     label: '2B',  group: 'hitting' },
+  { key: 'hits',        label: 'H',   group: 'hitting' },
+  { key: 'strikeouts',  label: 'SO',  group: 'pitching' },
+  { key: 'saves',       label: 'SV',  group: 'pitching' },
+];
+
 function getCached<T>(key: string, ttlHours: number): T | null {
   try {
     const raw = localStorage.getItem(key);
@@ -582,6 +605,9 @@ function App() {
   const [recordsAllData, setRecordsAllData] = useState<any[]>([]);
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [recordsError, setRecordsError] = useState(false);
+  const [milestoneEvents, setMilestoneEvents] = useState<MilestoneEvent[]>([]);
+  const [milestonesLoading, setMilestonesLoading] = useState(false);
+  const [milestonesError, setMilestonesError] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState('away');
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('games');
@@ -633,6 +659,13 @@ function App() {
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, recordsCategory, recordsGroup]);
+
+  useEffect(() => {
+    if (activeTab !== 'milestones') return;
+    if (Object.keys(mentaculous).length === 0) return;
+    fetchMilestones();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, mentaculous]);
 
   // beforeunload: flush latest state to localStorage immediately on force close
   useEffect(() => {
@@ -1424,6 +1457,99 @@ function App() {
       setRecordsError(true);
     } finally {
       setRecordsLoading(false);
+    }
+  };
+
+  const fetchMilestones = async () => {
+    setMilestonesLoading(true);
+    setMilestonesError(false);
+    try {
+      // Step 1: fetch top 250 for each stat (cached 24h — these lists barely change)
+      const top250: Record<string, { rank: number; personId: number; fullName: string; value: number }[]> = {};
+      await Promise.all(MILESTONE_STATS.map(async (stat) => {
+        const cacheKey = `milestone_top250_${stat.key}`;
+        const cached = getCached<typeof top250[string]>(cacheKey, 24);
+        if (cached) { top250[stat.key] = cached; return; }
+        try {
+          const res = await fetch(
+            `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${stat.key}&statType=career&limit=250&statGroup=${stat.group}`
+          );
+          const data = await res.json();
+          const leaders = (data.leagueLeaders?.[0]?.leaders ?? []).map((l: any) => ({
+            rank: l.rank,
+            personId: l.person?.id,
+            fullName: l.person?.fullName,
+            value: Number(l.value),
+          }));
+          top250[stat.key] = leaders;
+          setCached(cacheKey, leaders);
+        } catch { top250[stat.key] = []; }
+      }));
+
+      // Step 2: fetch career + 2026 season stats for each mentaculous player
+      const currentSeason = new Date().getFullYear();
+      const playerIds = Object.keys(mentaculous);
+      const events: MilestoneEvent[] = [];
+
+      await Promise.all(playerIds.map(async (playerId) => {
+        const player = mentaculous[playerId];
+        try {
+          const res = await fetch(
+            `https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=stats(type=[career,season],group=[hitting,pitching])&season=${currentSeason}`
+          );
+          const data = await res.json();
+          const statsArr: any[] = data.people?.[0]?.stats ?? [];
+
+          const getStatVal = (type: string, group: string, key: string): number => {
+            const entry = statsArr.find((s: any) =>
+              s.type?.displayName === type && s.group?.displayName === group
+            );
+            return Number(entry?.splits?.[0]?.stat?.[key] ?? 0);
+          };
+
+          for (const stat of MILESTONE_STATS) {
+            const groupName = stat.group === 'hitting' ? 'hitting' : 'pitching';
+            const career = getStatVal('career', groupName, stat.key);
+            const season = getStatVal('season', groupName, stat.key);
+            if (!career || !season) continue;
+
+            const preSeasonCareer = career - season;
+            const list = top250[stat.key] ?? [];
+
+            // Find everyone in the top 250 whose career value was passed during 2026:
+            // their value must be > pre-season total AND <= current career total
+            const passed = list.filter(
+              (e) => e.personId !== Number(playerId) && e.value > preSeasonCareer && e.value <= career
+            );
+
+            for (const p of passed) {
+              events.push({
+                playerId,
+                playerName: player.playerName,
+                statKey: stat.key,
+                statLabel: stat.label,
+                careerValue: career,
+                passedName: p.fullName,
+                passedValue: p.value,
+                passedRank: p.rank,
+              });
+            }
+          }
+        } catch { /* skip this player */ }
+      }));
+
+      // Sort: by stat label then by the value at which they passed (descending)
+      events.sort((a, b) =>
+        a.playerName.localeCompare(b.playerName) ||
+        a.statLabel.localeCompare(b.statLabel) ||
+        b.passedValue - a.passedValue
+      );
+
+      setMilestoneEvents(events);
+    } catch {
+      setMilestonesError(true);
+    } finally {
+      setMilestonesLoading(false);
     }
   };
 
@@ -2357,6 +2483,75 @@ function App() {
     );
   };
 
+  const renderMilestones = () => {
+    if (milestonesLoading) return <div className="loading">Loading milestones…</div>;
+    if (milestonesError) return <div className="loading">Failed to load milestones.</div>;
+
+    if (milestoneEvents.length === 0) {
+      return (
+        <div className="leaders-container">
+          <p style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+            No top-250 all-time passings found for your mentaculous players in {new Date().getFullYear()}.
+          </p>
+        </div>
+      );
+    }
+
+    // Group by player
+    const byPlayer: Record<string, MilestoneEvent[]> = {};
+    for (const ev of milestoneEvents) {
+      if (!byPlayer[ev.playerId]) byPlayer[ev.playerId] = [];
+      byPlayer[ev.playerId].push(ev);
+    }
+
+    return (
+      <div className="leaders-container">
+        <h2 style={{ textAlign: 'center', marginBottom: '1rem' }}>
+          Milestone Tracker — {new Date().getFullYear()}
+        </h2>
+        <p style={{ textAlign: 'center', fontSize: '0.85em', color: '#666', marginBottom: '1.5rem' }}>
+          Top-250 all-time passings by your mentaculous players
+        </p>
+        {Object.entries(byPlayer).map(([playerId, events]) => {
+          // Group events by stat
+          const byStat: Record<string, MilestoneEvent[]> = {};
+          for (const ev of events) {
+            if (!byStat[ev.statLabel]) byStat[ev.statLabel] = [];
+            byStat[ev.statLabel].push(ev);
+          }
+          return (
+            <div key={playerId} className="milestone-player-block">
+              <div className="milestone-player-name"
+                style={{ cursor: 'pointer' }}
+                onClick={() => setSelectedPlayerId(Number(playerId))}
+              >
+                {events[0].playerName}
+              </div>
+              {Object.entries(byStat).map(([statLabel, statEvents]) => (
+                <div key={statLabel} className="milestone-stat-group">
+                  <span className="milestone-stat-label">{statLabel}</span>
+                  <div className="milestone-passings">
+                    {statEvents.map((ev, i) => (
+                      <div key={i} className="milestone-row">
+                        <span className="milestone-career-val">{ev.careerValue.toLocaleString()}</span>
+                        <span className="milestone-text">
+                          Passed <strong>{ev.passedName}</strong> (#{ev.passedRank} all-time, {ev.passedValue.toLocaleString()})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })}
+        <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+          <button className="leaders-show-all" onClick={fetchMilestones}>Refresh</button>
+        </div>
+      </div>
+    );
+  };
+
   const renderLeaders = () => {
     const categories = leadersTab === 'batting' ? BATTING_LEADER_CATEGORIES : PITCHING_LEADER_CATEGORIES;
     const displayData = leadersShowAll ? leadersAllData : leadersData;
@@ -2758,6 +2953,15 @@ function App() {
                     }}
                   >
                     Records
+                  </button>
+                  <button
+                    className={activeTab === 'milestones' ? 'active' : ''}
+                    onClick={() => {
+                      setActiveTab('milestones');
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Milestones
                   </button>
                   {selectedTeamRoster && (
                     <button
@@ -3226,6 +3430,8 @@ function App() {
           {activeTab === 'leaders' && renderLeaders()}
 
           {activeTab === 'records' && renderRecords()}
+
+          {activeTab === 'milestones' && renderMilestones()}
 
           {activeTab === 'roster' && renderRoster()}
 
