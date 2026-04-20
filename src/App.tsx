@@ -2573,25 +2573,35 @@ function App() {
           Top-500 all-time passings · most recent first
         </p>
         {milestoneEvents.map((ev, i) => (
-          <div key={i} className="milestone-player-block">
-            <div className="milestone-row" style={{ alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-              {ev.date && (
-                <span className="milestone-date">{formatDate(ev.date)}</span>
-              )}
-              <span
-                className="milestone-player-name"
-                style={{ cursor: 'pointer', marginBottom: 0, border: 'none', paddingBottom: 0 }}
-                onClick={() => setSelectedPlayerId(Number(ev.playerId))}
-              >
-                {ev.playerName}
-              </span>
-              <span className="milestone-stat-label">{ev.statLabel}</span>
-              <span className="milestone-text">
-                passed <strong>{ev.passedName}</strong> (#{ev.passedRank} all-time, {ev.passedValue.toLocaleString()} career {ev.statLabel}) —{' '}
-                <span className="milestone-career-val" style={{ display: 'inline', minWidth: 'auto' }}>
-                  {ev.seasonValue.toLocaleString()}
-                </span>{' '}{ev.statLabel} on the season ({ev.crossingValue.toLocaleString()} career)
-              </span>
+          <div key={i} className="milestone-card">
+            <div className="milestone-card-header">
+              <div className="milestone-card-left">
+                <span className="milestone-stat-badge">{ev.statLabel}</span>
+                <span className="milestone-player-name" onClick={() => setSelectedPlayerId(Number(ev.playerId))}>
+                  {ev.playerName}
+                </span>
+              </div>
+              {ev.date && <span className="milestone-date">{formatDate(ev.date)}</span>}
+            </div>
+            <div className="milestone-card-passed">
+              passed <strong>{ev.passedName}</strong>
+              <span className="milestone-rank-chip">#{ev.passedRank} all-time</span>
+            </div>
+            <div className="milestone-card-stats">
+              <div className="milestone-stat-block">
+                <span className="milestone-stat-num">{ev.seasonValue.toLocaleString()}</span>
+                <span className="milestone-stat-sub">this season</span>
+              </div>
+              <div className="milestone-stat-sep">·</div>
+              <div className="milestone-stat-block">
+                <span className="milestone-stat-num">{ev.crossingValue.toLocaleString()}</span>
+                <span className="milestone-stat-sub">career</span>
+              </div>
+              <div className="milestone-stat-sep milestone-stat-sep--vs">vs</div>
+              <div className="milestone-stat-block milestone-stat-block--muted">
+                <span className="milestone-stat-num">{ev.passedValue.toLocaleString()}</span>
+                <span className="milestone-stat-sub">{ev.passedName.split(' ').slice(-1)[0]}'s career</span>
+              </div>
             </div>
           </div>
         ))}
