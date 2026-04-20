@@ -1562,18 +1562,19 @@ function App() {
             const passed = list.filter(
               (e) => e.personId !== Number(playerId) &&
                      e.value > preSeasonCareer &&
-                     e.value <= career
+                     e.value < career  // strictly less: ties don't count as passing
             );
 
             for (const p of passed) {
-              // Find the date the player's cumulative season total first exceeded p.value - preSeasonCareer
-              const needed = p.value - preSeasonCareer; // season stat count needed to cross
+              // Find the first game where cumulative season total strictly exceeds p.value - preSeasonCareer
+              // so crossingValue is always > p.value (a real pass, not a tie)
+              const needed = p.value - preSeasonCareer;
               let crossDate: string | null = null;
-              let crossingValue = p.value + 1; // at minimum they had p.value+1 career at crossing
+              let crossingValue = p.value + 1;
               let seasonValue = needed + 1;
               for (const entry of gameLog) {
                 const cumSeason = entry.cumulative[stat.key] ?? 0;
-                if (cumSeason >= needed) {
+                if (cumSeason > needed) {  // strictly greater: first game they went above p.value
                   crossDate = entry.date;
                   crossingValue = preSeasonCareer + cumSeason;
                   seasonValue = cumSeason;
