@@ -2615,48 +2615,16 @@ function App() {
           Milestone Tracker — {new Date().getFullYear()}
         </h2>
 
-        {/* Current all-time rankings */}
-        {milestoneRankings.length > 0 && (
-          <div className="milestone-rankings-section">
-            <div className="milestone-section-title">Current All-Time Rankings</div>
-            {milestoneRankings.map((r, i) => (
-              <div key={i} className="milestone-ranking-row">
-                <span
-                  className="milestone-ranking-player"
-                  onClick={() => setSelectedPlayerId(Number(r.playerId))}
-                >
-                  {r.playerName}
-                </span>
-                <span className="milestone-stat-badge" style={{ flexShrink: 0 }}>{r.statLabel}</span>
-                <span className="milestone-ranking-val">{r.careerValue.toLocaleString()}</span>
-                <span className="milestone-ranking-rank">
-                  {r.currentRank !== null ? `#${r.currentRank} all-time` : 'outside top 500'}
-                </span>
-                {r.tiedWith.length > 0 && (
-                  <span className="milestone-ranking-tied">
-                    tied with{' '}
-                    {r.tiedWith.map((t, ti) => (
-                      <span key={t.personId}>
-                        <span
-                          className="milestone-passed-name"
-                          onClick={() => setSelectedPlayerId(t.personId)}
-                        >
-                          {t.fullName}
-                        </span>
-                        {ti < r.tiedWith.length - 1 && ', '}
-                      </span>
-                    ))}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        <p style={{ textAlign: 'center', fontSize: '0.85em', color: '#666', marginBottom: '1.5rem', marginTop: '1.5rem' }}>
+        <p style={{ textAlign: 'center', fontSize: '0.85em', color: '#666', marginBottom: '1.5rem' }}>
           Top-500 all-time passings · most recent first
         </p>
         {(() => {
+          // Build a lookup: playerId__statKey -> ranking
+          const rankLookup = new Map<string, MilestoneRanking>();
+          for (const r of milestoneRankings) {
+            rankLookup.set(`${r.playerId}__${r.statKey}`, r);
+          }
+
           // Group events by player + stat + date so multiple passings in the same game share one card
           const groups: { key: string; events: MilestoneEvent[] }[] = [];
           const seen = new Map<string, MilestoneEvent[]>();
@@ -2667,6 +2635,7 @@ function App() {
           }
           return groups.map(({ key, events: grp }) => {
             const rep = grp[0];
+            const ranking = rankLookup.get(`${rep.playerId}__${rep.statKey}`);
             // Sort passed players by rank ascending within the group
             const sorted = [...grp].sort((a, b) => a.passedRank - b.passedRank);
             return (
@@ -2703,8 +2672,33 @@ function App() {
                   <div className="milestone-stat-sep">·</div>
                   <div className="milestone-stat-block">
                     <span className="milestone-stat-num">{rep.crossingValue.toLocaleString()}</span>
-                    <span className="milestone-stat-sub">career</span>
+                    <span className="milestone-stat-sub">at crossing</span>
                   </div>
+                  {ranking && (
+                    <>
+                      <div className="milestone-stat-sep">·</div>
+                      <div className="milestone-stat-block">
+                        <span className="milestone-stat-num">{ranking.careerValue.toLocaleString()}</span>
+                        <span className="milestone-stat-sub">career now</span>
+                      </div>
+                      <div className="milestone-card-rank">
+                        {ranking.currentRank !== null ? `#${ranking.currentRank} now` : ''}
+                        {ranking.tiedWith.length > 0 && (
+                          <span className="milestone-card-tied">
+                            {' '}tied w/{' '}
+                            {ranking.tiedWith.map((t, ti) => (
+                              <span key={t.personId}>
+                                <span className="milestone-passed-name" onClick={() => setSelectedPlayerId(t.personId)}>
+                                  {t.fullName}
+                                </span>
+                                {ti < ranking.tiedWith.length - 1 && ', '}
+                              </span>
+                            ))}
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             );
