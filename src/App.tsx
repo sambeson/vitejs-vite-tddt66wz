@@ -1560,9 +1560,10 @@ function App() {
           for (const stat of MILESTONE_STATS) {
             const groupName = stat.group;
             const career = getStatVal('career', groupName, stat.key);
+            if (!career) continue;
+            // season may be 0 if the player hasn't appeared yet this year — that's fine,
+            // it just means preSeasonCareer === career and no crossings will be found
             const season = getStatVal('season', groupName, stat.key);
-
-            if (!career || !season) continue;
 
             const preSeasonCareer = career - season;
             const list = top500[stat.key] ?? [];
