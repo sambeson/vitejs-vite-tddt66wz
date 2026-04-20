@@ -547,13 +547,14 @@ type MilestoneEvent = {
   statLabel: string;
   crossingValue: number;     // career total at the crossing game
   seasonValue: number;       // season total at the crossing game
+  passedPersonId: number;    // MLB person ID of the all-time leader they passed
   passedName: string;        // name of the all-time leader they passed
   passedValue: number;       // that person's career total
   passedRank: number;        // their rank in the top 500
   date: string | null;       // YYYY-MM-DD when the crossing happened
 };
 
-const MILESTONE_STATS: { key: string; label: string; group: 'hitting' | 'pitching' }[] = [
+const MILESTONE_STATS: { key: string; label: string; group: 'hitting' | 'pitching'; leaderKey?: string }[] = [
   { key: 'homeRuns',     label: 'HR',  group: 'hitting' },
   { key: 'rbi',         label: 'RBI', group: 'hitting' },
   { key: 'runs',        label: 'R',   group: 'hitting' },
@@ -561,7 +562,8 @@ const MILESTONE_STATS: { key: string; label: string; group: 'hitting' | 'pitchin
   { key: 'triples',     label: '3B',  group: 'hitting' },
   { key: 'doubles',     label: '2B',  group: 'hitting' },
   { key: 'hits',        label: 'H',   group: 'hitting' },
-  { key: 'strikeouts',  label: 'SO',  group: 'pitching' },
+  // game-log stat key is 'strikeOuts' (camelCase); leaders API uses 'strikeouts'
+  { key: 'strikeOuts',  label: 'SO',  group: 'pitching', leaderKey: 'strikeouts' },
   { key: 'saves',       label: 'SV',  group: 'pitching' },
 ];
 
@@ -1464,7 +1466,7 @@ function App() {
 
   const fetchMilestones = async (bustTopListCache = false) => {
     if (bustTopListCache) {
-      MILESTONE_STATS.forEach(stat => localStorage.removeItem(`milestone_top500_${stat.key}`));
+      MILESTONE_STATS.forEach(stat => localStorage.removeItem(`milestone_top500_${stat.leaderKey ?? stat.key}`));
     }
     setMilestonesLoading(true);
     setMilestonesError(false);
@@ -1475,7 +1477,8 @@ function App() {
       type LeaderEntry = { rank: number; personId: number; fullName: string; value: number };
       const top500: Record<string, LeaderEntry[]> = {};
       await Promise.all(MILESTONE_STATS.map(async (stat) => {
-        const cacheKey = `milestone_top500_${stat.key}`;
+        const apiKey = stat.leaderKey ?? stat.key;
+        const cacheKey = `milestone_top500_${apiKey}`;
         const cached = getCached<LeaderEntry[]>(cacheKey, 24);
         if (cached) { top500[stat.key] = cached; return; }
         try {
@@ -1484,7 +1487,7 @@ function App() {
           const pageSize = 100;
           for (let offset = 0; offset < 500; offset += pageSize) {
             const res = await fetch(
-              `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${stat.key}&statType=career&limit=${pageSize}&offset=${offset}&statGroup=${stat.group}`
+              `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${apiKey}&statType=career&limit=${pageSize}&offset=${offset}&statGroup=${stat.group}`
             );
             const data = await res.json();
             const page: LeaderEntry[] = (data.leagueLeaders?.[0]?.leaders ?? []).map((l: any) => ({
@@ -1589,6 +1592,7 @@ function App() {
                 statLabel: stat.label,
                 crossingValue,
                 seasonValue,
+                passedPersonId: p.personId,
                 passedName: p.fullName,
                 passedValue: p.value,
                 passedRank: p.rank,
@@ -2585,7 +2589,13 @@ function App() {
               {ev.date && <span className="milestone-date">{formatDate(ev.date)}</span>}
             </div>
             <div className="milestone-card-passed">
-              passed <strong>{ev.passedName}</strong>
+              passed{' '}
+              <strong
+                className="milestone-passed-name"
+                onClick={() => setSelectedPlayerId(ev.passedPersonId)}
+              >
+                {ev.passedName}
+              </strong>
               <span className="milestone-rank-chip">#{ev.passedRank} all-time</span>
             </div>
             <div className="milestone-card-stats">

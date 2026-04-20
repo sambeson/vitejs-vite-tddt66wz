@@ -1868,6 +1868,14 @@ button:focus {
   flex-wrap: wrap;
 }
 
+.milestone-passed-name {
+  cursor: pointer;
+}
+
+.milestone-passed-name:hover {
+  text-decoration: underline;
+}
+
 .milestone-rank-chip {
   font-size: 0.72rem;
   font-weight: 600;
