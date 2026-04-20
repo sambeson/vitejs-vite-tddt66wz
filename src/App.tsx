@@ -545,10 +545,11 @@ type MilestoneEvent = {
   playerName: string;
   statKey: string;
   statLabel: string;
-  careerValue: number;       // player's current career total
+  crossingValue: number;     // the career value at which they crossed (passedValue + 1... or the game-log value)
   passedName: string;        // name of the all-time leader they passed
   passedValue: number;       // that person's career total
-  passedRank: number;        // their rank in the top 250
+  passedRank: number;        // their rank in the top 500
+  date: string | null;       // YYYY-MM-DD when the crossing happened
 };
 
 const MILESTONE_STATS: { key: string; label: string; group: 'hitting' | 'pitching' }[] = [
@@ -1464,41 +1465,44 @@ function App() {
     setMilestonesLoading(true);
     setMilestonesError(false);
     try {
-      // Step 1: fetch top 250 for each stat (cached 24h — these lists barely change)
-      const top250: Record<string, { rank: number; personId: number; fullName: string; value: number }[]> = {};
+      const currentSeason = new Date().getFullYear();
+
+      // Step 1: fetch top 500 for each stat (cached 24h)
+      type LeaderEntry = { rank: number; personId: number; fullName: string; value: number };
+      const top500: Record<string, LeaderEntry[]> = {};
       await Promise.all(MILESTONE_STATS.map(async (stat) => {
-        const cacheKey = `milestone_top250_${stat.key}`;
-        const cached = getCached<typeof top250[string]>(cacheKey, 24);
-        if (cached) { top250[stat.key] = cached; return; }
+        const cacheKey = `milestone_top500_${stat.key}`;
+        const cached = getCached<LeaderEntry[]>(cacheKey, 24);
+        if (cached) { top500[stat.key] = cached; return; }
         try {
           const res = await fetch(
-            `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${stat.key}&statType=career&limit=250&statGroup=${stat.group}`
+            `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${stat.key}&statType=career&limit=500&statGroup=${stat.group}`
           );
           const data = await res.json();
-          const leaders = (data.leagueLeaders?.[0]?.leaders ?? []).map((l: any) => ({
+          const leaders: LeaderEntry[] = (data.leagueLeaders?.[0]?.leaders ?? []).map((l: any) => ({
             rank: l.rank,
             personId: l.person?.id,
             fullName: l.person?.fullName,
             value: Number(l.value),
           }));
-          top250[stat.key] = leaders;
+          top500[stat.key] = leaders;
           setCached(cacheKey, leaders);
-        } catch { top250[stat.key] = []; }
+        } catch { top500[stat.key] = []; }
       }));
 
-      // Step 2: fetch career + 2026 season stats for each mentaculous player
-      const currentSeason = new Date().getFullYear();
+      // Step 2: for each mentaculous player, fetch career+season totals AND game log
       const playerIds = Object.keys(mentaculous);
       const events: MilestoneEvent[] = [];
 
       await Promise.all(playerIds.map(async (playerId) => {
         const player = mentaculous[playerId];
         try {
-          const res = await fetch(
+          // Career + season totals
+          const statsRes = await fetch(
             `https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=stats(type=[career,season],group=[hitting,pitching])&season=${currentSeason}`
           );
-          const data = await res.json();
-          const statsArr: any[] = data.people?.[0]?.stats ?? [];
+          const statsData = await statsRes.json();
+          const statsArr: any[] = statsData.people?.[0]?.stats ?? [];
 
           const getStatVal = (type: string, group: string, key: string): number => {
             const entry = statsArr.find((s: any) =>
@@ -1507,43 +1511,85 @@ function App() {
             return Number(entry?.splits?.[0]?.stat?.[key] ?? 0);
           };
 
+          // Game logs: fetch hitting + pitching (cached 1h — updates daily)
+          const fetchGameLog = async (group: 'hitting' | 'pitching') => {
+            const cacheKey = `milestone_gamelog_${playerId}_${group}_${currentSeason}`;
+            const cached = getCached<{ date: string; cumulative: Record<string, number> }[]>(cacheKey, 1);
+            if (cached) return cached;
+            try {
+              const res = await fetch(
+                `https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=gameLog&group=${group}&season=${currentSeason}`
+              );
+              const data = await res.json();
+              const splits: any[] = data.stats?.[0]?.splits ?? [];
+              // Build cumulative running totals in date order
+              const running: Record<string, number> = {};
+              const result = splits.map((s: any) => {
+                for (const [k, v] of Object.entries(s.stat ?? {})) {
+                  running[k] = (running[k] ?? 0) + Number(v);
+                }
+                return { date: s.date as string, cumulative: { ...running } };
+              });
+              setCached(cacheKey, result);
+              return result;
+            } catch { return []; }
+          };
+
+          const hittingLog = await fetchGameLog('hitting');
+          const pitchingLog = await fetchGameLog('pitching');
+
           for (const stat of MILESTONE_STATS) {
-            const groupName = stat.group === 'hitting' ? 'hitting' : 'pitching';
+            const groupName = stat.group;
             const career = getStatVal('career', groupName, stat.key);
             const season = getStatVal('season', groupName, stat.key);
             if (!career || !season) continue;
 
             const preSeasonCareer = career - season;
-            const list = top250[stat.key] ?? [];
+            const list = top500[stat.key] ?? [];
+            const gameLog = groupName === 'hitting' ? hittingLog : pitchingLog;
 
-            // Find everyone in the top 250 whose career value was passed during 2026:
-            // their value must be > pre-season total AND <= current career total
             const passed = list.filter(
-              (e) => e.personId !== Number(playerId) && e.value > preSeasonCareer && e.value <= career
+              (e) => e.personId !== Number(playerId) &&
+                     e.value > preSeasonCareer &&
+                     e.value <= career
             );
 
             for (const p of passed) {
+              // Find the date the player's cumulative season total first exceeded p.value - preSeasonCareer
+              const needed = p.value - preSeasonCareer; // season stat count needed to cross
+              let crossDate: string | null = null;
+              let crossingValue = p.value + 1; // at minimum they had p.value+1 career at crossing
+              for (const entry of gameLog) {
+                const cumSeason = entry.cumulative[stat.key] ?? 0;
+                if (cumSeason >= needed) {
+                  crossDate = entry.date;
+                  crossingValue = preSeasonCareer + cumSeason;
+                  break;
+                }
+              }
+
               events.push({
                 playerId,
                 playerName: player.playerName,
                 statKey: stat.key,
                 statLabel: stat.label,
-                careerValue: career,
+                crossingValue,
                 passedName: p.fullName,
                 passedValue: p.value,
                 passedRank: p.rank,
+                date: crossDate,
               });
             }
           }
         } catch { /* skip this player */ }
       }));
 
-      // Sort: by stat label then by the value at which they passed (descending)
-      events.sort((a, b) =>
-        a.playerName.localeCompare(b.playerName) ||
-        a.statLabel.localeCompare(b.statLabel) ||
-        b.passedValue - a.passedValue
-      );
+      // Sort most recent first, then by player name, then by stat
+      events.sort((a, b) => {
+        const dateCompare = (b.date ?? '').localeCompare(a.date ?? '');
+        if (dateCompare !== 0) return dateCompare;
+        return a.playerName.localeCompare(b.playerName) || a.statLabel.localeCompare(b.statLabel);
+      });
 
       setMilestoneEvents(events);
     } catch {
@@ -2491,18 +2537,18 @@ function App() {
       return (
         <div className="leaders-container">
           <p style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-            No top-250 all-time passings found for your mentaculous players in {new Date().getFullYear()}.
+            No top-500 all-time passings found for your mentaculous players in {new Date().getFullYear()}.
           </p>
         </div>
       );
     }
 
-    // Group by player
-    const byPlayer: Record<string, MilestoneEvent[]> = {};
-    for (const ev of milestoneEvents) {
-      if (!byPlayer[ev.playerId]) byPlayer[ev.playerId] = [];
-      byPlayer[ev.playerId].push(ev);
-    }
+    const formatDate = (d: string | null) => {
+      if (!d) return null;
+      const [y, m, day] = d.split('-');
+      return new Date(Number(y), Number(m) - 1, Number(day))
+        .toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
 
     return (
       <div className="leaders-container">
@@ -2510,41 +2556,31 @@ function App() {
           Milestone Tracker — {new Date().getFullYear()}
         </h2>
         <p style={{ textAlign: 'center', fontSize: '0.85em', color: '#666', marginBottom: '1.5rem' }}>
-          Top-250 all-time passings by your mentaculous players
+          Top-500 all-time passings · most recent first
         </p>
-        {Object.entries(byPlayer).map(([playerId, events]) => {
-          // Group events by stat
-          const byStat: Record<string, MilestoneEvent[]> = {};
-          for (const ev of events) {
-            if (!byStat[ev.statLabel]) byStat[ev.statLabel] = [];
-            byStat[ev.statLabel].push(ev);
-          }
-          return (
-            <div key={playerId} className="milestone-player-block">
-              <div className="milestone-player-name"
-                style={{ cursor: 'pointer' }}
-                onClick={() => setSelectedPlayerId(Number(playerId))}
+        {milestoneEvents.map((ev, i) => (
+          <div key={i} className="milestone-player-block">
+            <div className="milestone-row" style={{ alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+              {ev.date && (
+                <span className="milestone-date">{formatDate(ev.date)}</span>
+              )}
+              <span
+                className="milestone-player-name"
+                style={{ cursor: 'pointer', marginBottom: 0, border: 'none', paddingBottom: 0 }}
+                onClick={() => setSelectedPlayerId(Number(ev.playerId))}
               >
-                {events[0].playerName}
-              </div>
-              {Object.entries(byStat).map(([statLabel, statEvents]) => (
-                <div key={statLabel} className="milestone-stat-group">
-                  <span className="milestone-stat-label">{statLabel}</span>
-                  <div className="milestone-passings">
-                    {statEvents.map((ev, i) => (
-                      <div key={i} className="milestone-row">
-                        <span className="milestone-career-val">{ev.careerValue.toLocaleString()}</span>
-                        <span className="milestone-text">
-                          Passed <strong>{ev.passedName}</strong> (#{ev.passedRank} all-time, {ev.passedValue.toLocaleString()})
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                {ev.playerName}
+              </span>
+              <span className="milestone-stat-label">{ev.statLabel}</span>
+              <span className="milestone-text">
+                passed <strong>{ev.passedName}</strong> (#{ev.passedRank} all-time) with{' '}
+                <span className="milestone-career-val" style={{ display: 'inline', minWidth: 'auto' }}>
+                  {ev.crossingValue.toLocaleString()}
+                </span>{' '}career {ev.statLabel}
+              </span>
             </div>
-          );
-        })}
+          </div>
+        ))}
         <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
           <button className="leaders-show-all" onClick={fetchMilestones}>Refresh</button>
         </div>
