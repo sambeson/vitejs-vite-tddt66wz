@@ -1800,6 +1800,50 @@ button:focus {
    MILESTONES TAB
    ======================================== */
 
+.milestone-day-group {
+  margin: 0 12px 14px;
+}
+
+.milestone-day-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #d7deea;
+  border-radius: 8px;
+  background: #f7f9fc;
+  color: #041e42;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.milestone-day-title {
+  flex: 1;
+}
+
+.milestone-day-count {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #667085;
+}
+
+.milestone-day-chevron {
+  font-size: 0.9rem;
+  color: #667085;
+  transition: transform 0.18s ease;
+}
+
+.milestone-day-chevron.open {
+  transform: rotate(180deg);
+}
+
+.milestone-day-cards {
+  padding-top: 10px;
+}
+
 /* Milestone card */
 .milestone-card {
   background: #fff;

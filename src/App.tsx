@@ -547,6 +547,8 @@ type MilestoneEvent = {
   statLabel: string;
   crossingValue: number;     // career total at the crossing game
   crossingRank: number;      // all-time rank at the moment of the crossing
+  tiedPersonIds: number[];   // MLB person IDs tied with the player at the crossing rank
+  tiedNames: string[];       // names tied with the player at the crossing rank
   seasonValue: number;       // season total at the crossing game
   passedPersonId: number;    // MLB person ID of the all-time leader they passed
   passedName: string;        // name of the all-time leader they passed
@@ -607,8 +609,6 @@ function App() {
   const [recordsGroup, setRecordsGroup] = useState<'batting' | 'pitching'>('batting');
   const [recordsCategory, setRecordsCategory] = useState('homeRuns');
   const [recordsData, setRecordsData] = useState<any[]>([]);
-  const [recordsShowAll, setRecordsShowAll] = useState(false);
-  const [recordsAllData, setRecordsAllData] = useState<any[]>([]);
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [recordsError, setRecordsError] = useState(false);
   const [recordsSubTab, setRecordsSubTab] = useState<'all-time' | 'active'>('all-time');
@@ -621,6 +621,7 @@ function App() {
   const [milestoneEvents, setMilestoneEvents] = useState<MilestoneEvent[]>([]);
   const [milestonesLoading, setMilestonesLoading] = useState(false);
   const [milestonesError, setMilestonesError] = useState(false);
+  const [openMilestoneDays, setOpenMilestoneDays] = useState<string[]>([]);
   const [selectedTeam, setSelectedTeam] = useState('away');
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('games');
@@ -666,12 +667,10 @@ function App() {
 
   useEffect(() => {
     if (activeTab !== 'records') return;
-    fetchRecords(
-      recordsCategory,
-      recordsGroup === 'batting' ? 'hitting' : 'pitching'
-    );
+    if (recordsSubTab !== 'all-time') return;
+    fetchRecords(recordsCategory, recordsGroup === 'batting' ? 'hitting' : 'pitching');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, recordsCategory, recordsGroup]);
+  }, [activeTab, recordsSubTab, recordsCategory, recordsGroup]);
 
   useEffect(() => {
     if (activeTab !== 'records') return;
@@ -1428,26 +1427,14 @@ function App() {
     }
   };
 
-  const fetchRecords = async (
-    category: string,
-    group: 'hitting' | 'pitching',
-    showAll = false
-  ) => {
-    if (showAll && recordsAllData.length > 0) {
-      setRecordsShowAll(true);
-      return;
-    }
-    const ttlHours = 24 * 7; // 7 days
+  const fetchRecords = async (category: string, group: 'hitting' | 'pitching') => {
+    const cacheKey = `records_v2_500_${group}_${category}`;
+    const ttlHours = 24 * 7;
 
-    if (!showAll) {
-      const cacheKey = `records_${category}`;
-      const cached = getCached<any[]>(cacheKey, ttlHours);
-      if (cached && cached.length > 0) {
-        setRecordsData(cached);
-        setRecordsShowAll(false);
-        setRecordsAllData([]);
-        return;
-      }
+    const cached = getCached<any[]>(cacheKey, ttlHours);
+    if (cached && cached.length > 0) {
+      setRecordsData(cached);
+      return;
     }
 
     setRecordsLoading(true);
@@ -1465,23 +1452,19 @@ function App() {
         allLeaders.push(...page);
         if (page.length < 100) break;
       }
-      const leaders = allLeaders;
 
-      if (leaders.length === 0) {
+      const dedupedLeaders = Array.from(
+        new Map(allLeaders.map(entry => [`${entry.person?.id ?? 'unknown'}_${entry.rank ?? entry.value}`, entry])).values()
+      ).sort((a, b) => Number(a.rank ?? 9999) - Number(b.rank ?? 9999));
+
+      if (dedupedLeaders.length === 0) {
         setRecordsError(true);
-        setRecordsLoading(false);
         return;
       }
 
-      if (showAll) {
-        setRecordsAllData(leaders);
-        setRecordsShowAll(true);
-      } else {
-        setCached(`records_${category}`, leaders.slice(0, 25));
-        setRecordsData(leaders.slice(0, 25));
-        setRecordsAllData(leaders);
-        setRecordsShowAll(false);
-      }
+      localStorage.removeItem(`records_500_${category}`);
+      setCached(cacheKey, dedupedLeaders);
+      setRecordsData(dedupedLeaders);
     } catch {
       setRecordsError(true);
     } finally {
@@ -1656,6 +1639,22 @@ function App() {
         } catch { return []; }
       };
 
+      const getCumulativeOnDate = (
+        gameLog: { date: string; cumulative: Record<string, number> }[],
+        date: string | null,
+        statKey: string,
+      ) => {
+        if (gameLog.length === 0) return 0;
+        if (!date) return gameLog[gameLog.length - 1]?.cumulative[statKey] ?? 0;
+
+        let cumulative = 0;
+        for (const entry of gameLog) {
+          if (entry.date > date) break;
+          cumulative = entry.cumulative[statKey] ?? 0;
+        }
+        return cumulative;
+      };
+
       // Collect all (personId, group) pairs that need game logs — only players who actually crossed someone
       type NeedLog = { personId: number; group: 'hitting' | 'pitching'; fullName: string };
       const needLogs: NeedLog[] = [];
@@ -1669,11 +1668,7 @@ function App() {
           const season = seasonMap.get(player.personId) ?? 0;
           if (!season) continue; // not active this season
 
-          const preSeasonCareer = player.value - season;
-          const passed = careerList.filter(
-            e => e.personId !== player.personId && e.value >= preSeasonCareer && e.value < player.value
-          );
-          if (passed.length > 0 && !needLogs.find(n => n.personId === player.personId && n.group === stat.group)) {
+          if (!needLogs.find(n => n.personId === player.personId && n.group === stat.group)) {
             needLogs.push({ personId: player.personId, group: stat.group, fullName: player.fullName });
           }
         }
@@ -1718,7 +1713,32 @@ function App() {
                 break;
               }
             }
-            const crossingRank = careerList.filter(e => e.personId !== player.personId && e.value > crossingValue).length + 1;
+
+            const standingAtCrossing = careerList.map(e => {
+              if (e.personId === player.personId) {
+                return { personId: e.personId, fullName: e.fullName, value: crossingValue };
+              }
+
+              const otherSeason = seasonMap.get(e.personId) ?? 0;
+              if (!otherSeason) {
+                return { personId: e.personId, fullName: e.fullName, value: e.value };
+              }
+
+              const otherPreSeasonCareer = e.value - otherSeason;
+              const otherGameLog = gameLogCache.get(`${e.personId}_${stat.group}`) ?? [];
+              const otherSeasonValue = getCumulativeOnDate(otherGameLog, crossDate, stat.key);
+              return {
+                personId: e.personId,
+                fullName: e.fullName,
+                value: otherPreSeasonCareer + otherSeasonValue,
+              };
+            });
+
+            const crossingRank = standingAtCrossing.filter(e => e.personId !== player.personId && e.value > crossingValue).length + 1;
+            const tiedWith = standingAtCrossing
+              .filter(e => e.personId !== player.personId && e.value === crossingValue)
+              .sort((a, b) => a.fullName.localeCompare(b.fullName));
+
             events.push({
               playerId: String(player.personId),
               playerName: player.fullName,
@@ -1726,6 +1746,8 @@ function App() {
               statLabel: stat.label,
               crossingValue,
               crossingRank,
+              tiedPersonIds: tiedWith.map(e => e.personId),
+              tiedNames: tiedWith.map(e => e.fullName),
               seasonValue,
               passedPersonId: p.personId,
               passedName: p.fullName,
@@ -1745,6 +1767,11 @@ function App() {
       });
 
       setMilestoneEvents(events);
+      setOpenMilestoneDays(prev => {
+        if (prev.length > 0) return prev;
+        const firstDay = events[0]?.date ?? 'unknown';
+        return firstDay ? [firstDay] : [];
+      });
     } catch {
       setMilestonesError(true);
     } finally {
@@ -2612,42 +2639,26 @@ function App() {
   const renderRecords = () => {
     const allTimeCategories = recordsGroup === 'batting' ? BATTING_RECORD_CATEGORIES : PITCHING_RECORD_CATEGORIES;
     const activeCategories = activeRecordsGroup === 'batting' ? BATTING_RECORD_CATEGORIES : PITCHING_RECORD_CATEGORIES;
-    const displayData = recordsShowAll ? recordsAllData : recordsData;
 
-    const resetData = () => {
-      setRecordsShowAll(false);
-      setRecordsAllData([]);
+    const switchGroup = (g: 'batting' | 'pitching') => {
+      setRecordsGroup(g);
+      setRecordsCategory(g === 'batting' ? 'homeRuns' : 'strikeOuts');
       setRecordsData([]);
     };
 
-    const switchGroup = (g: 'batting' | 'pitching') => {
-      const def = g === 'batting' ? 'homeRuns' : 'strikeOuts';
-      setRecordsGroup(g);
-      setRecordsCategory(def);
-      resetData();
-    };
-
     const switchActiveGroup = (g: 'batting' | 'pitching') => {
-      const def = g === 'batting' ? 'homeRuns' : 'strikeOuts';
       setActiveRecordsGroup(g);
-      setActiveRecordsCategory(def);
+      setActiveRecordsCategory(g === 'batting' ? 'homeRuns' : 'strikeOuts');
       setActiveRecordsData([]);
     };
 
     return (
       <div className="leaders-container">
-        {/* Top-level subtab: All-Time vs Active Roster */}
         <div className="leaders-subtabs" style={{ marginBottom: '0.5rem' }}>
-          <button
-            className={recordsSubTab === 'all-time' ? 'active' : ''}
-            onClick={() => setRecordsSubTab('all-time')}
-          >
+          <button className={recordsSubTab === 'all-time' ? 'active' : ''} onClick={() => setRecordsSubTab('all-time')}>
             All-Time Top 500
           </button>
-          <button
-            className={recordsSubTab === 'active' ? 'active' : ''}
-            onClick={() => setRecordsSubTab('active')}
-          >
+          <button className={recordsSubTab === 'active' ? 'active' : ''} onClick={() => setRecordsSubTab('active')}>
             Active Roster
           </button>
         </div>
@@ -2658,71 +2669,40 @@ function App() {
               <button className={recordsGroup === 'batting' ? 'active' : ''} onClick={() => switchGroup('batting')}>Batting</button>
               <button className={recordsGroup === 'pitching' ? 'active' : ''} onClick={() => switchGroup('pitching')}>Pitching</button>
             </div>
-
             <div className="leaders-pills">
               {allTimeCategories.map(cat => (
                 <button
                   key={cat.key}
                   className={`leaders-pill${recordsCategory === cat.key ? ' active' : ''}`}
-                  onClick={() => {
-                    if (cat.key === recordsCategory) return;
-                    setRecordsCategory(cat.key);
-                    setRecordsShowAll(false);
-                    setRecordsAllData([]);
-                    setRecordsData([]);
-                  }}
+                  onClick={() => { if (cat.key !== recordsCategory) { setRecordsCategory(cat.key); setRecordsData([]); } }}
                 >
                   {cat.label}
                 </button>
               ))}
             </div>
-
             {recordsLoading && <div className="leaders-status">Loading...</div>}
             {recordsError && <div className="leaders-status">Failed to load</div>}
-            {!recordsLoading && !recordsError && displayData.length > 0 && renderLeaderTable(
-              displayData,
-              <>
-                {!recordsShowAll && recordsAllData.length > displayData.length && (
-                  <button className="leaders-show-all" onClick={() => fetchRecords(recordsCategory, recordsGroup === 'batting' ? 'hitting' : 'pitching', true)}>
-                    Show all
-                  </button>
-                )}
-                {recordsShowAll && (
-                  <button className="leaders-show-all" onClick={() => setRecordsShowAll(false)}>
-                    Show top 25
-                  </button>
-                )}
-              </>
-            )}
+            {!recordsLoading && !recordsError && recordsData.length > 0 && renderLeaderTable(recordsData)}
           </>
         )}
 
         {recordsSubTab === 'active' && (
           <>
-            <p style={{ textAlign: 'center', fontSize: '0.8em', color: '#888', margin: '0.25rem 0 0.75rem' }}>
-              Top 100 career stats · current 40-man roster players only
-            </p>
             <div className="leaders-subtabs">
               <button className={activeRecordsGroup === 'batting' ? 'active' : ''} onClick={() => switchActiveGroup('batting')}>Batting</button>
               <button className={activeRecordsGroup === 'pitching' ? 'active' : ''} onClick={() => switchActiveGroup('pitching')}>Pitching</button>
             </div>
-
             <div className="leaders-pills">
               {activeCategories.map(cat => (
                 <button
                   key={cat.key}
                   className={`leaders-pill${activeRecordsCategory === cat.key ? ' active' : ''}`}
-                  onClick={() => {
-                    if (cat.key === activeRecordsCategory) return;
-                    setActiveRecordsCategory(cat.key);
-                    setActiveRecordsData([]);
-                  }}
+                  onClick={() => { if (cat.key !== activeRecordsCategory) { setActiveRecordsCategory(cat.key); setActiveRecordsData([]); } }}
                 >
                   {cat.label}
                 </button>
               ))}
             </div>
-
             {activeRecordsLoading && <div className="leaders-status">Loading...</div>}
             {activeRecordsError && <div className="leaders-status">Failed to load</div>}
             {!activeRecordsLoading && !activeRecordsError && activeRecordsData.length > 0 && renderLeaderTable(activeRecordsData)}
@@ -2753,6 +2733,12 @@ function App() {
         .toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     };
 
+    const toggleDay = (dayKey: string) => {
+      setOpenMilestoneDays(prev => (
+        prev.includes(dayKey) ? prev.filter(day => day !== dayKey) : [...prev, dayKey]
+      ));
+    };
+
     return (
       <div className="leaders-container">
         <h2 style={{ textAlign: 'center', marginBottom: '1rem' }}>
@@ -2766,56 +2752,101 @@ function App() {
           <button className="leaders-show-all" onClick={() => fetchMilestones(true)}>Refresh</button>
         </div>
         {(() => {
-          // Group events by player + stat + date so multiple passings in the same game share one card
-          const groups: { key: string; events: MilestoneEvent[] }[] = [];
-          const seen = new Map<string, MilestoneEvent[]>();
+          // Group events by day, then by player + stat + date so multiple passings in the same game share one card
+          const byDay = new Map<string, MilestoneEvent[]>();
           for (const ev of milestoneEvents) {
-            const k = `${ev.playerId}__${ev.statKey}__${ev.date ?? 'unknown'}`;
-            if (!seen.has(k)) { seen.set(k, []); groups.push({ key: k, events: seen.get(k)! }); }
-            seen.get(k)!.push(ev);
+            const dayKey = ev.date ?? 'unknown';
+            if (!byDay.has(dayKey)) byDay.set(dayKey, []);
+            byDay.get(dayKey)!.push(ev);
           }
-          return groups.map(({ key, events: grp }) => {
-            const rep = grp[0];
-            // Sort passed players by rank ascending within the group
-            const sorted = [...grp].sort((a, b) => a.passedRank - b.passedRank);
+
+          return Array.from(byDay.entries()).map(([dayKey, dayEvents]) => {
+            const groups: { key: string; events: MilestoneEvent[] }[] = [];
+            const seen = new Map<string, MilestoneEvent[]>();
+            for (const ev of dayEvents) {
+              const groupKey = `${ev.playerId}__${ev.statKey}__${ev.date ?? 'unknown'}`;
+              if (!seen.has(groupKey)) {
+                seen.set(groupKey, []);
+                groups.push({ key: groupKey, events: seen.get(groupKey)! });
+              }
+              seen.get(groupKey)!.push(ev);
+            }
+
+            const isOpen = openMilestoneDays.includes(dayKey);
             return (
-              <div key={key} className="milestone-card">
-                <div className="milestone-card-header">
-                  <div className="milestone-card-left">
-                    <span className="milestone-stat-badge">{rep.statLabel}</span>
-                    <span className="milestone-player-name" onClick={() => setSelectedPlayerId(Number(rep.playerId))}>
-                      {rep.playerName}
-                    </span>
+              <div key={dayKey} className="milestone-day-group">
+                <button className="milestone-day-header" onClick={() => toggleDay(dayKey)}>
+                  <span className="milestone-day-title">{formatDate(dayKey) ?? 'Unknown date'}</span>
+                  <span className="milestone-day-count">{groups.length} {groups.length === 1 ? 'milestone' : 'milestones'}</span>
+                  <span className={`milestone-day-chevron${isOpen ? ' open' : ''}`}>▾</span>
+                </button>
+                {isOpen && (
+                  <div className="milestone-day-cards">
+                    {groups.map(({ key, events: grp }) => {
+                      const rep = grp[0];
+                      const sorted = [...grp].sort((a, b) => a.passedRank - b.passedRank);
+                      return (
+                        <div key={key} className="milestone-card">
+                          <div className="milestone-card-header">
+                            <div className="milestone-card-left">
+                              <span className="milestone-stat-badge">{rep.statLabel}</span>
+                              <span className="milestone-player-name" onClick={() => setSelectedPlayerId(Number(rep.playerId))}>
+                                {rep.playerName}
+                              </span>
+                            </div>
+                            {rep.date && <span className="milestone-date">{formatDate(rep.date)}</span>}
+                          </div>
+                          <div className="milestone-card-passed">
+                            passed{' '}
+                            {sorted.map((ev, pi) => (
+                              <span key={ev.passedPersonId}>
+                                <strong
+                                  className="milestone-passed-name"
+                                  onClick={() => setSelectedPlayerId(ev.passedPersonId)}
+                                >
+                                  {ev.passedName}
+                                </strong>
+                                <span className="milestone-rank-chip">#{ev.passedRank}</span>
+                                {pi < sorted.length - 1 && <span style={{ color: '#bbb' }}> · </span>}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="milestone-card-stats">
+                            <div className="milestone-stat-block">
+                              <span className="milestone-stat-num">{rep.seasonValue.toLocaleString()}</span>
+                              <span className="milestone-stat-sub">on the season</span>
+                            </div>
+                            <div className="milestone-stat-sep">·</div>
+                            <div className="milestone-stat-block">
+                              <span className="milestone-stat-num">{rep.crossingValue.toLocaleString()}</span>
+                              <span className="milestone-stat-sub">career</span>
+                            </div>
+                            <div className="milestone-card-rank">
+                              moved to #{rep.crossingRank} all-time
+                              {rep.tiedPersonIds.length > 0 && (
+                                <>
+                                  {' '}
+                                  tied with{' '}
+                                  {rep.tiedPersonIds.map((personId, index) => (
+                                    <span key={personId}>
+                                      <strong
+                                        className="milestone-passed-name"
+                                        onClick={() => setSelectedPlayerId(personId)}
+                                      >
+                                        {rep.tiedNames[index]}
+                                      </strong>
+                                      {index < rep.tiedPersonIds.length - 1 && <span style={{ color: '#bbb' }}> · </span>}
+                                    </span>
+                                  ))}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  {rep.date && <span className="milestone-date">{formatDate(rep.date)}</span>}
-                </div>
-                <div className="milestone-card-passed">
-                  passed{' '}
-                  {sorted.map((ev, pi) => (
-                    <span key={ev.passedPersonId}>
-                      <strong
-                        className="milestone-passed-name"
-                        onClick={() => setSelectedPlayerId(ev.passedPersonId)}
-                      >
-                        {ev.passedName}
-                      </strong>
-                      <span className="milestone-rank-chip">#{ev.passedRank}</span>
-                      {pi < sorted.length - 1 && <span style={{ color: '#bbb' }}> · </span>}
-                    </span>
-                  ))}
-                </div>
-                <div className="milestone-card-stats">
-                  <div className="milestone-stat-block">
-                    <span className="milestone-stat-num">{rep.seasonValue.toLocaleString()}</span>
-                    <span className="milestone-stat-sub">on the season</span>
-                  </div>
-                  <div className="milestone-stat-sep">·</div>
-                  <div className="milestone-stat-block">
-                    <span className="milestone-stat-num">{rep.crossingValue.toLocaleString()}</span>
-                    <span className="milestone-stat-sub">career</span>
-                  </div>
-                  <div className="milestone-card-rank">moved to #{Math.min(...sorted.map(ev => ev.crossingRank))} all-time</div>
-                </div>
+                )}
               </div>
             );
           });
@@ -3711,7 +3742,7 @@ function App() {
 
           {activeTab === 'historical' && renderHistorical()}
 
-          {selectedPlayerId && (
+          {selectedPlayerId !== null && (
             <PlayerProfile
               playerId={selectedPlayerId}
               onClose={() => setSelectedPlayerId(null)}
