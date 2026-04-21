@@ -611,6 +611,13 @@ function App() {
   const [recordsAllData, setRecordsAllData] = useState<any[]>([]);
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [recordsError, setRecordsError] = useState(false);
+  const [recordsSubTab, setRecordsSubTab] = useState<'all-time' | 'active'>('all-time');
+  const [activeRecordsGroup, setActiveRecordsGroup] = useState<'batting' | 'pitching'>('batting');
+  const [activeRecordsCategory, setActiveRecordsCategory] = useState('homeRuns');
+  const [activeRecordsData, setActiveRecordsData] = useState<any[]>([]);
+  const [activeRecordsLoading, setActiveRecordsLoading] = useState(false);
+  const [activeRecordsError, setActiveRecordsError] = useState(false);
+  const [activeRosterIds, setActiveRosterIds] = useState<Set<number> | null>(null);
   const [milestoneEvents, setMilestoneEvents] = useState<MilestoneEvent[]>([]);
   const [milestonesLoading, setMilestonesLoading] = useState(false);
   const [milestonesError, setMilestonesError] = useState(false);
@@ -665,6 +672,16 @@ function App() {
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, recordsCategory, recordsGroup]);
+
+  useEffect(() => {
+    if (activeTab !== 'records') return;
+    if (recordsSubTab !== 'active') return;
+    fetchActiveRecords(
+      activeRecordsCategory,
+      activeRecordsGroup === 'batting' ? 'hitting' : 'pitching'
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, recordsSubTab, activeRecordsCategory, activeRecordsGroup]);
 
   useEffect(() => {
     if (activeTab !== 'milestones') return;
@@ -1420,7 +1437,6 @@ function App() {
       setRecordsShowAll(true);
       return;
     }
-    const limit = showAll ? 100 : 25;
     const ttlHours = 24 * 7; // 7 days
 
     if (!showAll) {
@@ -1438,11 +1454,18 @@ function App() {
     setRecordsError(false);
 
     try {
-      const res = await fetch(
-        `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${category}&statType=career&limit=${limit}&statGroup=${group}`
-      );
-      const json = await res.json();
-      const leaders = json?.leagueLeaders?.[0]?.leaders ?? [];
+      // Paginate to fetch up to 500 records (5 pages × 100)
+      const allLeaders: any[] = [];
+      for (let offset = 0; offset < 500; offset += 100) {
+        const res = await fetch(
+          `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${category}&statType=career&limit=100&offset=${offset}&statGroup=${group}`
+        );
+        const json = await res.json();
+        const page = json?.leagueLeaders?.[0]?.leaders ?? [];
+        allLeaders.push(...page);
+        if (page.length < 100) break;
+      }
+      const leaders = allLeaders;
 
       if (leaders.length === 0) {
         setRecordsError(true);
@@ -1454,15 +1477,77 @@ function App() {
         setRecordsAllData(leaders);
         setRecordsShowAll(true);
       } else {
-        setCached(`records_${category}`, leaders);
-        setRecordsData(leaders);
+        setCached(`records_${category}`, leaders.slice(0, 25));
+        setRecordsData(leaders.slice(0, 25));
+        setRecordsAllData(leaders);
         setRecordsShowAll(false);
-        setRecordsAllData([]);
       }
     } catch {
       setRecordsError(true);
     } finally {
       setRecordsLoading(false);
+    }
+  };
+
+  const fetchActiveRosterIds = async (): Promise<Set<number>> => {
+    const cacheKey = 'active_roster_ids';
+    const cached = getCached<number[]>(cacheKey, 24);
+    if (cached) return new Set(cached);
+
+    // Fetch all MLB teams
+    const teamsRes = await fetch('https://statsapi.mlb.com/api/v1/teams?sportId=1&season=2026');
+    const teamsJson = await teamsRes.json();
+    const teamIds: number[] = (teamsJson?.teams ?? []).map((t: any) => t.id);
+
+    // Fetch 40-man rosters for all teams in parallel
+    const rosterResults = await Promise.all(
+      teamIds.map(id =>
+        fetch(`https://statsapi.mlb.com/api/v1/teams/${id}/roster?rosterType=40Man`)
+          .then(r => r.json())
+          .catch(() => ({ roster: [] }))
+      )
+    );
+
+    const ids: number[] = [];
+    for (const result of rosterResults) {
+      for (const player of result?.roster ?? []) {
+        if (player?.person?.id) ids.push(player.person.id);
+      }
+    }
+
+    setCached(cacheKey, ids);
+    return new Set(ids);
+  };
+
+  const fetchActiveRecords = async (category: string, group: 'hitting' | 'pitching') => {
+    setActiveRecordsLoading(true);
+    setActiveRecordsError(false);
+    try {
+      let rosterIds = activeRosterIds;
+      if (!rosterIds) {
+        rosterIds = await fetchActiveRosterIds();
+        setActiveRosterIds(rosterIds);
+      }
+
+      // Paginate career leaders up to 500
+      const allLeaders: any[] = [];
+      for (let offset = 0; offset < 500; offset += 100) {
+        const res = await fetch(
+          `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${category}&statType=career&limit=100&offset=${offset}&statGroup=${group}`
+        );
+        const json = await res.json();
+        const page = json?.leagueLeaders?.[0]?.leaders ?? [];
+        allLeaders.push(...page);
+        if (page.length < 100) break;
+      }
+
+      // Filter to only 40-man roster players
+      const active = allLeaders.filter(e => rosterIds!.has(Number(e.person?.id)));
+      setActiveRecordsData(active.slice(0, 100));
+    } catch {
+      setActiveRecordsError(true);
+    } finally {
+      setActiveRecordsLoading(false);
     }
   };
 
@@ -1586,7 +1671,7 @@ function App() {
 
           const preSeasonCareer = player.value - season;
           const passed = careerList.filter(
-            e => e.personId !== player.personId && e.value > preSeasonCareer && e.value < player.value
+            e => e.personId !== player.personId && e.value >= preSeasonCareer && e.value < player.value
           );
           if (passed.length > 0 && !needLogs.find(n => n.personId === player.personId && n.group === stat.group)) {
             needLogs.push({ personId: player.personId, group: stat.group, fullName: player.fullName });
@@ -1613,7 +1698,7 @@ function App() {
 
           const preSeasonCareer = player.value - season;
           const passed = careerList.filter(
-            e => e.personId !== player.personId && e.value > preSeasonCareer && e.value < player.value
+            e => e.personId !== player.personId && e.value >= preSeasonCareer && e.value < player.value
           );
           if (passed.length === 0) continue;
 
@@ -1633,7 +1718,7 @@ function App() {
                 break;
               }
             }
-            const crossingRank = careerList.filter(e => e.personId !== player.personId && e.value >= crossingValue).length + 1;
+            const crossingRank = careerList.filter(e => e.personId !== player.personId && e.value > crossingValue).length + 1;
             events.push({
               playerId: String(player.personId),
               playerName: player.fullName,
@@ -2495,8 +2580,38 @@ function App() {
     );
   };
 
+  const renderLeaderTable = (data: any[], showAllBtn?: React.ReactNode) => (
+    <>
+      <table className="leaders-table">
+        <tbody>
+          {data.map((entry: any, i: number) => (
+            <tr key={i}>
+              <td className="leaders-rank">{entry.rank ?? i + 1}</td>
+              <td className="leaders-name">
+                {entry.person?.id ? (
+                  <span
+                    className="clickable-name"
+                    onClick={() => setSelectedPlayerId(Number(entry.person.id))}
+                  >
+                    {entry.person.fullName}
+                  </span>
+                ) : (
+                  <span>{entry.person?.fullName ?? entry.value ?? '—'}</span>
+                )}
+              </td>
+              <td className="leaders-team">{entry.team?.abbreviation ?? '—'}</td>
+              <td className="leaders-value">{entry.value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {showAllBtn}
+    </>
+  );
+
   const renderRecords = () => {
-    const categories = recordsGroup === 'batting' ? BATTING_RECORD_CATEGORIES : PITCHING_RECORD_CATEGORIES;
+    const allTimeCategories = recordsGroup === 'batting' ? BATTING_RECORD_CATEGORIES : PITCHING_RECORD_CATEGORIES;
+    const activeCategories = activeRecordsGroup === 'batting' ? BATTING_RECORD_CATEGORIES : PITCHING_RECORD_CATEGORIES;
     const displayData = recordsShowAll ? recordsAllData : recordsData;
 
     const resetData = () => {
@@ -2512,85 +2627,105 @@ function App() {
       resetData();
     };
 
+    const switchActiveGroup = (g: 'batting' | 'pitching') => {
+      const def = g === 'batting' ? 'homeRuns' : 'strikeOuts';
+      setActiveRecordsGroup(g);
+      setActiveRecordsCategory(def);
+      setActiveRecordsData([]);
+    };
+
     return (
       <div className="leaders-container">
-        <div className="leaders-subtabs">
+        {/* Top-level subtab: All-Time vs Active Roster */}
+        <div className="leaders-subtabs" style={{ marginBottom: '0.5rem' }}>
           <button
-            className={recordsGroup === 'batting' ? 'active' : ''}
-            onClick={() => switchGroup('batting')}
+            className={recordsSubTab === 'all-time' ? 'active' : ''}
+            onClick={() => setRecordsSubTab('all-time')}
           >
-            Batting
+            All-Time Top 500
           </button>
           <button
-            className={recordsGroup === 'pitching' ? 'active' : ''}
-            onClick={() => switchGroup('pitching')}
+            className={recordsSubTab === 'active' ? 'active' : ''}
+            onClick={() => setRecordsSubTab('active')}
           >
-            Pitching
+            Active Roster
           </button>
         </div>
 
-        <div className="leaders-pills">
-          {categories.map(cat => (
-            <button
-              key={cat.key}
-              className={`leaders-pill${recordsCategory === cat.key ? ' active' : ''}`}
-              onClick={() => {
-                if (cat.key === recordsCategory) return;
-                setRecordsCategory(cat.key);
-                setRecordsShowAll(false);
-                setRecordsAllData([]);
-                setRecordsData([]);
-              }}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
-        {recordsLoading && <div className="leaders-status">Loading...</div>}
-        {recordsError && <div className="leaders-status">Failed to load</div>}
-
-        {!recordsLoading && !recordsError && displayData.length > 0 && (
+        {recordsSubTab === 'all-time' && (
           <>
-            <table className="leaders-table">
-              <tbody>
-                {displayData.map((entry: any, i: number) => (
-                  <tr key={i}>
-                    <td className="leaders-rank">{entry.rank ?? i + 1}</td>
-                    <td className="leaders-name">
-                      {entry.person?.id ? (
-                        <span
-                          className="clickable-name"
-                          onClick={() => setSelectedPlayerId(Number(entry.person.id))}
-                        >
-                          {entry.person.fullName}
-                        </span>
-                      ) : (
-                        <span>{entry.person?.fullName ?? entry.value ?? '—'}</span>
-                      )}
-                    </td>
-                    <td className="leaders-team">{entry.team?.abbreviation ?? '—'}</td>
-                    <td className="leaders-value">{entry.value}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!recordsShowAll && recordsData.length > 0 && (
-              <button
-                className="leaders-show-all"
-                onClick={() => fetchRecords(recordsCategory, recordsGroup === 'batting' ? 'hitting' : 'pitching', true)}
-              >
-                Show all
-              </button>
+            <div className="leaders-subtabs">
+              <button className={recordsGroup === 'batting' ? 'active' : ''} onClick={() => switchGroup('batting')}>Batting</button>
+              <button className={recordsGroup === 'pitching' ? 'active' : ''} onClick={() => switchGroup('pitching')}>Pitching</button>
+            </div>
+
+            <div className="leaders-pills">
+              {allTimeCategories.map(cat => (
+                <button
+                  key={cat.key}
+                  className={`leaders-pill${recordsCategory === cat.key ? ' active' : ''}`}
+                  onClick={() => {
+                    if (cat.key === recordsCategory) return;
+                    setRecordsCategory(cat.key);
+                    setRecordsShowAll(false);
+                    setRecordsAllData([]);
+                    setRecordsData([]);
+                  }}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            {recordsLoading && <div className="leaders-status">Loading...</div>}
+            {recordsError && <div className="leaders-status">Failed to load</div>}
+            {!recordsLoading && !recordsError && displayData.length > 0 && renderLeaderTable(
+              displayData,
+              <>
+                {!recordsShowAll && recordsAllData.length > displayData.length && (
+                  <button className="leaders-show-all" onClick={() => fetchRecords(recordsCategory, recordsGroup === 'batting' ? 'hitting' : 'pitching', true)}>
+                    Show all
+                  </button>
+                )}
+                {recordsShowAll && (
+                  <button className="leaders-show-all" onClick={() => setRecordsShowAll(false)}>
+                    Show top 25
+                  </button>
+                )}
+              </>
             )}
-            {recordsShowAll && (
-              <button
-                className="leaders-show-all"
-                onClick={() => setRecordsShowAll(false)}
-              >
-                Show top 25
-              </button>
-            )}
+          </>
+        )}
+
+        {recordsSubTab === 'active' && (
+          <>
+            <p style={{ textAlign: 'center', fontSize: '0.8em', color: '#888', margin: '0.25rem 0 0.75rem' }}>
+              Top 100 career stats · current 40-man roster players only
+            </p>
+            <div className="leaders-subtabs">
+              <button className={activeRecordsGroup === 'batting' ? 'active' : ''} onClick={() => switchActiveGroup('batting')}>Batting</button>
+              <button className={activeRecordsGroup === 'pitching' ? 'active' : ''} onClick={() => switchActiveGroup('pitching')}>Pitching</button>
+            </div>
+
+            <div className="leaders-pills">
+              {activeCategories.map(cat => (
+                <button
+                  key={cat.key}
+                  className={`leaders-pill${activeRecordsCategory === cat.key ? ' active' : ''}`}
+                  onClick={() => {
+                    if (cat.key === activeRecordsCategory) return;
+                    setActiveRecordsCategory(cat.key);
+                    setActiveRecordsData([]);
+                  }}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            {activeRecordsLoading && <div className="leaders-status">Loading...</div>}
+            {activeRecordsError && <div className="leaders-status">Failed to load</div>}
+            {!activeRecordsLoading && !activeRecordsError && activeRecordsData.length > 0 && renderLeaderTable(activeRecordsData)}
           </>
         )}
       </div>
@@ -2624,9 +2759,12 @@ function App() {
           Milestone Tracker — {new Date().getFullYear()}
         </h2>
 
-        <p style={{ textAlign: 'center', fontSize: '0.85em', color: '#666', marginBottom: '1.5rem' }}>
+        <p style={{ textAlign: 'center', fontSize: '0.85em', color: '#666', marginBottom: '1rem' }}>
           Top-500 all-time passings · most recent first
         </p>
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <button className="leaders-show-all" onClick={() => fetchMilestones(true)}>Refresh</button>
+        </div>
         {(() => {
           // Group events by player + stat + date so multiple passings in the same game share one card
           const groups: { key: string; events: MilestoneEvent[] }[] = [];
@@ -2682,9 +2820,6 @@ function App() {
             );
           });
         })()}
-        <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-          <button className="leaders-show-all" onClick={() => fetchMilestones(true)}>Refresh</button>
-        </div>
       </div>
     );
   };
