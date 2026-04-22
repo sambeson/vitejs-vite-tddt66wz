@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './styles.css';
-import { fetchFromFirebase, saveToFirebase } from './firebase';
+import { fetchFromFirebase, saveToFirebase, fetchStealaculousFromFirebase, saveStealaculousToFirebase } from './firebase';
 import { historical2025 } from './historical2025';
 
 // Function to remove accents from text for custom font compatibility
@@ -347,6 +347,12 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
                       <strong>Hits:</strong> {careerStats.hitting.hits}
                     </p>
                     <p>
+                      <strong>Runs:</strong> {careerStats.hitting.runs}
+                    </p>
+                    <p>
+                      <strong>RBI:</strong> {careerStats.hitting.rbi}
+                    </p>
+                    <p>
                       <strong>Home Runs:</strong> {careerStats.hitting.homeRuns}
                     </p>
                     <p>
@@ -509,6 +515,21 @@ type MentaculousPlayer = {
   addedAt?: number;
 };
 
+type StolenBaseEntry = {
+  sbId: string;        // `${playerId}_${date}`
+  gameSBs: number;
+  seasonTotalSB: number;
+  opponent?: string;
+};
+
+type StealaculousPlayer = {
+  playerName: string;
+  teamName: string;
+  teamId: string;
+  stolenBases: StolenBaseEntry[];
+  addedAt?: number;
+};
+
 // User Selection Component
 function UserSelection({ onUserSelect }: { onUserSelect: (userId: string) => void }) {
   return (
@@ -634,6 +655,12 @@ function App() {
   const loadedForUserRef = useRef<string | null>(null);
   const [mentaculousPage, setMentaculousPage] = useState(0)
   const [updatedPlayerId, setUpdatedPlayerId] = useState<number | null>(null);
+  // Stealaculous (stolen-base tracker)
+  const [stealaculous, setStealaculous] = useState<Record<string, StealaculousPlayer>>({});
+  const stealaculousRef = useRef<Record<string, StealaculousPlayer>>({});
+  const [stealOrder, setStealOrder] = useState<string[]>([]);
+  const stealOrderRef = useRef<string[]>([]);
+  const [stealaculousPage, setStealaculousPage] = useState(0);
   const [newPlayerId, setNewPlayerId] = useState<number | null>(null);
   const prevCountRef = useRef<Record<string, number>>({});
   const fetchedHRTotalsRef = useRef<Set<number>>(new Set());
@@ -655,6 +682,8 @@ function App() {
   // Keep refs in sync for beforeunload handler (closures can't capture latest state)
   useEffect(() => { mentaculousRef.current = mentaculous; }, [mentaculous]);
   useEffect(() => { orderRef.current = order; }, [order]);
+  useEffect(() => { stealaculousRef.current = stealaculous; }, [stealaculous]);
+  useEffect(() => { stealOrderRef.current = stealOrder; }, [stealOrder]);
   useEffect(() => { dataLoadedRef.current = dataLoaded; }, [dataLoaded]);
   useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
 
@@ -700,6 +729,8 @@ function App() {
       localStorage.setItem(`mentaculous_${user}`, JSON.stringify(mentaculousRef.current));
       localStorage.setItem(`mentaculousOrder_${user}`, JSON.stringify(orderRef.current));
       localStorage.setItem(`mentaculousUpdatedAt_${user}`, now);
+      localStorage.setItem(`stealaculous_${user}`, JSON.stringify(stealaculousRef.current));
+      localStorage.setItem(`stealaculousOrder_${user}`, JSON.stringify(stealOrderRef.current));
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -820,6 +851,64 @@ function App() {
     return () => { cancelled = true; };
   }, [currentUser]);
 
+  // Load stealaculous from Firebase (authoritative) with localStorage fallback
+  useEffect(() => {
+    if (!currentUser) {
+      setStealaculous({});
+      setStealOrder([]);
+      return;
+    }
+    let cancelled = false;
+    const currentYear = String(new Date().getFullYear());
+
+    function filterToCurrentYear(data: Record<string, StealaculousPlayer>): Record<string, StealaculousPlayer> {
+      const result: Record<string, StealaculousPlayer> = {};
+      for (const [id, player] of Object.entries(data)) {
+        const sbs = player.stolenBases.filter(sb => {
+          const datePart = (sb.sbId ?? '').split('_')[1] ?? '';
+          return datePart.startsWith(currentYear);
+        });
+        if (sbs.length > 0) result[id] = { ...player, stolenBases: sbs };
+      }
+      return result;
+    }
+
+    async function loadStealaculous() {
+      let parsed: Record<string, StealaculousPlayer> = {};
+      let orderArr: string[] = [];
+      try {
+        const { stealaculous: fbData, stealorder: fbOrder } = await fetchStealaculousFromFirebase(currentUser!);
+        if (fbData && Object.keys(fbData).length) {
+          parsed = filterToCurrentYear(fbData as Record<string, StealaculousPlayer>);
+          localStorage.setItem(`stealaculous_${currentUser}`, JSON.stringify(parsed));
+        } else {
+          parsed = {};
+          localStorage.removeItem(`stealaculous_${currentUser}`);
+          localStorage.removeItem(`stealaculousOrder_${currentUser}`);
+        }
+        if (fbOrder && fbOrder.length) orderArr = fbOrder;
+      } catch (e) {
+        console.warn('Stealaculous Firebase load failed, falling back to localStorage:', e);
+        const raw = localStorage.getItem(`stealaculous_${currentUser}`);
+        if (raw) { try { parsed = filterToCurrentYear(JSON.parse(raw)); } catch { parsed = {}; } }
+        const rawOrder = localStorage.getItem(`stealaculousOrder_${currentUser}`);
+        if (rawOrder) { try { orderArr = JSON.parse(rawOrder); } catch { orderArr = []; } }
+      }
+      const parsedKeys = new Set(Object.keys(parsed));
+      const cleanOrder = orderArr.filter(id => parsedKeys.has(id));
+      const inOrder = new Set(cleanOrder);
+      const extra = Object.keys(parsed).filter(id => !inOrder.has(id));
+      orderArr = [...cleanOrder, ...extra];
+      localStorage.setItem(`stealaculousOrder_${currentUser}`, JSON.stringify(orderArr));
+      if (cancelled) return;
+      setStealaculous(parsed);
+      setStealOrder(orderArr);
+    }
+
+    loadStealaculous();
+    return () => { cancelled = true; };
+  }, [currentUser]);
+
   // Move function for manual override (must be defined before autosave effect)
   function move(playerId: string, delta: number) {
     setOrder((prevOrder) => {
@@ -854,6 +943,14 @@ function App() {
     localStorage.setItem(`mentaculousUpdatedAt_${user}`, now);
     saveToFirebase(user, mentaculous, order).catch(e => console.error('[Autosave] Firebase save failed:', e));
   }, [mentaculous, order, dataLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Stealaculous autosave to localStorage + Firebase
+  useEffect(() => {
+    if (!currentUser) return;
+    localStorage.setItem(`stealaculous_${currentUser}`, JSON.stringify(stealaculous));
+    localStorage.setItem(`stealaculousOrder_${currentUser}`, JSON.stringify(stealOrder));
+    saveStealaculousToFirebase(currentUser, stealaculous, stealOrder).catch(e => console.error('[Autosave] Stealaculous Firebase save failed:', e));
+  }, [stealaculous, stealOrder, currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Backfill careerHRNumber for HRs added before this field existed.
   // Runs once after data is loaded. Fetches career + season stats per player,
@@ -1882,12 +1979,26 @@ function App() {
 
     const steals = Object.entries(allPlayers)
       .filter(([_, p]: [string, any]) => p.stats?.batting?.stolenBases > 0)
-      .map(([_, p]: [string, any]) => {
+      .map(([key, p]: [string, any]) => {
+        const playerId = String(p.person.id);
         const name = getLastName(p.person);
         const gameSB = p.stats.batting.stolenBases;
-        // If you’ve fetched season-by-season, p.seasonStats.batting?.stolenBases should exist
         const seasonSB = p.seasonStats?.batting?.stolenBases ?? 'N/A';
-        return `${name} ${gameSB} (${seasonSB})`;
+        const sbId = `${playerId}_${date}`;
+        const alreadyAdded = stealaculous[playerId]?.stolenBases.some(sb => sb.sbId === sbId);
+        return (
+          <span key={key} className="steal-entry">
+            {name} {gameSB} ({seasonSB})
+            {alreadyAdded ? (
+              <>
+                <span className="added-indicator"> Added! </span>
+                <button className="remove-button" onClick={e => { e.stopPropagation(); handleRemoveStealEntry(playerId, sbId); }}>Remove SB</button>
+              </>
+            ) : (
+              <button className="mentaculous-button" onClick={e => { e.stopPropagation(); handleAddToStealaculous(p, team.team?.name ?? 'Unknown', team.team?.id); }}>Add Add</button>
+            )}
+          </span>
+        );
       });
 
     return (
@@ -1909,7 +2020,7 @@ function App() {
           )}
           {steals.length > 0 && (
             <div className="stat-line">
-              SB— {steals.join('; ')}
+              <strong>SB—</strong> {steals}
             </div>
           )}
         </div>
@@ -2613,6 +2724,96 @@ function App() {
     );
   };
 
+  const renderStealaculous = () => {
+    const entries = stealOrder
+      .map(id => [id, stealaculous[id]] as [string, StealaculousPlayer])
+      .filter(([, entry]) => entry);
+
+    const start = stealaculousPage * 32;
+    const currentEntries = entries.slice(start, start + 32);
+    const totalPages = Math.ceil(entries.length / 32) || 1;
+
+    return (
+      <div className="mentaculous-container">
+        {totalPages > 1 && (
+          <div className="pagination-controls">
+            <button disabled={stealaculousPage === 0} onClick={() => setStealaculousPage(p => Math.max(0, p - 1))}>Prev</button>
+            <span>{stealaculousPage + 1} / {totalPages}</span>
+            <button disabled={stealaculousPage >= totalPages - 1} onClick={() => setStealaculousPage(p => Math.min(totalPages - 1, p + 1))}>Next</button>
+          </div>
+        )}
+        <div className="mentaculous-page notebook">
+          <div className="notebook-title-line">
+            <h2>Stealaculous</h2>
+          </div>
+          <div className="notebook-lines">
+            {Array.from({ length: 33 }).map((_, i) => {
+              if (i === 0) return <div key="spacer" className="notebook-line empty" />;
+              const entry = currentEntries[i - 1];
+              if (!entry) return <div key={i} className="notebook-line empty" />;
+              const [playerId, { playerName, teamName, teamId, stolenBases }] = entry;
+              const teamAbbr = getTeamAbbreviation(teamName);
+              const totalSBs = stolenBases.reduce((sum, sb) => sum + sb.gameSBs, 0);
+              return (
+                <div key={playerId} className="notebook-line filled">
+                  <div className="notebook-left">
+                    {teamId && (
+                      <img className="team-logo" src={getTeamLogoUrl(Number(teamId))} alt={teamAbbr} width={24} height={24} />
+                    )}
+                    <span className="notebook-abbr">{teamAbbr}</span>
+                  </div>
+                  <div className="player-info">
+                    <div className="player-name">
+                      <span
+                        className="mentaculous-font"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => setSelectedPlayerId(parseInt(playerId))}
+                      >
+                        {removeAccents(playerName)}
+                      </span>{' '}
+                      <span
+                        className="hr-count-wrapper"
+                        onClick={() => setTooltipOpenId(prev => prev === parseInt(playerId) ? null : parseInt(playerId))}
+                      >
+                        {totalSBs} SB
+                        {tooltipOpenId === parseInt(playerId) && (
+                          <div className="tooltip-box">
+                            {stolenBases.map((sb, idx) => {
+                              const datePart = (sb.sbId ?? '').split('_')[1] ?? '';
+                              const formatted = datePart
+                                ? new Date(datePart).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                                : '?';
+                              return (
+                                <div key={idx} className="tooltip-line">
+                                  {formatted} — {sb.gameSBs} SB (season: {sb.seasonTotalSB})
+                                  <button
+                                    className="remove-button"
+                                    onClick={e => { e.stopPropagation(); handleRemoveStealEntry(playerId, sb.sbId); }}
+                                  >x</button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {totalPages > 1 && (
+          <div className="pagination-controls">
+            <button disabled={stealaculousPage === 0} onClick={() => setStealaculousPage(p => Math.max(0, p - 1))}>Prev</button>
+            <span>{stealaculousPage + 1} / {totalPages}</span>
+            <button disabled={stealaculousPage >= totalPages - 1} onClick={() => setStealaculousPage(p => Math.min(totalPages - 1, p + 1))}>Next</button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderLeaderTable = (data: any[], showAllBtn?: React.ReactNode) => (
     <>
       <table className="leaders-table">
@@ -3074,6 +3275,44 @@ function App() {
     }
   };
 
+  const handleAddToStealaculous = (player: any, teamName: string, teamId?: string) => {
+    const playerId = String(player.person.id);
+    const playerName: string = player.person.fullName;
+    const gameSBs: number = player.stats?.batting?.stolenBases ?? 0;
+    const seasonTotalSB: number = player.seasonStats?.batting?.stolenBases ?? 0;
+    const sbId = `${playerId}_${date}`;
+    setStealaculous(prev => {
+      if (prev[playerId]?.stolenBases.some(sb => sb.sbId === sbId)) return prev;
+      const prevPlayer = prev[playerId] ?? { stolenBases: [], playerName, teamName, teamId: teamId ?? '', addedAt: Date.now() };
+      return {
+        ...prev,
+        [playerId]: {
+          ...prevPlayer,
+          stolenBases: [...prevPlayer.stolenBases, { sbId, gameSBs, seasonTotalSB }],
+          playerName,
+          teamName,
+          teamId: teamId ?? '',
+        },
+      };
+    });
+    setStealOrder(o => o.includes(playerId) ? o : [...o, playerId]);
+  };
+
+  const handleRemoveStealEntry = (playerId: string, sbId: string) => {
+    setStealaculous(prev => {
+      const prevPlayer = prev[playerId];
+      if (!prevPlayer) return prev;
+      const newSBs = prevPlayer.stolenBases.filter(sb => sb.sbId !== sbId);
+      if (newSBs.length === 0) {
+        const next = { ...prev };
+        delete next[playerId];
+        setStealOrder(o => o.filter(id => id !== playerId));
+        return next;
+      }
+      return { ...prev, [playerId]: { ...prevPlayer, stolenBases: newSBs } };
+    });
+  };
+
   // Add a home run to mentaculous for a player (restored async version with opponent lookup and navigation)
   const handleAddToMentaculous = async (player: any, hr: any, teamName: string, teamId?: string) => {
     const playerId = Number(player.person.id);
@@ -3294,6 +3533,15 @@ function App() {
                       Mentaculous Backend
                     </button>
                   )}
+                  <button
+                    className={activeTab === 'stealaculous' ? 'active' : ''}
+                    onClick={() => {
+                      setActiveTab('stealaculous');
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Stealaculous
+                  </button>
                   <button
                     className={activeTab === 'historical' ? 'active' : ''}
                     onClick={() => {
@@ -3745,6 +3993,8 @@ function App() {
           {activeTab === 'roster' && renderRoster()}
 
           {activeTab === 'mentaculous' && renderMentaculous()}
+
+          {activeTab === 'stealaculous' && renderStealaculous()}
 
           {activeTab === 'historical' && renderHistorical()}
 
