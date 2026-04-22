@@ -1644,7 +1644,10 @@ function App() {
         } catch { return []; }
       };
 
-      // Collect all (personId, group) pairs that need game logs — only players who actually crossed someone
+      // Collect all (personId, group) pairs that need game logs.
+      // We fetch logs for ALL active top-500 players — not just crossers — so that
+      // when computing point-in-time rank we can check whether a bystander active
+      // player had already surpassed the crossingValue before the crossing date.
       type NeedLog = { personId: number; group: 'hitting' | 'pitching'; fullName: string };
       const needLogs: NeedLog[] = [];
 
@@ -1655,13 +1658,9 @@ function App() {
 
         for (const player of careerList) {
           const season = seasonMap.get(player.personId) ?? 0;
-          if (!season) continue; // not active this season
+          if (!season) continue; // not active this season — retired players never need a log
 
-          const preSeasonCareer = player.value - season;
-          const crossed = careerList.filter(
-            e => e.personId !== player.personId && e.value >= preSeasonCareer && e.value < player.value
-          );
-          if (crossed.length > 0 && !needLogs.find(n => n.personId === player.personId && n.group === stat.group)) {
+          if (!needLogs.find(n => n.personId === player.personId && n.group === stat.group)) {
             needLogs.push({ personId: player.personId, group: stat.group, fullName: player.fullName });
           }
         }
@@ -1707,12 +1706,33 @@ function App() {
               }
             }
 
-            // Rank: how many all-time career leaders have MORE than crossingValue
-            // (using current career totals — retired players never change, and active
-            //  players already far ahead were ahead then too).
-            const crossingRank = careerList.filter(
-              e => e.personId !== player.personId && e.value > crossingValue
-            ).length + 1;
+            // Rank at the moment of crossing (point-in-time):
+            // For each other player in the career list, determine whether they were
+            // strictly above crossingValue on crossDate.
+            //   - Retired / inactive (season = 0): career total never changes → compare directly.
+            //   - Active, pre-season career already > crossingValue: definitely ahead.
+            //   - Active, pre-season career ≤ crossingValue: look up their game log to see
+            //     how many they had accumulated by crossDate. If preSeasonCareer + cumByDate >
+            //     crossingValue they were already ahead; otherwise they weren't yet.
+            const crossingRank = careerList.filter(e => {
+              if (e.personId === player.personId) return false;
+              if (e.value <= crossingValue) return false; // currently at or below — never ahead
+              const eSeasonTotal = seasonMap.get(e.personId) ?? 0;
+              const ePreSeason = e.value - eSeasonTotal;
+              if (ePreSeason > crossingValue) return true; // was ahead before season even started
+              if (!eSeasonTotal) return false; // retired and current ≤ crossingValue (caught above)
+              // Active player who started the season at or below crossingValue.
+              // We don't know their exact crossing date unless we check their log.
+              if (!crossDate) return false; // unknown crossing date — conservatively exclude
+              const eLog = gameLogCache.get(`${e.personId}_${stat.group}`) ?? [];
+              // Find their cumulative at the last game on or before crossDate
+              let eCumAtCross = 0;
+              for (const entry of eLog) {
+                if (entry.date <= crossDate) eCumAtCross = entry.cumulative[stat.key] ?? 0;
+                else break;
+              }
+              return ePreSeason + eCumAtCross > crossingValue;
+            }).length + 1;
             const tiedWith = careerList
               .filter(e => e.personId !== player.personId && e.value === crossingValue)
               .sort((a, b) => a.fullName.localeCompare(b.fullName));
