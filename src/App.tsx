@@ -1582,8 +1582,16 @@ function App() {
               allLeaders.push(...page);
               if (page.length < pageSize) break;
             }
-            top500[stat.key] = allLeaders;
-            setCached(careerCacheKey, allLeaders);
+            // Deduplicate by personId — page boundaries on tied ranks can cause
+            // the same player to appear on two consecutive pages, inflating counts.
+            const seen = new Set<number>();
+            const dedupedLeaders = allLeaders.filter(e => {
+              if (seen.has(e.personId)) return false;
+              seen.add(e.personId);
+              return true;
+            });
+            top500[stat.key] = dedupedLeaders;
+            setCached(careerCacheKey, dedupedLeaders);
           } catch { top500[stat.key] = []; }
         }
 
