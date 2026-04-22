@@ -671,6 +671,7 @@ function App() {
   const [order, setOrder] = useState<string[]>([]);
   const lineRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const linesContainerRef = useRef<HTMLDivElement>(null);
+  const stealLineRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [manualOverride, setManualOverride] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false); // New state to track data loading
   const [liveInfo, setLiveInfo] = useState<Record<string, any>>({}); // Add this state
@@ -2758,7 +2759,11 @@ function App() {
               const teamAbbr = getTeamAbbreviation(teamName);
               const totalSBs = stolenBases.reduce((sum, sb) => sum + sb.gameSBs, 0);
               return (
-                <div key={playerId} className="notebook-line filled">
+                <div
+                  key={playerId}
+                  ref={(r) => { stealLineRefs.current[playerId] = r; }}
+                  className={`notebook-line filled ${updatedPlayerId === parseInt(playerId) ? 'update-animate' : ''} ${newPlayerId === parseInt(playerId) ? 'new-player-animate' : ''}`}
+                >
                   <div className="notebook-left">
                     {teamId && (
                       <img className="team-logo" src={getTeamLogoUrl(Number(teamId))} alt={teamAbbr} width={24} height={24} />
@@ -2773,12 +2778,12 @@ function App() {
                         onClick={() => setSelectedPlayerId(parseInt(playerId))}
                       >
                         {removeAccents(playerName)}
-                      </span>{' '}
+                      </span>{' – '}
                       <span
                         className="hr-count-wrapper"
                         onClick={() => setTooltipOpenId(prev => prev === parseInt(playerId) ? null : parseInt(playerId))}
                       >
-                        {totalSBs} SB
+                        {totalSBs}
                         {tooltipOpenId === parseInt(playerId) && (
                           <div className="tooltip-box">
                             {stolenBases.map((sb, idx) => {
@@ -3298,8 +3303,25 @@ function App() {
         },
       };
     });
+    const isNewPlayer = !stealaculousRef.current[playerId];
     setStealOrder(o => o.includes(playerId) ? o : [...o, playerId]);
-    setActiveTab('stealaculous');
+    setTimeout(() => {
+      setActiveTab('stealaculous');
+      if (isNewPlayer) {
+        setNewPlayerId(Number(playerId));
+        setTimeout(() => setNewPlayerId(null), 2100);
+      } else {
+        setUpdatedPlayerId(Number(playerId));
+        setTimeout(() => setUpdatedPlayerId(null), 1600);
+      }
+      const currentOrder = stealOrderRef.current;
+      const idx = isNewPlayer ? currentOrder.length : currentOrder.indexOf(playerId);
+      const page = Math.floor(idx / 32);
+      setStealaculousPage(page);
+      setTimeout(() => {
+        stealLineRefs.current[playerId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }, 0);
   };
 
   const handleRemoveStealEntry = (playerId: string, sbId: string) => {
