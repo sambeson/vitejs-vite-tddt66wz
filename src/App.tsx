@@ -1639,22 +1639,6 @@ function App() {
         } catch { return []; }
       };
 
-      const getCumulativeOnDate = (
-        gameLog: { date: string; cumulative: Record<string, number> }[],
-        date: string | null,
-        statKey: string,
-      ) => {
-        if (gameLog.length === 0) return 0;
-        if (!date) return gameLog[gameLog.length - 1]?.cumulative[statKey] ?? 0;
-
-        let cumulative = 0;
-        for (const entry of gameLog) {
-          if (entry.date > date) break;
-          cumulative = entry.cumulative[statKey] ?? 0;
-        }
-        return cumulative;
-      };
-
       // Collect all (personId, group) pairs that need game logs — only players who actually crossed someone
       type NeedLog = { personId: number; group: 'hitting' | 'pitching'; fullName: string };
       const needLogs: NeedLog[] = [];
@@ -1668,7 +1652,11 @@ function App() {
           const season = seasonMap.get(player.personId) ?? 0;
           if (!season) continue; // not active this season
 
-          if (!needLogs.find(n => n.personId === player.personId && n.group === stat.group)) {
+          const preSeasonCareer = player.value - season;
+          const crossed = careerList.filter(
+            e => e.personId !== player.personId && e.value >= preSeasonCareer && e.value < player.value
+          );
+          if (crossed.length > 0 && !needLogs.find(n => n.personId === player.personId && n.group === stat.group)) {
             needLogs.push({ personId: player.personId, group: stat.group, fullName: player.fullName });
           }
         }
@@ -1714,28 +1702,13 @@ function App() {
               }
             }
 
-            const standingAtCrossing = careerList.map(e => {
-              if (e.personId === player.personId) {
-                return { personId: e.personId, fullName: e.fullName, value: crossingValue };
-              }
-
-              const otherSeason = seasonMap.get(e.personId) ?? 0;
-              if (!otherSeason) {
-                return { personId: e.personId, fullName: e.fullName, value: e.value };
-              }
-
-              const otherPreSeasonCareer = e.value - otherSeason;
-              const otherGameLog = gameLogCache.get(`${e.personId}_${stat.group}`) ?? [];
-              const otherSeasonValue = getCumulativeOnDate(otherGameLog, crossDate, stat.key);
-              return {
-                personId: e.personId,
-                fullName: e.fullName,
-                value: otherPreSeasonCareer + otherSeasonValue,
-              };
-            });
-
-            const crossingRank = standingAtCrossing.filter(e => e.personId !== player.personId && e.value > crossingValue).length + 1;
-            const tiedWith = standingAtCrossing
+            // Rank: how many all-time career leaders have MORE than crossingValue
+            // (using current career totals — retired players never change, and active
+            //  players already far ahead were ahead then too).
+            const crossingRank = careerList.filter(
+              e => e.personId !== player.personId && e.value > crossingValue
+            ).length + 1;
+            const tiedWith = careerList
               .filter(e => e.personId !== player.personId && e.value === crossingValue)
               .sort((a, b) => a.fullName.localeCompare(b.fullName));
 
