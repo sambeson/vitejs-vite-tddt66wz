@@ -1,7 +1,6 @@
 const PROJECT_ID = 'mentaculous-3ff17';
 const API_KEY = import.meta.env.VITE_FIREBASE_API_KEY as string;
 const BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/default/documents/mentaculous_2026`;
-const STEAL_BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/default/documents/stealaculous_2026`;
 
 export async function fetchFromFirebase(userId: string): Promise<{ mentaculous: Record<string, any> | null; mentorder: string[] | null; updatedAt: string | null }> {
   const res = await fetch(`${BASE_URL}/${encodeURIComponent(userId)}`);
@@ -48,7 +47,7 @@ export async function saveToFirebase(userId: string, mentaculousData: Record<str
 }
 
 export async function fetchStealaculousFromFirebase(userId: string): Promise<{ stealaculous: Record<string, any> | null; stealorder: string[] | null }> {
-  const res = await fetch(`${STEAL_BASE_URL}/${encodeURIComponent(userId)}?key=${API_KEY}`);
+  const res = await fetch(`${BASE_URL}/${encodeURIComponent(userId)}`);
   if (!res.ok) return { stealaculous: null, stealorder: null };
 
   const data = await res.json();
@@ -72,11 +71,10 @@ export async function saveStealaculousToFirebase(userId: string, stealaculousDat
     fields: {
       stealaculous: { stringValue: JSON.stringify(stealaculousData) },
       stealorder: { stringValue: JSON.stringify(orderData) },
-      updatedAt: { stringValue: new Date().toISOString() },
     },
   };
   const res = await fetch(
-    `${STEAL_BASE_URL}/${encodeURIComponent(userId)}?key=${API_KEY}&updateMask.fieldPaths=stealaculous&updateMask.fieldPaths=stealorder&updateMask.fieldPaths=updatedAt`,
+    `${BASE_URL}/${encodeURIComponent(userId)}?key=${API_KEY}&updateMask.fieldPaths=stealaculous&updateMask.fieldPaths=stealorder`,
     {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
