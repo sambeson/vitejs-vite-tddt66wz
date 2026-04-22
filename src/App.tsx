@@ -656,6 +656,8 @@ function App() {
   const currentUserRef = useRef<string | null>(null);
   const loadedDataHadEntriesRef = useRef(false);
   const loadedForUserRef = useRef<string | null>(null);
+  const stealLoadedHadEntriesRef = useRef(false);
+  const stealLoadedForUserRef = useRef<string | null>(null);
   const [mentaculousPage, setMentaculousPage] = useState(0)
   const [updatedPlayerId, setUpdatedPlayerId] = useState<number | null>(null);
   // Stealaculous (stolen-base tracker)
@@ -674,6 +676,7 @@ function App() {
   const stealLineRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [manualOverride, setManualOverride] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false); // New state to track data loading
+  const [stealDataLoaded, setStealDataLoaded] = useState(false);
   const [liveInfo, setLiveInfo] = useState<Record<string, any>>({}); // Add this state
   const [pitcherInfo, setPitcherInfo] = useState<Record<string, any>>({}); // Store pitcher information for games
   const [standings, setStandings] = useState<any[]>([]);
@@ -860,9 +863,13 @@ function App() {
     if (!currentUser) {
       setStealaculous({});
       setStealOrder([]);
+      setStealDataLoaded(false);
       return;
     }
     let cancelled = false;
+    stealLoadedHadEntriesRef.current = false;
+    stealLoadedForUserRef.current = null;
+    setStealDataLoaded(false);
     const currentYear = String(new Date().getFullYear());
 
     function filterToCurrentYear(data: Record<string, StealaculousPlayer>): Record<string, StealaculousPlayer> {
@@ -905,8 +912,11 @@ function App() {
       orderArr = [...cleanOrder, ...extra];
       localStorage.setItem(`stealaculousOrder_${currentUser}`, JSON.stringify(orderArr));
       if (cancelled) return;
+      stealLoadedHadEntriesRef.current = Object.keys(parsed).length > 0;
+      stealLoadedForUserRef.current = currentUser;
       setStealaculous(parsed);
       setStealOrder(orderArr);
+      setStealDataLoaded(true);
     }
 
     loadStealaculous();
@@ -948,13 +958,19 @@ function App() {
     saveToFirebase(user, mentaculous, order).catch(e => console.error('[Autosave] Firebase save failed:', e));
   }, [mentaculous, order, dataLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Stealaculous autosave to localStorage + Firebase
+  // Stealaculous autosave — mirrors mentaculous guards to prevent wiping Firebase on load
   useEffect(() => {
-    if (!currentUser) return;
-    localStorage.setItem(`stealaculous_${currentUser}`, JSON.stringify(stealaculous));
-    localStorage.setItem(`stealaculousOrder_${currentUser}`, JSON.stringify(stealOrder));
-    saveStealaculousToFirebase(currentUser, stealaculous, stealOrder).catch(e => console.error('[Autosave] Stealaculous Firebase save failed:', e));
-  }, [stealaculous, stealOrder, currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
+    const user = currentUserRef.current;
+    if (!stealDataLoaded || !user) return;
+    if (stealLoadedForUserRef.current !== user) return;
+    if (Object.keys(stealaculous).length === 0 && stealLoadedHadEntriesRef.current) {
+      console.warn('[Autosave] Refusing to save empty stealaculous when loaded data was non-empty');
+      return;
+    }
+    localStorage.setItem(`stealaculous_${user}`, JSON.stringify(stealaculous));
+    localStorage.setItem(`stealaculousOrder_${user}`, JSON.stringify(stealOrder));
+    saveStealaculousToFirebase(user, stealaculous, stealOrder).catch(e => console.error('[Autosave] Stealaculous Firebase save failed:', e));
+  }, [stealaculous, stealOrder, stealDataLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Backfill careerHRNumber for HRs added before this field existed.
   // Runs once after data is loaded. Fetches career + season stats per player,
