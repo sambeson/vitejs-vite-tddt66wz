@@ -356,6 +356,9 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
                       <strong>Home Runs:</strong> {careerStats.hitting.homeRuns}
                     </p>
                     <p>
+                      <strong>Stolen Bases:</strong> {careerStats.hitting.stolenBases}
+                    </p>
+                    <p>
                       <strong>Average:</strong> {careerStats.hitting.avg}
                     </p>
                     <p>
@@ -1995,7 +1998,7 @@ function App() {
                 <button className="remove-button" onClick={e => { e.stopPropagation(); handleRemoveStealEntry(playerId, sbId); }}>Remove SB</button>
               </>
             ) : (
-              <button className="mentaculous-button" onClick={e => { e.stopPropagation(); handleAddToStealaculous(p, team.team?.name ?? 'Unknown', team.team?.id); }}>Add Add</button>
+              <button className="mentaculous-button" onClick={e => { e.stopPropagation(); handleAddToStealaculous(p, team.team?.name ?? 'Unknown', team.team?.id); }}>Add</button>
             )}
           </span>
         );
@@ -3296,6 +3299,7 @@ function App() {
       };
     });
     setStealOrder(o => o.includes(playerId) ? o : [...o, playerId]);
+    setActiveTab('stealaculous');
   };
 
   const handleRemoveStealEntry = (playerId: string, sbId: string) => {
