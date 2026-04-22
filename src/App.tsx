@@ -890,14 +890,18 @@ function App() {
       try {
         const { stealaculous: fbData, stealorder: fbOrder } = await fetchStealaculousFromFirebase(currentUser!);
         if (fbData && Object.keys(fbData).length) {
+          // Firebase has data — authoritative
           parsed = filterToCurrentYear(fbData as Record<string, StealaculousPlayer>);
           localStorage.setItem(`stealaculous_${currentUser}`, JSON.stringify(parsed));
+          if (fbOrder && fbOrder.length) orderArr = fbOrder;
         } else {
-          parsed = {};
-          localStorage.removeItem(`stealaculous_${currentUser}`);
-          localStorage.removeItem(`stealaculousOrder_${currentUser}`);
+          // Firebase has no stealaculous field yet (new user, or PATCH didn't finish before last close)
+          // Fall back to localStorage rather than clearing it
+          const raw = localStorage.getItem(`stealaculous_${currentUser}`);
+          if (raw) { try { parsed = filterToCurrentYear(JSON.parse(raw)); } catch { parsed = {}; } }
+          const rawOrder = localStorage.getItem(`stealaculousOrder_${currentUser}`);
+          if (rawOrder) { try { orderArr = JSON.parse(rawOrder); } catch { orderArr = []; } }
         }
-        if (fbOrder && fbOrder.length) orderArr = fbOrder;
       } catch (e) {
         console.warn('Stealaculous Firebase load failed, falling back to localStorage:', e);
         const raw = localStorage.getItem(`stealaculous_${currentUser}`);
@@ -1962,7 +1966,7 @@ function App() {
         <HomerEntry
           key={key}
           player={p}
-          getLastName={getLastName}
+          getLastName={getLastName}``
           onAdd={async (player, hr) => await handleAddToMentaculous(player, hr, team.team?.name, team.team?.id)}
           onRemove={handleRemoveHomeRun}
           mentaculous={mentaculous} // ✅ required for per-HR tracking
