@@ -1541,6 +1541,10 @@ function App() {
         localStorage.removeItem(`milestone_top500_${apiKey}`);
         localStorage.removeItem(`milestone_season100_${apiKey}_${new Date().getFullYear()}`);
       });
+      // Also clear game log caches so crossing dates are always re-computed from fresh data
+      Object.keys(localStorage)
+        .filter(k => k.startsWith('milestone_gamelog_'))
+        .forEach(k => localStorage.removeItem(k));
     }
     setMilestonesLoading(true);
     setMilestonesError(false);
@@ -1618,8 +1622,9 @@ function App() {
 
       // Game log helper — fetches cumulative per-game running totals (cached 1h)
       const fetchGameLog = async (personId: number, group: 'hitting' | 'pitching') => {
-        const cacheKey = `milestone_gamelog_${personId}_${group}_${currentSeason}`;
-        const cached = getCached<{ date: string; cumulative: Record<string, number> }[]>(cacheKey, 1);
+        const today = new Date().toISOString().slice(0, 10);
+        const cacheKey = `milestone_gamelog_${personId}_${group}_${currentSeason}_${today}`;
+        const cached = getCached<{ date: string; cumulative: Record<string, number> }[]>(cacheKey, 25);
         if (cached) return cached;
         try {
           const res = await fetch(
