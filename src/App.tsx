@@ -2753,17 +2753,19 @@ function App() {
       .map(id => [id, stealaculous[id]] as [string, StealaculousPlayer])
       .filter(([, entry]) => entry);
 
-    const start = stealaculousPage * 32;
-    const currentEntries = entries.slice(start, start + 32);
     const totalPages = Math.ceil(entries.length / 32) || 1;
+    const safePage = Math.min(stealaculousPage, totalPages - 1);
+    if (safePage !== stealaculousPage) setStealaculousPage(safePage);
+    const start = safePage * 32;
+    const currentEntries = entries.slice(start, start + 32);
 
     return (
       <div className="mentaculous-container">
         {totalPages > 1 && (
           <div className="pagination-controls">
-            <button disabled={stealaculousPage === 0} onClick={() => setStealaculousPage(p => Math.max(0, p - 1))}>Prev</button>
-            <span>{stealaculousPage + 1} / {totalPages}</span>
-            <button disabled={stealaculousPage >= totalPages - 1} onClick={() => setStealaculousPage(p => Math.min(totalPages - 1, p + 1))}>Next</button>
+            <button disabled={safePage === 0} onClick={() => setStealaculousPage(p => Math.max(0, p - 1))}>Prev</button>
+            <span>{safePage + 1} / {totalPages}</span>
+            <button disabled={safePage >= totalPages - 1} onClick={() => setStealaculousPage(p => Math.min(totalPages - 1, p + 1))}>Next</button>
           </div>
         )}
         <div className="mentaculous-page notebook">
@@ -2833,9 +2835,9 @@ function App() {
         </div>
         {totalPages > 1 && (
           <div className="pagination-controls">
-            <button disabled={stealaculousPage === 0} onClick={() => setStealaculousPage(p => Math.max(0, p - 1))}>Prev</button>
-            <span>{stealaculousPage + 1} / {totalPages}</span>
-            <button disabled={stealaculousPage >= totalPages - 1} onClick={() => setStealaculousPage(p => Math.min(totalPages - 1, p + 1))}>Next</button>
+            <button disabled={safePage === 0} onClick={() => setStealaculousPage(p => Math.max(0, p - 1))}>Prev</button>
+            <span>{safePage + 1} / {totalPages}</span>
+            <button disabled={safePage >= totalPages - 1} onClick={() => setStealaculousPage(p => Math.min(totalPages - 1, p + 1))}>Next</button>
           </div>
         )}
       </div>
