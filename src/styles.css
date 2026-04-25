@@ -356,6 +356,21 @@
   font-size: 14px;
 }
 
+.today-btn {
+  padding: 6px 12px;
+  border: 1px solid #adb5bd;
+  border-radius: 4px;
+  background: #fff;
+  color: #495057;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.today-btn:hover {
+  background: #e9ecef;
+}
+
 /* ========================================
    GAMES LIST DISPLAY
    Layout for the list of games on a date
@@ -399,6 +414,26 @@
 
 .game-item:hover {
   transform: translateY(-2px);
+}
+
+.game-item--live {
+  border-color: #d63e3e;
+  box-shadow: 0 0 0 2px rgba(214, 62, 62, 0.15), 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.live-badge {
+  display: inline-block;
+  color: #d63e3e;
+  font-weight: 700;
+  font-size: 0.8em;
+  letter-spacing: 0.04em;
+  margin-right: 6px;
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
 }
 
 
@@ -1177,6 +1212,14 @@ button:focus {
   margin-bottom: 20px;
 }
 
+.active-tab-crumb {
+  font-size: 0.75rem;
+  color: #6c757d;
+  padding: 2px 8px 6px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
 /* Main visible tabs (Games, Mentaculous) */
 .main-tabs {
   display: flex;
@@ -1705,14 +1748,35 @@ button:focus {
   border-color: #041e42;
 }
 
+.pills-fade-container {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.pills-fade-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 48px;
+  height: calc(100% - 6px);
+  background: linear-gradient(to right, transparent, #f8f9fa);
+  pointer-events: none;
+}
+
 .leaders-pills {
   display: flex;
   gap: 6px;
   overflow-x: auto;
   white-space: nowrap;
   padding-bottom: 6px;
-  margin-bottom: 10px;
+  margin-bottom: 0;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.leaders-pills::-webkit-scrollbar {
+  display: none;
 }
 
 .leaders-container .leaders-pill {

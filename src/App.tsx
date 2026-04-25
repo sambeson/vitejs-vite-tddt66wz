@@ -590,6 +590,7 @@ const MILESTONE_STATS: { key: string; label: string; group: 'hitting' | 'pitchin
   { key: 'triples',     label: '3B',  group: 'hitting' },
   { key: 'doubles',     label: '2B',  group: 'hitting' },
   { key: 'hits',        label: 'H',   group: 'hitting' },
+  { key: 'baseOnBalls', label: 'BB',  group: 'hitting' },
   // game-log stat key is 'strikeOuts' (camelCase); leaders API uses 'strikeouts'
   { key: 'strikeOuts',  label: 'SO',  group: 'pitching', leaderKey: 'strikeouts' },
   { key: 'saves',       label: 'SV',  group: 'pitching' },
@@ -650,6 +651,7 @@ function App() {
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('games');
   const [mentaculous, setMentaculous] = React.useState<Record<string, MentaculousPlayer>>({});
+  const lastViewedGamePkRef = useRef<number | null>(null);
   const mentaculousRef = useRef<Record<string, MentaculousPlayer>>({});
   const orderRef = useRef<string[]>([]);
   const dataLoadedRef = useRef(false);
@@ -736,8 +738,13 @@ function App() {
       localStorage.setItem(`mentaculous_${user}`, JSON.stringify(mentaculousRef.current));
       localStorage.setItem(`mentaculousOrder_${user}`, JSON.stringify(orderRef.current));
       localStorage.setItem(`mentaculousUpdatedAt_${user}`, now);
-      localStorage.setItem(`stealaculous_${user}`, JSON.stringify(stealaculousRef.current));
-      localStorage.setItem(`stealaculousOrder_${user}`, JSON.stringify(stealOrderRef.current));
+      if (
+        stealLoadedForUserRef.current === user &&
+        !(Object.keys(stealaculousRef.current).length === 0 && stealLoadedHadEntriesRef.current)
+      ) {
+        localStorage.setItem(`stealaculous_${user}`, JSON.stringify(stealaculousRef.current));
+        localStorage.setItem(`stealaculousOrder_${user}`, JSON.stringify(stealOrderRef.current));
+      }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -2912,6 +2919,7 @@ function App() {
               <button className={recordsGroup === 'batting' ? 'active' : ''} onClick={() => switchGroup('batting')}>Batting</button>
               <button className={recordsGroup === 'pitching' ? 'active' : ''} onClick={() => switchGroup('pitching')}>Pitching</button>
             </div>
+            <div className="pills-fade-container">
             <div className="leaders-pills">
               {allTimeCategories.map(cat => (
                 <button
@@ -2922,6 +2930,7 @@ function App() {
                   {cat.label}
                 </button>
               ))}
+            </div>
             </div>
             {recordsLoading && <div className="leaders-status">Loading...</div>}
             {recordsError && <div className="leaders-status">Failed to load</div>}
@@ -2935,6 +2944,7 @@ function App() {
               <button className={activeRecordsGroup === 'batting' ? 'active' : ''} onClick={() => switchActiveGroup('batting')}>Batting</button>
               <button className={activeRecordsGroup === 'pitching' ? 'active' : ''} onClick={() => switchActiveGroup('pitching')}>Pitching</button>
             </div>
+            <div className="pills-fade-container">
             <div className="leaders-pills">
               {activeCategories.map(cat => (
                 <button
@@ -2945,6 +2955,7 @@ function App() {
                   {cat.label}
                 </button>
               ))}
+            </div>
             </div>
             {activeRecordsLoading && <div className="leaders-status">Loading...</div>}
             {activeRecordsError && <div className="leaders-status">Failed to load</div>}
@@ -3132,6 +3143,7 @@ function App() {
           </button>
         </div>
 
+        <div className="pills-fade-container">
         <div className="leaders-pills">
           {categories.map(cat => (
             <button
@@ -3148,6 +3160,7 @@ function App() {
               {cat.label}
             </button>
           ))}
+        </div>
         </div>
 
         {leadersYear && leadersYear !== currentYear && (
@@ -3639,6 +3652,15 @@ function App() {
             </div>
           </div>
 
+          {!['games', 'mentaculous'].includes(activeTab) && (() => {
+            const tabLabels: Record<string, string> = {
+              standings: 'Standings', leaders: 'Leaders', records: 'Records',
+              milestones: 'Milestones', roster: 'Roster', stealaculous: 'Stealaculous',
+              historical: 'Historical Mentaculi', backend: 'Mentaculous Backend',
+            };
+            return <div className="active-tab-crumb">{tabLabels[activeTab] ?? activeTab}</div>;
+          })()}
+
           {activeTab === 'games' && (
             <>
               {!selectedGame && (
@@ -3651,6 +3673,9 @@ function App() {
                       onChange={(e) => setDate(e.target.value)}
                     />
                     <button onClick={() => changeDate(1)}>→</button>
+                    {date !== new Date().toLocaleDateString('en-CA') && (
+                      <button className="today-btn" onClick={() => setDate(new Date().toLocaleDateString('en-CA'))}>Today</button>
+                    )}
                   </div>
 
                   <div className="games-list">
@@ -3677,8 +3702,10 @@ function App() {
                       return (
                         <div
                           key={game.gamePk}
-                          className="game-item"
+                          className={`game-item${isLive ? ' game-item--live' : ''}`}
+                          data-gamepk={game.gamePk}
                           onClick={() => {
+                            lastViewedGamePkRef.current = game.gamePk;
                             setSelectedGame(game);
                             loadBoxScore(game.gamePk, game.gameDate);
                           }}
@@ -3798,9 +3825,10 @@ function App() {
                           </div>
 
                           <div className="game-status">
-                            {isFutureGame ? 
-                              `${game.status.detailedState} - ${formatGameTime(game.gameDate)}` : 
-                              game.status.detailedState
+                            {isLive && <span className="live-badge">● LIVE</span>}
+                            {isFutureGame ?
+                              `${game.status.detailedState} - ${formatGameTime(game.gameDate)}` :
+                              (!isLive ? game.status.detailedState : '')
                             }
                           </div>
                           {game.status.detailedState === 'In Progress' && (
@@ -3841,8 +3869,15 @@ function App() {
                 <div className="box-score">
                   <button
                     onClick={() => {
+                      const pk = lastViewedGamePkRef.current;
                       setSelectedGame(null);
                       setBoxScore(null);
+                      if (pk != null) {
+                        requestAnimationFrame(() => {
+                          const el = document.querySelector(`[data-gamepk="${pk}"]`);
+                          el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                        });
+                      }
                     }}
                   >
                     ← Back to Games
