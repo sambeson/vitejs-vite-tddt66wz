@@ -617,6 +617,11 @@ function setCached<T>(key: string, data: T): void {
 
 function App() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === '1');
+  const [mentSearch, setMentSearch] = useState('');
+  const [stealSearch, setStealSearch] = useState('');
+  const [liveLastUpdated, setLiveLastUpdated] = useState<number | null>(null);
+  const [liveSecondsAgo, setLiveSecondsAgo] = useState(0);
   const [date, setDate] = useState(new Date().toLocaleDateString('en-CA'));
   const [games, setGames] = useState<any[]>([]);
   const [selectedGame, setSelectedGame] = useState(null);
@@ -652,6 +657,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('games');
   const [mentaculous, setMentaculous] = React.useState<Record<string, MentaculousPlayer>>({});
   const lastViewedGamePkRef = useRef<number | null>(null);
+  const touchStartXRef = useRef<number | null>(null);
   const mentaculousRef = useRef<Record<string, MentaculousPlayer>>({});
   const orderRef = useRef<string[]>([]);
   const dataLoadedRef = useRef(false);
@@ -749,6 +755,17 @@ function App() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
+
+  // Persist dark mode
+  useEffect(() => { localStorage.setItem('darkMode', darkMode ? '1' : '0'); }, [darkMode]);
+
+  // Tick live-refresh indicator every second
+  useEffect(() => {
+    if (liveLastUpdated === null) return;
+    setLiveSecondsAgo(0);
+    const id = setInterval(() => setLiveSecondsAgo(s => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [liveLastUpdated]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -2623,12 +2640,17 @@ function App() {
   };
 
   const renderMentaculous = () => {
-    // Use the order array to sort mentaculous entries
+    const q = mentSearch.trim().toLowerCase();
     const entries = order
       .map(id => [id, mentaculous[id]] as [string, MentaculousPlayer])
-      .filter(([, entry]) => entry);
+      .filter(([, entry]) => entry)
+      .filter(([, p]) => !q || p.playerName.toLowerCase().includes(q) || p.teamName.toLowerCase().includes(q));
 
-    const start = mentaculousPage * 32;
+    // Jump to the page containing the first match when searching
+    const totalPages = Math.ceil(entries.length / 32) || 1;
+    const safeMentPage = Math.min(mentaculousPage, totalPages - 1);
+
+    const start = safeMentPage * 32;
     const currentEntries = entries.slice(start, start + 32);
     const maxHRs = Math.max(0, ...currentEntries.map(([, p]) => p.homeRuns.length));
 
@@ -2643,7 +2665,24 @@ function App() {
 
     return (
       <div className="mentaculous-container">
-        {renderPagination()}
+        <div className="tracker-search-bar">
+          <input
+            className="tracker-search"
+            type="text"
+            placeholder="Search players or teams…"
+            value={mentSearch}
+            onChange={e => { setMentSearch(e.target.value); setMentaculousPage(0); }}
+          />
+          {mentSearch && <button className="tracker-search-clear" onClick={() => setMentSearch('')}>✕</button>}
+        </div>
+
+        {totalPages > 1 && (
+          <div className="pagination-controls">
+            <button onClick={() => setMentaculousPage(p => Math.max(0, p - 1))} disabled={safeMentPage === 0}>← Prev</button>
+            <span className="page-info">Page {safeMentPage + 1} of {totalPages}</span>
+            <button onClick={() => setMentaculousPage(p => Math.min(totalPages - 1, p + 1))} disabled={safeMentPage >= totalPages - 1}>Next →</button>
+          </div>
+        )}
 
         <div className="mentaculous-page notebook">
           <div className="notebook-title-line">
@@ -2756,9 +2795,11 @@ function App() {
   };
 
   const renderStealaculous = () => {
+    const sq = stealSearch.trim().toLowerCase();
     const entries = stealOrder
       .map(id => [id, stealaculous[id]] as [string, StealaculousPlayer])
-      .filter(([, entry]) => entry);
+      .filter(([, entry]) => entry)
+      .filter(([, p]) => !sq || p.playerName.toLowerCase().includes(sq) || p.teamName.toLowerCase().includes(sq));
 
     const totalPages = Math.ceil(entries.length / 32) || 1;
     const safePage = Math.min(stealaculousPage, totalPages - 1);
@@ -2768,6 +2809,17 @@ function App() {
 
     return (
       <div className="mentaculous-container">
+        <div className="tracker-search-bar">
+          <input
+            className="tracker-search"
+            type="text"
+            placeholder="Search players or teams…"
+            value={stealSearch}
+            onChange={e => { setStealSearch(e.target.value); setStealaculousPage(0); }}
+          />
+          {stealSearch && <button className="tracker-search-clear" onClick={() => setStealSearch('')}>✕</button>}
+        </div>
+
         {totalPages > 1 && (
           <div className="pagination-controls">
             <button onClick={() => setStealaculousPage(p => Math.max(0, p - 1))} disabled={safePage === 0}>← Prev</button>
@@ -3482,35 +3534,43 @@ function App() {
     }, 0);
   };
 
-  // Add this effect after games are loaded
+  // Poll live game data every 30s while games are in progress
   useEffect(() => {
-    // Only fetch for in-progress games
     const inProgressGames = games.filter(g => g.status.detailedState === 'In Progress');
     if (inProgressGames.length === 0) return;
-    inProgressGames.forEach(game => {
-      fetch(`https://statsapi.mlb.com/api/v1.1/game/${game.gamePk}/feed/live`)
-        .then(res => res.json())
-        .then(data => {
-          const linescore = data.liveData?.linescore;
-          const currentPlay = data.liveData?.plays?.currentPlay;
-          setLiveInfo(prev => ({
-            ...prev,
-            [game.gamePk]: {
-              inning: linescore?.currentInning,
-              inningState: linescore?.inningState,
-              outs: linescore?.outs,
-              pitcher: currentPlay?.matchup?.pitcher?.fullName,
-              batter: currentPlay?.matchup?.batter?.fullName,
-              awayScore: linescore?.teams?.away?.runs,
-              homeScore: linescore?.teams?.home?.runs,
-            }
-          }));
-        });
-    });
+
+    const fetchAll = () => {
+      Promise.all(
+        inProgressGames.map(game =>
+          fetch(`https://statsapi.mlb.com/api/v1.1/game/${game.gamePk}/feed/live`)
+            .then(res => res.json())
+            .then(data => {
+              const linescore = data.liveData?.linescore;
+              const currentPlay = data.liveData?.plays?.currentPlay;
+              setLiveInfo(prev => ({
+                ...prev,
+                [game.gamePk]: {
+                  inning: linescore?.currentInning,
+                  inningState: linescore?.inningState,
+                  outs: linescore?.outs,
+                  pitcher: currentPlay?.matchup?.pitcher?.fullName,
+                  batter: currentPlay?.matchup?.batter?.fullName,
+                  awayScore: linescore?.teams?.away?.runs,
+                  homeScore: linescore?.teams?.home?.runs,
+                }
+              }));
+            })
+        )
+      ).then(() => setLiveLastUpdated(Date.now()));
+    };
+
+    fetchAll();
+    const id = setInterval(fetchAll, 30_000);
+    return () => clearInterval(id);
   }, [games]);
 
   return (
-    <div className="app">
+    <div className={`app${darkMode ? ' dark' : ''}`}>
       {!currentUser ? (
         <UserSelection onUserSelect={setCurrentUser} />
       ) : (
@@ -3619,6 +3679,13 @@ function App() {
                     Historical Mentaculi
                   </button>
                   <button
+                    className="menu-dark-toggle"
+                    onClick={() => setDarkMode(d => !d)}
+                  >
+                    <span>{darkMode ? '☀ Light Mode' : '🌙 Dark Mode'}</span>
+                    <span className="menu-dark-check">{darkMode ? 'On' : 'Off'}</span>
+                  </button>
+                  <button
                     className="user-switch-btn"
                     onClick={() => {
                       setMentaculous({});
@@ -3678,7 +3745,17 @@ function App() {
                     )}
                   </div>
 
-                  <div className="games-list">
+                  <div
+                    className="games-list"
+                    onTouchStart={e => { touchStartXRef.current = e.touches[0].clientX; }}
+                    onTouchEnd={e => {
+                      if (touchStartXRef.current === null) return;
+                      const dx = e.changedTouches[0].clientX - touchStartXRef.current;
+                      touchStartXRef.current = null;
+                      if (Math.abs(dx) < 50) return;
+                      changeDate(dx < 0 ? 1 : -1);
+                    }}
+                  >
                     {games.map((game) => {
                       const awayName = game.teams.away.team.name;
                       const homeName = game.teams.home.team.name;
@@ -3826,6 +3903,9 @@ function App() {
 
                           <div className="game-status">
                             {isLive && <span className="live-badge">● LIVE</span>}
+                            {isLive && liveLastUpdated !== null && (
+                              <span className="live-updated">updated {liveSecondsAgo}s ago</span>
+                            )}
                             {isFutureGame ?
                               `${game.status.detailedState} - ${formatGameTime(game.gameDate)}` :
                               (!isLive ? game.status.detailedState : '')
