@@ -2763,9 +2763,9 @@ function App() {
       <div className="mentaculous-container">
         {totalPages > 1 && (
           <div className="pagination-controls">
-            <button disabled={safePage === 0} onClick={() => setStealaculousPage(p => Math.max(0, p - 1))}>Prev</button>
-            <span>{safePage + 1} / {totalPages}</span>
-            <button disabled={safePage >= totalPages - 1} onClick={() => setStealaculousPage(p => Math.min(totalPages - 1, p + 1))}>Next</button>
+            <button onClick={() => setStealaculousPage(p => Math.max(0, p - 1))} disabled={safePage === 0}>← Prev</button>
+            <span className="page-info">Page {safePage + 1} of {totalPages}</span>
+            <button onClick={() => setStealaculousPage(p => Math.min(totalPages - 1, p + 1))} disabled={safePage >= totalPages - 1}>Next →</button>
           </div>
         )}
         <div className="mentaculous-page notebook">
@@ -2800,12 +2800,17 @@ function App() {
                         onClick={() => setSelectedPlayerId(parseInt(playerId))}
                       >
                         {removeAccents(playerName)}
-                      </span>{' – '}
+                      </span> –{' '}
                       <span
                         className="hr-count-wrapper"
                         onClick={() => setTooltipOpenId(prev => prev === parseInt(playerId) ? null : parseInt(playerId))}
                       >
-                        {totalSBs}
+                        {updatedPlayerId === parseInt(playerId) ? (
+                          <>
+                            <span className="count-old">{totalSBs - (stolenBases[stolenBases.length - 1]?.gameSBs ?? 0)}</span>
+                            <span className="count-new">{totalSBs}</span>
+                          </>
+                        ) : totalSBs}
                         {tooltipOpenId === parseInt(playerId) && (
                           <div className="tooltip-box">
                             {stolenBases.map((sb, idx) => {
@@ -2827,6 +2832,7 @@ function App() {
                         )}
                       </span>
                     </div>
+                      <div className="player-buttons" />
                   </div>
                 </div>
               );
@@ -2835,9 +2841,9 @@ function App() {
         </div>
         {totalPages > 1 && (
           <div className="pagination-controls">
-            <button disabled={safePage === 0} onClick={() => setStealaculousPage(p => Math.max(0, p - 1))}>Prev</button>
-            <span>{safePage + 1} / {totalPages}</span>
-            <button disabled={safePage >= totalPages - 1} onClick={() => setStealaculousPage(p => Math.min(totalPages - 1, p + 1))}>Next</button>
+            <button onClick={() => setStealaculousPage(p => Math.max(0, p - 1))} disabled={safePage === 0}>← Prev</button>
+            <span className="page-info">Page {safePage + 1} of {totalPages}</span>
+            <button onClick={() => setStealaculousPage(p => Math.min(totalPages - 1, p + 1))} disabled={safePage >= totalPages - 1}>Next →</button>
           </div>
         )}
       </div>
@@ -3337,7 +3343,7 @@ function App() {
         setTimeout(() => setUpdatedPlayerId(null), 1600);
       }
       const currentOrder = stealOrderRef.current;
-      const idx = isNewPlayer ? currentOrder.length : currentOrder.indexOf(playerId);
+      const idx = Math.max(0, currentOrder.indexOf(playerId));
       const page = Math.floor(idx / 32);
       setStealaculousPage(page);
       setTimeout(() => {
