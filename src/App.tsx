@@ -640,6 +640,9 @@ function App() {
   const [leadersError, setLeadersError] = useState(false);
   const [leadersYear, setLeadersYear] = useState<number | null>(null);
   const [recordsGroup, setRecordsGroup] = useState<'batting' | 'pitching'>('batting');
+  const [recordsRefreshKey, setRecordsRefreshKey] = useState(0);
+  const [recordsPullDistance, setRecordsPullDistance] = useState(0);
+  const recordsPullStartYRef = useRef<number | null>(null);
   const [recordsCategory, setRecordsCategory] = useState('homeRuns');
   const [recordsData, setRecordsData] = useState<any[]>([]);
   const [recordsLoading, setRecordsLoading] = useState(false);
@@ -718,19 +721,20 @@ function App() {
   useEffect(() => {
     if (activeTab !== 'records') return;
     if (recordsSubTab !== 'all-time') return;
-    fetchRecords(recordsCategory, recordsGroup === 'batting' ? 'hitting' : 'pitching');
+    fetchRecords(recordsCategory, recordsGroup === 'batting' ? 'hitting' : 'pitching', recordsRefreshKey > 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, recordsSubTab, recordsCategory, recordsGroup]);
+  }, [activeTab, recordsSubTab, recordsCategory, recordsGroup, recordsRefreshKey]);
 
   useEffect(() => {
     if (activeTab !== 'records') return;
     if (recordsSubTab !== 'active') return;
     fetchActiveRecords(
       activeRecordsCategory,
-      activeRecordsGroup === 'batting' ? 'hitting' : 'pitching'
+      activeRecordsGroup === 'batting' ? 'hitting' : 'pitching',
+      recordsRefreshKey > 0
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, recordsSubTab, activeRecordsCategory, activeRecordsGroup]);
+  }, [activeTab, recordsSubTab, activeRecordsCategory, activeRecordsGroup, recordsRefreshKey]);
 
   useEffect(() => {
     if (activeTab !== 'milestones') return;
@@ -1587,11 +1591,11 @@ function App() {
     }
   };
 
-  const fetchRecords = async (category: string, group: 'hitting' | 'pitching') => {
+  const fetchRecords = async (category: string, group: 'hitting' | 'pitching', bust = false) => {
     const cacheKey = `records_v2_500_${group}_${category}`;
-    const ttlHours = 24 * 7;
+    const ttlHours = 24;
 
-    const cached = getCached<any[]>(cacheKey, ttlHours);
+    const cached = bust ? null : getCached<any[]>(cacheKey, ttlHours);
     if (cached && cached.length > 0) {
       setRecordsData(cached);
       return;
@@ -1662,7 +1666,7 @@ function App() {
     return new Set(ids);
   };
 
-  const fetchActiveRecords = async (category: string, group: 'hitting' | 'pitching') => {
+  const fetchActiveRecords = async (category: string, group: 'hitting' | 'pitching', _bust = false) => {
     setActiveRecordsLoading(true);
     setActiveRecordsError(false);
     try {
@@ -2970,7 +2974,28 @@ function App() {
     };
 
     return (
-      <div className="leaders-container">
+      <div
+        className="leaders-container"
+        onTouchStart={e => { if (window.scrollY === 0) recordsPullStartYRef.current = e.touches[0].clientY; }}
+        onTouchMove={e => {
+          if (recordsPullStartYRef.current === null) return;
+          const dy = e.touches[0].clientY - recordsPullStartYRef.current;
+          if (dy > 0) setRecordsPullDistance(Math.min(dy * 0.4, 72));
+        }}
+        onTouchEnd={() => {
+          if (recordsPullDistance >= 60) setRecordsRefreshKey(k => k + 1);
+          setRecordsPullDistance(0);
+          recordsPullStartYRef.current = null;
+        }}
+      >
+        {(recordsPullDistance > 0 || (recordsLoading && recordsRefreshKey > 0)) && (
+          <div className="pull-indicator" style={{ height: (recordsLoading && recordsRefreshKey > 0) ? 44 : recordsPullDistance * 0.6 }}>
+            <span className={`pull-spinner${(recordsLoading && recordsRefreshKey > 0) ? ' spinning' : ''}`}>↻</span>
+            <span className="pull-label">
+              {(recordsLoading && recordsRefreshKey > 0) ? 'Refreshing…' : recordsPullDistance >= 60 ? 'Release to refresh' : 'Pull to refresh'}
+            </span>
+          </div>
+        )}
         <div className="leaders-subtabs" style={{ marginBottom: '0.5rem' }}>
           <button className={recordsSubTab === 'all-time' ? 'active' : ''} onClick={() => setRecordsSubTab('all-time')}>
             All-Time Top 500
