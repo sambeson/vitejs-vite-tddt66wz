@@ -2350,3 +2350,111 @@ button:focus {
 .app.dark .standings-table th { background: #1f2937; color: #9ca3af; }
 .app.dark .standings-table td { border-color: #374151; color: #e5e7eb; }
 .app.dark .standings-table tr:hover td { background: #374151; }
+
+/* ── Displaced from Top 500 ─────────────────────────────── */
+.displaced-stat-section {
+  margin-bottom: 2rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.displaced-stat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.displaced-count {
+  font-size: 0.8em;
+  color: #6b7280;
+}
+
+.displaced-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+.displaced-col {
+  padding: 0.75rem 1rem;
+}
+
+.displaced-col + .displaced-col {
+  border-left: 1px solid #e5e7eb;
+}
+
+.displaced-col-label {
+  font-size: 0.72em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+  margin-bottom: 0.6rem;
+}
+
+.displaced-player-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.displaced-player-row:last-child { border-bottom: none; }
+
+.displaced-player-name {
+  font-weight: 600;
+  font-size: 0.88em;
+  color: #1a56db;
+  cursor: pointer;
+}
+
+.displaced-player-name:hover { text-decoration: underline; }
+
+.displaced-ranks {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78em;
+}
+
+.displaced-was { color: #6b7280; }
+.displaced-arrow { color: #9ca3af; }
+.displaced-now { color: #dc2626; font-weight: 600; }
+.displaced-newcomer .displaced-now { color: #16a34a; }
+
+.displaced-value {
+  font-size: 0.75em;
+  color: #6b7280;
+}
+
+.displaced-by-line {
+  font-size: 0.75em;
+  color: #9ca3af;
+  margin-top: 0.1rem;
+}
+
+.displaced-passer-name {
+  color: #1a56db;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.displaced-passer-name:hover { text-decoration: underline; }
+
+/* Dark mode */
+.app.dark .displaced-stat-section { border-color: #374151; }
+.app.dark .displaced-stat-header { background: #1f2937; border-color: #374151; }
+.app.dark .displaced-count { color: #9ca3af; }
+.app.dark .displaced-col + .displaced-col { border-color: #374151; }
+.app.dark .displaced-col-label { color: #6b7280; }
+.app.dark .displaced-player-row { border-color: #1f2937; }
+.app.dark .displaced-player-name { color: #60a5fa; }
+.app.dark .displaced-was { color: #9ca3af; }
+.app.dark .displaced-value { color: #9ca3af; }
+.app.dark .displaced-by-line { color: #6b7280; }
+.app.dark .displaced-passer-name { color: #60a5fa; }

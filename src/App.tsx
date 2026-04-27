@@ -636,6 +636,23 @@ type MilestoneEvent = {
   date: string | null;       // YYYY-MM-DD when the crossing happened
 };
 
+type DisplacedEntry = {
+  personId: number;
+  fullName: string;
+  pre2026Rank: number;    // rank at start of 2026 season
+  currentRank: number;    // rank now (from career top 600 list)
+  pre2026Value: number;   // career total at start of 2026
+  currentValue: number;   // career total now
+  displacedBy: Array<{ personId: number; fullName: string; gained: number; currentRank: number }>;
+};
+
+type DisplacedResult = {
+  statKey: string;
+  statLabel: string;
+  displaced: DisplacedEntry[];
+  newcomers: Array<{ personId: number; fullName: string; gained: number; currentRank: number; currentValue: number }>;
+};
+
 
 const MILESTONE_STATS: { key: string; label: string; group: 'hitting' | 'pitching'; leaderKey?: string }[] = [
   { key: 'homeRuns',     label: 'HR',  group: 'hitting' },
@@ -715,6 +732,10 @@ function App() {
   const [openMilestoneDays, setOpenMilestoneDays] = useState<string[]>([]);
   const [milestoneSearch, setMilestoneSearch] = useState('');
   const [milestoneStatFilter, setMilestoneStatFilter] = useState<string | null>(null);
+  const [milestoneSubTab, setMilestoneSubTab] = useState<'tracker' | 'displaced'>('tracker');
+  const [displacedData, setDisplacedData] = useState<DisplacedResult[]>([]);
+  const [displacedLoading, setDisplacedLoading] = useState(false);
+  const [displacedError, setDisplacedError] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState('away');
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('games');
@@ -797,6 +818,13 @@ function App() {
     fetchMilestones();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, mentaculous]);
+
+  useEffect(() => {
+    if (activeTab !== 'milestones' || milestoneSubTab !== 'displaced') return;
+    if (displacedData.length > 0) return;
+    fetchDisplaced();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, milestoneSubTab]);
 
   // beforeunload: flush latest state to localStorage immediately on force close
   useEffect(() => {
@@ -2004,6 +2032,158 @@ function App() {
     }
   };
 
+  const fetchDisplaced = async (bust = false) => {
+    const CACHE_KEY = 'displaced_2026_results';
+    const TTL_HOURS = 4;
+    if (!bust) {
+      const cached = getCached<DisplacedResult[]>(CACHE_KEY, TTL_HOURS);
+      if (cached) { setDisplacedData(cached); return; }
+    } else {
+      localStorage.removeItem(CACHE_KEY);
+      MILESTONE_STATS.forEach(stat => {
+        const apiKey = stat.leaderKey ?? stat.key;
+        localStorage.removeItem(`displaced_career600_${stat.group}_${apiKey}`);
+        localStorage.removeItem(`milestone_season100_${apiKey}_${new Date().getFullYear()}`);
+      });
+    }
+
+    setDisplacedLoading(true);
+    setDisplacedError(false);
+    const currentSeason = new Date().getFullYear();
+
+    try {
+      type LeaderEntry = { rank: number; personId: number; fullName: string; value: number };
+      const results: DisplacedResult[] = [];
+
+      await Promise.all(MILESTONE_STATS.map(async (stat) => {
+        const apiKey = stat.leaderKey ?? stat.key;
+
+        // Career top 600 — 6 pages of 100, dedicated cache
+        const careerCacheKey = `displaced_career600_${stat.group}_${apiKey}`;
+        let careerList = getCached<LeaderEntry[]>(careerCacheKey, 24);
+        if (!careerList) {
+          const all: LeaderEntry[] = [];
+          for (let offset = 0; offset < 600; offset += 100) {
+            try {
+              const res = await fetch(
+                `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${apiKey}&statType=career&limit=100&offset=${offset}&statGroup=${stat.group}`
+              );
+              const data = await res.json();
+              const page: LeaderEntry[] = (data.leagueLeaders?.[0]?.leaders ?? []).map((l: any) => ({
+                rank: l.rank, personId: l.person?.id, fullName: l.person?.fullName, value: Number(l.value),
+              }));
+              all.push(...page);
+              if (page.length < 100) break;
+            } catch { break; }
+          }
+          const seen = new Set<number>();
+          careerList = all.filter(e => { if (seen.has(e.personId)) return false; seen.add(e.personId); return true; });
+          setCached(careerCacheKey, careerList);
+        }
+
+        // 2026 season leaders — reuse milestone cache if available
+        const seasonCacheKey = `milestone_season100_${apiKey}_${currentSeason}`;
+        let seasonList = getCached<LeaderEntry[]>(seasonCacheKey, 1);
+        if (!seasonList) {
+          const all: LeaderEntry[] = [];
+          for (let offset = 0; offset < 5000; offset += 100) {
+            try {
+              const res = await fetch(
+                `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${apiKey}&statType=season&season=${currentSeason}&limit=100&offset=${offset}&statGroup=${stat.group}`
+              );
+              const data = await res.json();
+              const page: LeaderEntry[] = (data.leagueLeaders?.[0]?.leaders ?? []).map((l: any) => ({
+                rank: l.rank, personId: l.person?.id, fullName: l.person?.fullName, value: Number(l.value),
+              }));
+              all.push(...page);
+              if (page.length < 100) break;
+            } catch { break; }
+          }
+          seasonList = all;
+          setCached(seasonCacheKey, seasonList);
+        }
+
+        const seasonMap = new Map<number, number>(seasonList.map(e => [e.personId, e.value]));
+
+        // Enrich with pre-2026 values
+        const enriched = careerList.map(e => ({
+          ...e,
+          pre2026Value: e.value - (seasonMap.get(e.personId) ?? 0),
+          gained2026: seasonMap.get(e.personId) ?? 0,
+        }));
+
+        // Assign pre-2026 ranks using standard competition ranking (ties get lowest rank)
+        const sortedPre = [...enriched].sort((a, b) => b.pre2026Value - a.pre2026Value);
+        // Map personId → pre2026Rank
+        const pre2026RankMap = new Map<number, number>();
+        for (let i = 0; i < sortedPre.length; i++) {
+          const val = sortedPre[i].pre2026Value;
+          // Rank = position of first occurrence of this value + 1
+          if (!pre2026RankMap.has(sortedPre[i].personId)) {
+            const firstIdx = sortedPre.findIndex(x => x.pre2026Value === val);
+            pre2026RankMap.set(sortedPre[i].personId, firstIdx + 1);
+          }
+        }
+
+        // Current top 500: career rank ≤ 500 per the API (ties at boundary are all included)
+        const currentTop500Set = new Set(enriched.filter(e => e.rank <= 500).map(e => e.personId));
+
+        // Pre-2026 top 500: pre2026Rank ≤ 500
+        const inPre500 = enriched.filter(e => (pre2026RankMap.get(e.personId) ?? 9999) <= 500);
+        if (inPre500.length === 0) return;
+
+        // Displaced: were in pre-2026 top 500, are NOT in current top 500
+        const displaced = enriched
+          .filter(e => (pre2026RankMap.get(e.personId) ?? 9999) <= 500 && !currentTop500Set.has(e.personId))
+          .map(e => e.personId);
+
+        if (displaced.length === 0) return;
+
+        // Newcomers: are in current top 500, were NOT in pre-2026 top 500
+        const newcomers = enriched.filter(e =>
+          currentTop500Set.has(e.personId) &&
+          (pre2026RankMap.get(e.personId) ?? 9999) > 500 &&
+          e.gained2026 > 0
+        );
+
+        const displacedEntries: DisplacedEntry[] = displaced.map(pid => {
+          const e = enriched.find(x => x.personId === pid)!;
+          // Which newcomers specifically passed this player's pre-2026 value this year?
+          const by = newcomers
+            .filter(n => n.pre2026Value <= e.pre2026Value && n.value >= e.pre2026Value)
+            .map(n => ({ personId: n.personId, fullName: n.fullName, gained: n.gained2026, currentRank: n.rank }));
+          return {
+            personId: e.personId,
+            fullName: e.fullName,
+            pre2026Rank: pre2026RankMap.get(e.personId)!,
+            currentRank: e.rank,
+            pre2026Value: e.pre2026Value,
+            currentValue: e.value,
+            displacedBy: by,
+          };
+        }).sort((a, b) => a.pre2026Rank - b.pre2026Rank);
+
+        results.push({
+          statKey: stat.key,
+          statLabel: stat.label,
+          displaced: displacedEntries,
+          newcomers: newcomers
+            .map(n => ({ personId: n.personId, fullName: n.fullName, gained: n.gained2026, currentRank: n.rank, currentValue: n.value }))
+            .sort((a, b) => a.currentRank - b.currentRank),
+        });
+      }));
+
+      // Sort stats by number of displaced players desc
+      results.sort((a, b) => b.displaced.length - a.displaced.length);
+      setDisplacedData(results);
+      setCached(CACHE_KEY, results);
+    } catch {
+      setDisplacedError(true);
+    } finally {
+      setDisplacedLoading(false);
+    }
+  };
+
   // Helper function to format game time
   const formatGameTime = (gameDate: string) => {
     try {
@@ -3113,13 +3293,125 @@ function App() {
     );
   };
 
+  const renderDisplaced = () => {
+    if (displacedLoading) return <div className="loading">Computing displaced players…</div>;
+    if (displacedError) return <div className="loading">Failed to load displaced data.</div>;
+
+    const year = new Date().getFullYear();
+
+    return (
+      <div className="leaders-container">
+        <h2 style={{ textAlign: 'center', marginBottom: '0.25rem' }}>Displaced from Top 500</h2>
+        <p style={{ textAlign: 'center', fontSize: '0.85em', color: '#888', marginBottom: '1.25rem' }}>
+          Players who started {year} in the all-time top 500 but have since been passed out of it
+        </p>
+
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <button className="leaders-show-all" onClick={() => fetchDisplaced(true)}>Refresh</button>
+        </div>
+
+        {displacedData.length === 0 ? (
+          <p style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>
+            {displacedLoading ? '' : 'No displacements detected yet — check back as the season progresses.'}
+          </p>
+        ) : displacedData.map(result => (
+          <div key={result.statKey} className="displaced-stat-section">
+            <div className="displaced-stat-header">
+              <span className="milestone-stat-badge">{result.statLabel}</span>
+              <span className="displaced-count">
+                {result.displaced.length} {result.displaced.length === 1 ? 'player' : 'players'} displaced
+              </span>
+            </div>
+
+            <div className="displaced-columns">
+              <div className="displaced-col">
+                <div className="displaced-col-label">Displaced out</div>
+                {result.displaced.map(d => (
+                  <div key={d.personId} className="displaced-player-row">
+                    <span
+                      className="displaced-player-name"
+                      onClick={() => setSelectedPlayerId(d.personId)}
+                    >
+                      {d.fullName}
+                    </span>
+                    <span className="displaced-ranks">
+                      <span className="displaced-was">was #{d.pre2026Rank}</span>
+                      <span className="displaced-arrow">→</span>
+                      <span className="displaced-now">now #{d.currentRank}</span>
+                    </span>
+                    <span className="displaced-value">{d.pre2026Value.toLocaleString()} → {d.currentValue.toLocaleString()}</span>
+                    {d.displacedBy.length > 0 && (
+                      <span className="displaced-by-line">
+                        passed by{' '}
+                        {d.displacedBy.map((b, i) => (
+                          <span key={b.personId}>
+                            <span
+                              className="displaced-passer-name"
+                              onClick={() => setSelectedPlayerId(b.personId)}
+                            >{b.fullName}</span>
+                            {i < d.displacedBy.length - 1 && ', '}
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="displaced-col">
+                <div className="displaced-col-label">Entered top 500</div>
+                {result.newcomers.map(n => (
+                  <div key={n.personId} className="displaced-player-row displaced-newcomer">
+                    <span
+                      className="displaced-player-name"
+                      onClick={() => setSelectedPlayerId(n.personId)}
+                    >
+                      {n.fullName}
+                    </span>
+                    <span className="displaced-ranks">
+                      <span className="displaced-now">#{n.currentRank} all-time</span>
+                    </span>
+                    <span className="displaced-value">+{n.gained.toLocaleString()} in {year} · {n.currentValue.toLocaleString()} career</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const renderMilestones = () => {
-    if (milestonesLoading) return <div className="loading">Loading milestones…</div>;
-    if (milestonesError) return <div className="loading">Failed to load milestones.</div>;
+    const subTabs = (
+      <div className="leaders-subtabs" style={{ marginBottom: '1.25rem' }}>
+        <button
+          className={milestoneSubTab === 'tracker' ? 'active' : ''}
+          onClick={() => setMilestoneSubTab('tracker')}
+        >Milestone Tracker</button>
+        <button
+          className={milestoneSubTab === 'displaced' ? 'active' : ''}
+          onClick={() => setMilestoneSubTab('displaced')}
+        >Displaced from Top 500</button>
+      </div>
+    );
+
+    if (milestoneSubTab === 'displaced') {
+      return (
+        <div className="leaders-container">
+          {subTabs}
+          {renderDisplaced()}
+        </div>
+      );
+    }
+
+    if (milestonesLoading) return <div className="leaders-container">{subTabs}<div className="loading">Loading milestones…</div></div>;
+    if (milestonesError) return <div className="leaders-container">{subTabs}<div className="loading">Failed to load milestones.</div></div>;
 
     if (milestoneEvents.length === 0) {
       return (
         <div className="leaders-container">
+          {subTabs}
           <p style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
             No top-500 all-time passings found for your mentaculous players in {new Date().getFullYear()}.
           </p>
@@ -3148,6 +3440,7 @@ function App() {
 
     return (
       <div className="leaders-container">
+        {subTabs}
         <h2 style={{ textAlign: 'center', marginBottom: '1rem' }}>
           Milestone Tracker — {new Date().getFullYear()}
         </h2>
