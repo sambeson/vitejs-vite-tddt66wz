@@ -278,34 +278,89 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
     return () => controller.abort();
   }, [playerId]);
 
-  // Look up this player in cached top-500 records datasets
+  // Look up this player in top-500 records; fetch missing categories on demand
   useEffect(() => {
     const categories = [
-      { key: 'homeRuns',           label: 'HR',  group: 'hitting' },
-      { key: 'runsBattedIn',       label: 'RBI', group: 'hitting' },
-      { key: 'runs',               label: 'R',   group: 'hitting' },
-      { key: 'hits',               label: 'H',   group: 'hitting' },
-      { key: 'stolenBases',        label: 'SB',  group: 'hitting' },
-      { key: 'doubles',            label: '2B',  group: 'hitting' },
-      { key: 'triples',            label: '3B',  group: 'hitting' },
-      { key: 'baseOnBalls',        label: 'BB',  group: 'hitting' },
-      { key: 'strikeOuts',         label: 'SO',  group: 'pitching' },
-      { key: 'wins',               label: 'W',   group: 'pitching' },
-      { key: 'saves',              label: 'SV',  group: 'pitching' },
+      { key: 'homeRuns',     label: 'HR',  group: 'hitting' },
+      { key: 'runsBattedIn', label: 'RBI', group: 'hitting' },
+      { key: 'runs',         label: 'R',   group: 'hitting' },
+      { key: 'hits',         label: 'H',   group: 'hitting' },
+      { key: 'stolenBases',  label: 'SB',  group: 'hitting' },
+      { key: 'doubles',      label: '2B',  group: 'hitting' },
+      { key: 'triples',      label: '3B',  group: 'hitting' },
+      { key: 'baseOnBalls',  label: 'BB',  group: 'hitting' },
+      { key: 'strikeOuts',   label: 'SO',  group: 'pitching' },
+      { key: 'wins',         label: 'W',   group: 'pitching' },
+      { key: 'saves',        label: 'SV',  group: 'pitching' },
     ];
+
+    const TTL_HOURS = 24;
+    const TTL_MS = TTL_HOURS * 60 * 60 * 1000;
+
+    const readCache = (cacheKey: string): any[] | null => {
+      try {
+        const raw = localStorage.getItem(cacheKey);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (parsed?.ts && Date.now() - parsed.ts > TTL_MS) return null;
+        const list = parsed?.data ?? parsed;
+        return Array.isArray(list) ? list : null;
+      } catch { return null; }
+    };
+
+    const fetchCategory = async (cat: { key: string; label: string; group: string }): Promise<any[]> => {
+      const cacheKey = `records_v2_500_${cat.group}_${cat.key}`;
+      const existing = readCache(cacheKey);
+      if (existing) return existing;
+
+      const pages = 5;
+      const limit = 100;
+      const allEntries: any[] = [];
+      for (let page = 0; page < pages; page++) {
+        try {
+          const url = `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${cat.key}&statType=career&limit=${limit}&offset=${page * limit}&statGroup=${cat.group}`;
+          const res = await fetch(url);
+          if (!res.ok) break;
+          const json = await res.json();
+          const leaders = json?.leagueLeaders?.[0]?.leaders ?? [];
+          allEntries.push(...leaders);
+          if (leaders.length < limit) break;
+        } catch { break; }
+      }
+      if (allEntries.length > 0) {
+        try { localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: allEntries })); } catch { /* quota */ }
+      }
+      return allEntries;
+    };
+
+    let cancelled = false;
+
+    // Seed with any already-cached data immediately
     const found: Record<string, { rank: number; value: string }> = {};
     for (const cat of categories) {
-      try {
-        const raw = localStorage.getItem(`records_v2_500_${cat.group}_${cat.key}`);
-        if (!raw) continue;
-        const parsed = JSON.parse(raw);
-        const list: any[] = parsed?.data ?? parsed;
-        if (!Array.isArray(list)) continue;
-        const entry = list.find((e: any) => e.person?.id === playerId);
-        if (entry) found[cat.label] = { rank: Number(entry.rank), value: String(entry.value) };
-      } catch { /* skip */ }
+      const list = readCache(`records_v2_500_${cat.group}_${cat.key}`);
+      if (!list) continue;
+      const entry = list.find((e: any) => e.person?.id === playerId);
+      if (entry) found[cat.label] = { rank: Number(entry.rank), value: String(entry.value) };
     }
-    setRankings(found);
+    setRankings({ ...found });
+
+    // Fetch any missing categories in background
+    (async () => {
+      for (const cat of categories) {
+        if (cancelled) return;
+        const cacheKey = `records_v2_500_${cat.group}_${cat.key}`;
+        if (readCache(cacheKey)) continue; // already seeded above
+        const list = await fetchCategory(cat);
+        if (cancelled) return;
+        const entry = list.find((e: any) => e.person?.id === playerId);
+        if (entry) {
+          setRankings(prev => ({ ...prev, [cat.label]: { rank: Number(entry.rank), value: String(entry.value) } }));
+        }
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, [playerId]);
 
   return (
