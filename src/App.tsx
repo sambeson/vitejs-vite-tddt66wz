@@ -482,6 +482,8 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
                           <th>G</th>
                           <th>AB</th>
                           <th>H</th>
+                          <th>R</th>
+                          <th>BB</th>
                           <th>HR</th>
                           <th>RBI</th>
                           <th>SB</th>
@@ -501,7 +503,9 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
                               <td>{s.stat?.gamesPlayed ?? s.stat?.games ?? '-'}</td>
                               <td>{s.stat?.atBats ?? '-'}</td>
                               <td>{s.stat?.hits ?? '-'}</td>
-                              <td>{s.stat?.homeRuns ?? '-'} </td>
+                              <td>{s.stat?.runs ?? '-'}</td>
+                              <td>{s.stat?.baseOnBalls ?? '-'}</td>
+                              <td>{s.stat?.homeRuns ?? '-'}</td>
                               <td>{s.stat?.rbi ?? '-'}</td>
                               <td>{s.stat?.stolenBases ?? '-'}</td>
                               <td>{s.stat?.avg ?? '-'}</td>
