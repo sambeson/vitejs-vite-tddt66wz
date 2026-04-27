@@ -288,10 +288,13 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
       { key: 'stolenBases',  label: 'SB',  group: 'hitting' },
       { key: 'doubles',      label: '2B',  group: 'hitting' },
       { key: 'triples',      label: '3B',  group: 'hitting' },
-      { key: 'baseOnBalls',  label: 'BB',  group: 'hitting' },
-      { key: 'strikeOuts',   label: 'SO',  group: 'pitching' },
-      { key: 'wins',         label: 'W',   group: 'pitching' },
-      { key: 'saves',        label: 'SV',  group: 'pitching' },
+      { key: 'baseOnBalls',      label: 'BB', group: 'hitting' },
+      { key: 'strikeOuts',       label: 'K',  group: 'hitting' },
+      { key: 'plateAppearances', label: 'PA', group: 'hitting' },
+      { key: 'gamesPlayed',      label: 'G',  group: 'hitting' },
+      { key: 'strikeOuts',       label: 'SO', group: 'pitching' },
+      { key: 'wins',             label: 'W',  group: 'pitching' },
+      { key: 'saves',            label: 'SV', group: 'pitching' },
     ];
 
     const TTL_HOURS = 24;
@@ -407,7 +410,7 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
                 ) : careerStats.hitting ? (
                   <>
                     <h3>Career Hitting Stats</h3>
-                    <p><strong>Games Played:</strong> {careerStats.hitting.gamesPlayed}</p>
+                    <p><strong>Games Played:</strong> {careerStats.hitting.gamesPlayed}{rankings['G'] && <span className="modal-rank">#{rankings['G'].rank} all-time</span>}</p>
                     <p><strong>At Bats:</strong> {careerStats.hitting.atBats}</p>
                     <p><strong>Hits:</strong> {careerStats.hitting.hits}{rankings['H'] && <span className="modal-rank">#{rankings['H'].rank} all-time</span>}</p>
                     <p><strong>Runs:</strong> {careerStats.hitting.runs}{rankings['R'] && <span className="modal-rank">#{rankings['R'].rank} all-time</span>}</p>
@@ -417,6 +420,8 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
                     <p><strong>Doubles:</strong> {careerStats.hitting.doubles}{rankings['2B'] && <span className="modal-rank">#{rankings['2B'].rank} all-time</span>}</p>
                     <p><strong>Triples:</strong> {careerStats.hitting.triples}{rankings['3B'] && <span className="modal-rank">#{rankings['3B'].rank} all-time</span>}</p>
                     <p><strong>Walks:</strong> {careerStats.hitting.baseOnBalls}{rankings['BB'] && <span className="modal-rank">#{rankings['BB'].rank} all-time</span>}</p>
+                    <p><strong>Strikeouts:</strong> {careerStats.hitting.strikeOuts}{rankings['K'] && <span className="modal-rank">#{rankings['K'].rank} all-time</span>}</p>
+                    <p><strong>Plate Appearances:</strong> {careerStats.hitting.plateAppearances}{rankings['PA'] && <span className="modal-rank">#{rankings['PA'].rank} all-time</span>}</p>
                     <p><strong>Average:</strong> {careerStats.hitting.avg}</p>
                     <p><strong>OPS:</strong> {careerStats.hitting.ops}</p>
                   </>
@@ -666,10 +671,13 @@ const MILESTONE_STATS: { key: string; label: string; group: 'hitting' | 'pitchin
   { key: 'triples',     label: '3B',  group: 'hitting' },
   { key: 'doubles',     label: '2B',  group: 'hitting' },
   { key: 'hits',        label: 'H',   group: 'hitting' },
-  { key: 'baseOnBalls', label: 'BB',  group: 'hitting' },
+  { key: 'baseOnBalls',      label: 'BB', group: 'hitting' },
   // game-log stat key is 'strikeOuts' (camelCase); leaders API uses 'strikeouts'
-  { key: 'strikeOuts',  label: 'SO',  group: 'pitching', leaderKey: 'strikeouts' },
-  { key: 'saves',       label: 'SV',  group: 'pitching' },
+  { key: 'strikeOuts',       label: 'K',  group: 'hitting',  leaderKey: 'strikeouts' },
+  { key: 'plateAppearances', label: 'PA', group: 'hitting' },
+  { key: 'gamesPlayed',      label: 'G',  group: 'hitting' },
+  { key: 'strikeOuts',       label: 'SO', group: 'pitching', leaderKey: 'strikeouts' },
+  { key: 'saves',            label: 'SV', group: 'pitching' },
 ];
 
 function getCached<T>(key: string, ttlHours: number): T | null {
