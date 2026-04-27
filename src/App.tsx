@@ -1055,6 +1055,13 @@ function App() {
       .finally(() => setIsRefreshing(false));
   }, [date, refreshKey]);
 
+  // Auto-refresh games every 60s when on the games tab with no game selected
+  useEffect(() => {
+    if (activeTab !== 'games' || selectedGame) return;
+    const id = setInterval(() => setRefreshKey(k => k + 1), 60_000);
+    return () => clearInterval(id);
+  }, [activeTab, selectedGame]);
+
   // Pre-fetch HR totals for Final/In-Progress games so the ticker shows without clicking
   useEffect(() => {
     const completedGames = games.filter(g =>
