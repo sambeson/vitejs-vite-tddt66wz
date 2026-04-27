@@ -620,6 +620,9 @@ function App() {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === '1');
   const [mentSearch, setMentSearch] = useState('');
   const [stealSearch, setStealSearch] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [liveLastUpdated, setLiveLastUpdated] = useState<number | null>(null);
   const [liveSecondsAgo, setLiveSecondsAgo] = useState(0);
   const [date, setDate] = useState(new Date().toLocaleDateString('en-CA'));
@@ -658,6 +661,7 @@ function App() {
   const [mentaculous, setMentaculous] = React.useState<Record<string, MentaculousPlayer>>({});
   const lastViewedGamePkRef = useRef<number | null>(null);
   const touchStartXRef = useRef<number | null>(null);
+  const pullStartYRef = useRef<number | null>(null);
   const mentaculousRef = useRef<Record<string, MentaculousPlayer>>({});
   const orderRef = useRef<string[]>([]);
   const dataLoadedRef = useRef(false);
@@ -1043,11 +1047,13 @@ function App() {
   }, [dataLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    setIsRefreshing(true);
     fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`)
       .then((res) => res.json())
       .then((data) => setGames(data.dates[0]?.games || []))
-      .catch((error) => console.error('Error fetching schedule:', error));
-  }, [date]);
+      .catch((error) => console.error('Error fetching schedule:', error))
+      .finally(() => setIsRefreshing(false));
+  }, [date, refreshKey]);
 
   // Pre-fetch HR totals for Final/In-Progress games so the ticker shows without clicking
   useEffect(() => {
@@ -3729,7 +3735,29 @@ function App() {
           })()}
 
           {activeTab === 'games' && (
-            <>
+            <div
+              onTouchStart={e => {
+                if (window.scrollY === 0) pullStartYRef.current = e.touches[0].clientY;
+              }}
+              onTouchMove={e => {
+                if (pullStartYRef.current === null) return;
+                const dy = e.touches[0].clientY - pullStartYRef.current;
+                if (dy > 0) setPullDistance(Math.min(dy * 0.4, 72));
+              }}
+              onTouchEnd={() => {
+                if (pullDistance >= 60) {
+                  setRefreshKey(k => k + 1);
+                }
+                setPullDistance(0);
+                pullStartYRef.current = null;
+              }}
+            >
+              {(pullDistance > 0 || isRefreshing) && (
+                <div className="pull-indicator" style={{ height: isRefreshing ? 44 : pullDistance * 0.6 }}>
+                  <span className={`pull-spinner${isRefreshing ? ' spinning' : ''}`}>↻</span>
+                  <span className="pull-label">{isRefreshing ? 'Refreshing…' : pullDistance >= 60 ? 'Release to refresh' : 'Pull to refresh'}</span>
+                </div>
+              )}
               {!selectedGame && (
                 <>
                   <div className="date-selector">
@@ -3999,7 +4027,7 @@ function App() {
                   </div>
                 </div>
               )}
-            </>
+            </div>
           )}
           {activeTab === 'backend' && manualOverride && (
             <div className="backend-tab">
