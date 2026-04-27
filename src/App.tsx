@@ -1990,7 +1990,7 @@ function App() {
         <HomerEntry
           key={key}
           player={p}
-          getLastName={getLastName}``
+          getLastName={getLastName}
           onAdd={async (player, hr) => await handleAddToMentaculous(player, hr, team.team?.name, team.team?.id)}
           onRemove={handleRemoveHomeRun}
           mentaculous={mentaculous} // ✅ required for per-HR tracking
