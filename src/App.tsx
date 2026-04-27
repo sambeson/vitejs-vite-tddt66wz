@@ -181,6 +181,7 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
   const [isPitcher, setIsPitcher] = useState<boolean>(false);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState<boolean>(false);
+  const [rankings, setRankings] = useState<Record<string, { rank: number; value: string }>>({});
 
   useEffect(() => {
     const controller = new AbortController();
@@ -277,6 +278,36 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
     return () => controller.abort();
   }, [playerId]);
 
+  // Look up this player in cached top-500 records datasets
+  useEffect(() => {
+    const categories = [
+      { key: 'homeRuns',           label: 'HR',  group: 'hitting' },
+      { key: 'runsBattedIn',       label: 'RBI', group: 'hitting' },
+      { key: 'runs',               label: 'R',   group: 'hitting' },
+      { key: 'hits',               label: 'H',   group: 'hitting' },
+      { key: 'stolenBases',        label: 'SB',  group: 'hitting' },
+      { key: 'doubles',            label: '2B',  group: 'hitting' },
+      { key: 'triples',            label: '3B',  group: 'hitting' },
+      { key: 'baseOnBalls',        label: 'BB',  group: 'hitting' },
+      { key: 'strikeOuts',         label: 'SO',  group: 'pitching' },
+      { key: 'wins',               label: 'W',   group: 'pitching' },
+      { key: 'saves',              label: 'SV',  group: 'pitching' },
+    ];
+    const found: Record<string, { rank: number; value: string }> = {};
+    for (const cat of categories) {
+      try {
+        const raw = localStorage.getItem(`records_v2_500_${cat.group}_${cat.key}`);
+        if (!raw) continue;
+        const parsed = JSON.parse(raw);
+        const list: any[] = parsed?.data ?? parsed;
+        if (!Array.isArray(list)) continue;
+        const entry = list.find((e: any) => e.person?.id === playerId);
+        if (entry) found[cat.label] = { rank: Number(entry.rank), value: String(entry.value) };
+      } catch { /* skip */ }
+    }
+    setRankings(found);
+  }, [playerId]);
+
   return (
     <div className="modal" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -309,61 +340,30 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
                 {isPitcher && careerStats.pitching ? (
                   <>
                     <h3>Career Pitching Stats</h3>
-                    <p>
-                      <strong>Wins:</strong> {careerStats.pitching.wins}
-                    </p>
-                    <p>
-                      <strong>Losses:</strong> {careerStats.pitching.losses}
-                    </p>
-                    <p>
-                      <strong>ERA:</strong> {careerStats.pitching.era}
-                    </p>
-                    <p>
-                      <strong>Quality Starts:</strong> {careerStats.pitching.qualityStarts || 0}
-                    </p>
-                    <p>
-                      <strong>Innings Pitched:</strong> {careerStats.pitching.inningsPitched}
-                    </p>
-                    <p>
-                      <strong>Strikeouts:</strong> {careerStats.pitching.strikeOuts}
-                    </p>
-                    <p>
-                      <strong>Saves:</strong> {careerStats.pitching.saves}
-                    </p>
-                    <p>
-                      <strong>WHIP:</strong> {careerStats.pitching.whip}
-                    </p>
+                    <p><strong>Wins:</strong> {careerStats.pitching.wins}{rankings['W'] && <span className="modal-rank">#{rankings['W'].rank} all-time</span>}</p>
+                    <p><strong>Losses:</strong> {careerStats.pitching.losses}</p>
+                    <p><strong>ERA:</strong> {careerStats.pitching.era}</p>
+                    <p><strong>Quality Starts:</strong> {careerStats.pitching.qualityStarts || 0}</p>
+                    <p><strong>Innings Pitched:</strong> {careerStats.pitching.inningsPitched}</p>
+                    <p><strong>Strikeouts:</strong> {careerStats.pitching.strikeOuts}{rankings['SO'] && <span className="modal-rank">#{rankings['SO'].rank} all-time</span>}</p>
+                    <p><strong>Saves:</strong> {careerStats.pitching.saves}{rankings['SV'] && <span className="modal-rank">#{rankings['SV'].rank} all-time</span>}</p>
+                    <p><strong>WHIP:</strong> {careerStats.pitching.whip}</p>
                   </>
                 ) : careerStats.hitting ? (
                   <>
                     <h3>Career Hitting Stats</h3>
-                    <p>
-                      <strong>Games Played:</strong> {careerStats.hitting.gamesPlayed}
-                    </p>
-                    <p>
-                      <strong>At Bats:</strong> {careerStats.hitting.atBats}
-                    </p>
-                    <p>
-                      <strong>Hits:</strong> {careerStats.hitting.hits}
-                    </p>
-                    <p>
-                      <strong>Runs:</strong> {careerStats.hitting.runs}
-                    </p>
-                    <p>
-                      <strong>RBI:</strong> {careerStats.hitting.rbi}
-                    </p>
-                    <p>
-                      <strong>Home Runs:</strong> {careerStats.hitting.homeRuns}
-                    </p>
-                    <p>
-                      <strong>Stolen Bases:</strong> {careerStats.hitting.stolenBases}
-                    </p>
-                    <p>
-                      <strong>Average:</strong> {careerStats.hitting.avg}
-                    </p>
-                    <p>
-                      <strong>OPS:</strong> {careerStats.hitting.ops}
-                    </p>
+                    <p><strong>Games Played:</strong> {careerStats.hitting.gamesPlayed}</p>
+                    <p><strong>At Bats:</strong> {careerStats.hitting.atBats}</p>
+                    <p><strong>Hits:</strong> {careerStats.hitting.hits}{rankings['H'] && <span className="modal-rank">#{rankings['H'].rank} all-time</span>}</p>
+                    <p><strong>Runs:</strong> {careerStats.hitting.runs}{rankings['R'] && <span className="modal-rank">#{rankings['R'].rank} all-time</span>}</p>
+                    <p><strong>RBI:</strong> {careerStats.hitting.rbi}{rankings['RBI'] && <span className="modal-rank">#{rankings['RBI'].rank} all-time</span>}</p>
+                    <p><strong>Home Runs:</strong> {careerStats.hitting.homeRuns}{rankings['HR'] && <span className="modal-rank">#{rankings['HR'].rank} all-time</span>}</p>
+                    <p><strong>Stolen Bases:</strong> {careerStats.hitting.stolenBases}{rankings['SB'] && <span className="modal-rank">#{rankings['SB'].rank} all-time</span>}</p>
+                    <p><strong>Doubles:</strong> {careerStats.hitting.doubles}{rankings['2B'] && <span className="modal-rank">#{rankings['2B'].rank} all-time</span>}</p>
+                    <p><strong>Triples:</strong> {careerStats.hitting.triples}{rankings['3B'] && <span className="modal-rank">#{rankings['3B'].rank} all-time</span>}</p>
+                    <p><strong>Walks:</strong> {careerStats.hitting.baseOnBalls}{rankings['BB'] && <span className="modal-rank">#{rankings['BB'].rank} all-time</span>}</p>
+                    <p><strong>Average:</strong> {careerStats.hitting.avg}</p>
+                    <p><strong>OPS:</strong> {careerStats.hitting.ops}</p>
                   </>
                 ) : null}
               </div>
@@ -655,6 +655,8 @@ function App() {
   const [milestonesLoading, setMilestonesLoading] = useState(false);
   const [milestonesError, setMilestonesError] = useState(false);
   const [openMilestoneDays, setOpenMilestoneDays] = useState<string[]>([]);
+  const [milestoneSearch, setMilestoneSearch] = useState('');
+  const [milestoneStatFilter, setMilestoneStatFilter] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState('away');
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('games');
@@ -3058,6 +3060,12 @@ function App() {
       ));
     };
 
+    const mq = milestoneSearch.trim().toLowerCase();
+    const uniqueStats = Array.from(new Map(milestoneEvents.map(ev => [ev.statKey, ev.statLabel])).entries());
+    const filteredEvents = milestoneEvents
+      .filter(ev => !mq || ev.playerName.toLowerCase().includes(mq))
+      .filter(ev => !milestoneStatFilter || ev.statKey === milestoneStatFilter);
+
     return (
       <div className="leaders-container">
         <h2 style={{ textAlign: 'center', marginBottom: '1rem' }}>
@@ -3067,13 +3075,42 @@ function App() {
         <p style={{ textAlign: 'center', fontSize: '0.85em', color: '#666', marginBottom: '1rem' }}>
           Top-500 all-time passings · most recent first
         </p>
+
+        <div className="tracker-search-bar" style={{ marginBottom: '10px' }}>
+          <input
+            className="tracker-search"
+            type="text"
+            placeholder="Search players…"
+            value={milestoneSearch}
+            onChange={e => setMilestoneSearch(e.target.value)}
+          />
+          {milestoneSearch && <button className="tracker-search-clear" onClick={() => setMilestoneSearch('')}>✕</button>}
+        </div>
+
+        <div className="pills-fade-container" style={{ marginBottom: '1.5rem' }}>
+          <div className="leaders-pills">
+            <button
+              className={`leaders-pill${!milestoneStatFilter ? ' active' : ''}`}
+              onClick={() => setMilestoneStatFilter(null)}
+            >All</button>
+            {uniqueStats.map(([key, label]) => (
+              <button
+                key={key}
+                className={`leaders-pill${milestoneStatFilter === key ? ' active' : ''}`}
+                onClick={() => setMilestoneStatFilter(milestoneStatFilter === key ? null : key)}
+              >{label}</button>
+            ))}
+          </div>
+        </div>
+
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <button className="leaders-show-all" onClick={() => fetchMilestones(true)}>Refresh</button>
         </div>
-        {(() => {
-          // Group events by day, then by player + stat + date so multiple passings in the same game share one card
+        {filteredEvents.length === 0 ? (
+          <p style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>No milestones match your filters.</p>
+        ) : (() => {
           const byDay = new Map<string, MilestoneEvent[]>();
-          for (const ev of milestoneEvents) {
+          for (const ev of filteredEvents) {
             const dayKey = ev.date ?? 'unknown';
             if (!byDay.has(dayKey)) byDay.set(dayKey, []);
             byDay.get(dayKey)!.push(ev);

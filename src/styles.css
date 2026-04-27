@@ -870,6 +870,23 @@ button:focus {
   font-weight: 600;
 }
 
+.modal-rank {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.78em;
+  font-weight: 600;
+  color: #1a7a2e;
+  background: #e6f4ea;
+  border-radius: 10px;
+  padding: 1px 7px;
+  vertical-align: middle;
+}
+
+.app.dark .modal-rank {
+  color: #6ee7b7;
+  background: #064e3b;
+}
+
 .hr-count-wrapper {
   position: relative;
   cursor: pointer;
