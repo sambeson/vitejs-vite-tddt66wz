@@ -366,6 +366,14 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
     return () => { cancelled = true; };
   }, [playerId]);
 
+  const SC = (label: string, value: any, rankKey?: string, rate?: boolean) => (
+    <div className={`career-stat-card${rate ? ' career-stat-card--rate' : ''}`}>
+      <span className="career-stat-label">{label}</span>
+      <span className="career-stat-value">{value ?? '—'}</span>
+      {rankKey && rankings[rankKey] && <span className="career-stat-rank">#{rankings[rankKey].rank}</span>}
+    </div>
+  );
+
   return (
     <div className="modal" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -373,57 +381,56 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
         <div className="modal-body">
         {profile ? (
           <div className="player-profile">
-            <img
-              src={`https://img.mlbstatic.com/mlb-photos/image/upload/v1/people/${profile.id}/headshot/67/current.png`}
-              alt={`${profile.fullName} headshot`}
-              className="player-headshot"
-            />
-            <h2>{profile.fullName}</h2>
-            <p>
-              <strong>Position:</strong> {profile.primaryPosition.name}
-            </p>
-            <p>
-              <strong>Birth:</strong> {profile.birthDate} in {profile.birthCity}
-              , {profile.birthStateProvince ?? ''} {profile.birthCountry}
-            </p>
-            <p>
-              <strong>Debut:</strong> {profile.mlbDebutDate}
-            </p>
-            <p>
-              <strong>Height/Weight:</strong> {profile.height} /{' '}
-              {profile.weight}
-            </p>
+            <div className="player-profile-header">
+              <img
+                src={`https://img.mlbstatic.com/mlb-photos/image/upload/v1/people/${profile.id}/headshot/67/current.png`}
+                alt={`${profile.fullName} headshot`}
+                className="player-headshot"
+              />
+              <div className="player-profile-bio">
+                <h2>{profile.fullName}</h2>
+                <p><strong>Position:</strong> {profile.primaryPosition.name}</p>
+                <p><strong>Born:</strong> {profile.birthDate} · {profile.birthCity}{profile.birthStateProvince ? `, ${profile.birthStateProvince}` : ''} {profile.birthCountry}</p>
+                <p><strong>Debut:</strong> {profile.mlbDebutDate}</p>
+                <p><strong>Ht / Wt:</strong> {profile.height} · {profile.weight}</p>
+              </div>
+            </div>
             {careerStats ? (
               <div className="career-stats">
                 {isPitcher && careerStats.pitching ? (
                   <>
-                    <h3>Career Pitching Stats</h3>
-                    <p><strong>Wins:</strong> {careerStats.pitching.wins}{rankings['W'] && <span className="modal-rank">#{rankings['W'].rank} all-time</span>}</p>
-                    <p><strong>Losses:</strong> {careerStats.pitching.losses}</p>
-                    <p><strong>ERA:</strong> {careerStats.pitching.era}</p>
-                    <p><strong>Quality Starts:</strong> {careerStats.pitching.qualityStarts || 0}</p>
-                    <p><strong>Innings Pitched:</strong> {careerStats.pitching.inningsPitched}</p>
-                    <p><strong>Strikeouts:</strong> {careerStats.pitching.strikeOuts}{rankings['SO'] && <span className="modal-rank">#{rankings['SO'].rank} all-time</span>}</p>
-                    <p><strong>Saves:</strong> {careerStats.pitching.saves}{rankings['SV'] && <span className="modal-rank">#{rankings['SV'].rank} all-time</span>}</p>
-                    <p><strong>WHIP:</strong> {careerStats.pitching.whip}</p>
+                    <div className="career-stats-heading">Career Pitching</div>
+                    <div className="career-stats-grid">
+                      {SC('W',    careerStats.pitching.wins,              'W')}
+                      {SC('L',    careerStats.pitching.losses)}
+                      {SC('ERA',  careerStats.pitching.era,               undefined, true)}
+                      {SC('SO',   careerStats.pitching.strikeOuts,        'SO')}
+                      {SC('IP',   careerStats.pitching.inningsPitched)}
+                      {SC('WHIP', careerStats.pitching.whip,              undefined, true)}
+                      {SC('SV',   careerStats.pitching.saves,             'SV')}
+                      {SC('QS',   careerStats.pitching.qualityStarts || 0)}
+                    </div>
                   </>
                 ) : careerStats.hitting ? (
                   <>
-                    <h3>Career Hitting Stats</h3>
-                    <p><strong>Games Played:</strong> {careerStats.hitting.gamesPlayed}{rankings['G'] && <span className="modal-rank">#{rankings['G'].rank} all-time</span>}</p>
-                    <p><strong>At Bats:</strong> {careerStats.hitting.atBats}</p>
-                    <p><strong>Hits:</strong> {careerStats.hitting.hits}{rankings['H'] && <span className="modal-rank">#{rankings['H'].rank} all-time</span>}</p>
-                    <p><strong>Runs:</strong> {careerStats.hitting.runs}{rankings['R'] && <span className="modal-rank">#{rankings['R'].rank} all-time</span>}</p>
-                    <p><strong>RBI:</strong> {careerStats.hitting.rbi}{rankings['RBI'] && <span className="modal-rank">#{rankings['RBI'].rank} all-time</span>}</p>
-                    <p><strong>Home Runs:</strong> {careerStats.hitting.homeRuns}{rankings['HR'] && <span className="modal-rank">#{rankings['HR'].rank} all-time</span>}</p>
-                    <p><strong>Stolen Bases:</strong> {careerStats.hitting.stolenBases}{rankings['SB'] && <span className="modal-rank">#{rankings['SB'].rank} all-time</span>}</p>
-                    <p><strong>Doubles:</strong> {careerStats.hitting.doubles}{rankings['2B'] && <span className="modal-rank">#{rankings['2B'].rank} all-time</span>}</p>
-                    <p><strong>Triples:</strong> {careerStats.hitting.triples}{rankings['3B'] && <span className="modal-rank">#{rankings['3B'].rank} all-time</span>}</p>
-                    <p><strong>Walks:</strong> {careerStats.hitting.baseOnBalls}{rankings['BB'] && <span className="modal-rank">#{rankings['BB'].rank} all-time</span>}</p>
-                    <p><strong>Strikeouts:</strong> {careerStats.hitting.strikeOuts}{rankings['K'] && <span className="modal-rank">#{rankings['K'].rank} all-time</span>}</p>
-                    <p><strong>Plate Appearances:</strong> {careerStats.hitting.plateAppearances}{rankings['PA'] && <span className="modal-rank">#{rankings['PA'].rank} all-time</span>}</p>
-                    <p><strong>Average:</strong> {careerStats.hitting.avg}</p>
-                    <p><strong>OPS:</strong> {careerStats.hitting.ops}</p>
+                    <div className="career-stats-heading">Career Hitting</div>
+                    <div className="career-stats-grid">
+                      {SC('G',   careerStats.hitting.gamesPlayed,      'G')}
+                      {SC('PA',  careerStats.hitting.plateAppearances,  'PA')}
+                      {SC('AB',  careerStats.hitting.atBats)}
+                      {SC('R',   careerStats.hitting.runs,              'R')}
+                      {SC('H',   careerStats.hitting.hits,              'H')}
+                      {SC('HR',  careerStats.hitting.homeRuns,          'HR')}
+                      {SC('RBI', careerStats.hitting.rbi,               'RBI')}
+                      {SC('BB',  careerStats.hitting.baseOnBalls,       'BB')}
+                      {SC('SB',  careerStats.hitting.stolenBases,       'SB')}
+                      {SC('2B',  careerStats.hitting.doubles,           '2B')}
+                      {SC('3B',  careerStats.hitting.triples,           '3B')}
+                      {SC('K',   careerStats.hitting.strikeOuts,        'K')}
+                      {SC('AVG', careerStats.hitting.avg,               undefined, true)}
+                      {SC('OBP', careerStats.hitting.obp,               undefined, true)}
+                      {SC('OPS', careerStats.hitting.ops,               undefined, true)}
+                    </div>
                   </>
                 ) : null}
               </div>
@@ -486,11 +493,11 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
                           <th>Team</th>
                           <th>G</th>
                           <th>AB</th>
-                          <th>H</th>
                           <th>R</th>
-                          <th>BB</th>
+                          <th>H</th>
                           <th>HR</th>
                           <th>RBI</th>
+                          <th>BB</th>
                           <th>SB</th>
                           <th>AVG</th>
                           <th>OBP</th>
@@ -507,11 +514,11 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
                               <td>{s.team?.name || '—'}</td>
                               <td>{s.stat?.gamesPlayed ?? s.stat?.games ?? '-'}</td>
                               <td>{s.stat?.atBats ?? '-'}</td>
-                              <td>{s.stat?.hits ?? '-'}</td>
                               <td>{s.stat?.runs ?? '-'}</td>
-                              <td>{s.stat?.baseOnBalls ?? '-'}</td>
+                              <td>{s.stat?.hits ?? '-'}</td>
                               <td>{s.stat?.homeRuns ?? '-'}</td>
                               <td>{s.stat?.rbi ?? '-'}</td>
+                              <td>{s.stat?.baseOnBalls ?? '-'}</td>
                               <td>{s.stat?.stolenBases ?? '-'}</td>
                               <td>{s.stat?.avg ?? '-'}</td>
                               <td>{s.stat?.obp ?? '-'}</td>

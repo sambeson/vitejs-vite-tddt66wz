@@ -834,40 +834,113 @@ button:focus {
 }
 
 
-.player-headshot {
-  width: 120px;
-  height: 190px;
-  object-fit: cover;
-  border-radius: 4px;
-  margin-bottom: 0.25rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
 /* ========================================
-   PLAYER PROFILE BIO SECTION
-   Biographical information in player modals
+   PLAYER PROFILE MODAL
    ======================================== */
 .player-profile {
   text-align: left;
 }
 
-.player-profile h2 {
-  margin: 10px 0 8px 0;
-  font-size: 1.4em;
-  color: #333;
+.player-profile-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  margin-bottom: 1.25rem;
 }
 
-.player-profile p {
-  margin: 4px 0;
-  font-size: 0.85em;
+.player-headshot {
+  width: 80px;
+  height: auto;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.player-profile-bio {
+  flex: 1;
+  min-width: 0;
+}
+
+.player-profile-bio h2 {
+  margin: 0 0 5px;
+  font-size: 1.15em;
+  font-weight: 700;
+  color: #111;
+  line-height: 1.2;
+}
+
+.player-profile-bio p {
+  margin: 2px 0;
+  font-size: 0.8em;
   color: #666;
-  line-height: 1.3;
-  padding: 0;
+  line-height: 1.4;
 }
 
-.player-profile p strong {
+.player-profile-bio p strong {
   color: #333;
   font-weight: 600;
+}
+
+/* Career stats grid */
+.career-stats-heading {
+  font-size: 0.68em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9ca3af;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.career-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  margin-bottom: 0.75rem;
+}
+
+.career-stat-card {
+  background: #f3f4f6;
+  border-radius: 7px;
+  padding: 6px 4px 5px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.career-stat-card--rate {
+  background: #eff6ff;
+}
+
+.career-stat-label {
+  font-size: 0.62em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+}
+
+.career-stat-value {
+  font-size: 0.97em;
+  font-weight: 700;
+  color: #111;
+  line-height: 1.1;
+}
+
+.career-stat-card--rate .career-stat-value {
+  color: #1d4ed8;
+}
+
+.career-stat-rank {
+  font-size: 0.6em;
+  font-weight: 600;
+  color: #15803d;
+  background: #dcfce7;
+  border-radius: 5px;
+  padding: 1px 4px;
+  white-space: nowrap;
+  line-height: 1.4;
 }
 
 .modal-rank {
@@ -2462,3 +2535,78 @@ button:focus {
 .app.dark .displaced-value { color: #9ca3af; }
 .app.dark .displaced-by-line { color: #6b7280; }
 .app.dark .displaced-passer-name { color: #60a5fa; }
+
+/* ── Comprehensive dark mode additions ───────────────────── */
+
+/* New player modal layout */
+.app.dark .player-profile-bio h2 { color: #f3f4f6; }
+.app.dark .player-profile-bio p { color: #9ca3af; }
+.app.dark .player-profile-bio p strong { color: #d1d5db; }
+.app.dark .career-stats-heading { color: #6b7280; }
+.app.dark .career-stat-card { background: #374151; }
+.app.dark .career-stat-card--rate { background: #1e3a5f; }
+.app.dark .career-stat-label { color: #6b7280; }
+.app.dark .career-stat-value { color: #f3f4f6; }
+.app.dark .career-stat-card--rate .career-stat-value { color: #93c5fd; }
+.app.dark .career-stat-rank { background: #064e3b; color: #6ee7b7; }
+
+/* Season-by-season stats table */
+.app.dark .profile-stats-table { background: #1f2937; color: #e5e7eb; }
+.app.dark .profile-stats-table th { background: #374151; color: #9ca3af; }
+.app.dark .profile-stats-table th,
+.app.dark .profile-stats-table td { border-color: #374151; }
+
+/* Transaction history */
+.app.dark .transaction-history h3 { color: #e5e7eb; }
+.app.dark .transaction-item {
+  background: #1f2937;
+  border-left-color: #3b82f6;
+}
+.app.dark .transaction-date { color: #9ca3af; }
+.app.dark .transaction-description { color: #d1d5db; }
+.app.dark .transaction-teams { color: #9ca3af; }
+
+/* Box score */
+.app.dark .box-score { background: #1f2937; }
+.app.dark .stats-table th { background: #374151; color: #9ca3af; border-color: #4b5563; }
+.app.dark .stats-table td { border-color: #374151; color: #e5e7eb; }
+.app.dark .view-toggle button { border-color: #4b5563; background: #374151; color: #d1d5db; }
+
+/* Milestone cards */
+.app.dark .milestone-day-header { background: #1f2937; border-color: #374151; color: #e5e7eb; }
+.app.dark .milestone-day-title { color: #e5e7eb; }
+.app.dark .milestone-day-count { color: #9ca3af; }
+.app.dark .milestone-day-chevron { color: #9ca3af; }
+.app.dark .milestone-card {
+  background: #1f2937;
+  border-color: #374151;
+  border-left-color: #3b82f6;
+}
+.app.dark .milestone-stat-badge { background: #1e3a5f; color: #93c5fd; }
+.app.dark .milestone-player-name { color: #93c5fd; }
+.app.dark .milestone-passed-name { color: #60a5fa; }
+.app.dark .milestone-rank-chip { background: #374151; color: #9ca3af; }
+.app.dark .milestone-card-passed { color: #9ca3af; }
+.app.dark .milestone-card-rank { color: #9ca3af; }
+.app.dark .milestone-stat-num { color: #f3f4f6; }
+.app.dark .milestone-stat-sub { color: #6b7280; }
+.app.dark .milestone-stat-sep { color: #4b5563; }
+.app.dark .milestone-date { color: #6b7280; }
+
+/* Roster */
+.app.dark .position-group { background: #1f2937; box-shadow: none; }
+.app.dark .position-title { background: #374151; color: #9ca3af; }
+
+/* Close button in dark modal */
+.app.dark .close-button { background: rgba(255,255,255,0.07); color: #9ca3af; }
+.app.dark .close-button:hover { background: rgba(255,255,255,0.12); color: #f3f4f6; }
+
+/* User selection / login modal */
+.app.dark .user-selection-modal { background: #1f2937; color: #e5e7eb; }
+
+/* Loading text */
+.app.dark .loading { color: #9ca3af; }
+
+/* season-stats section heading */
+.app.dark .season-stats h3 { color: #e5e7eb; }
+.app.dark .career-stats h3 { color: #e5e7eb; }
