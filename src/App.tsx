@@ -761,6 +761,7 @@ function App() {
   const [mentaculous, setMentaculous] = React.useState<Record<string, MentaculousPlayer>>({});
   const lastViewedGamePkRef = useRef<number | null>(null);
   const touchStartXRef = useRef<number | null>(null);
+  const swipeStartYRef = useRef<number | null>(null);
   const pullStartYRef = useRef<number | null>(null);
   const mentaculousRef = useRef<Record<string, MentaculousPlayer>>({});
   const orderRef = useRef<string[]>([]);
@@ -4214,12 +4215,17 @@ function App() {
 
                   <div
                     className="games-list"
-                    onTouchStart={e => { touchStartXRef.current = e.touches[0].clientX; }}
+                    onTouchStart={e => {
+                      touchStartXRef.current = e.touches[0].clientX;
+                      swipeStartYRef.current = e.touches[0].clientY;
+                    }}
                     onTouchEnd={e => {
                       if (touchStartXRef.current === null) return;
                       const dx = e.changedTouches[0].clientX - touchStartXRef.current;
+                      const dy = e.changedTouches[0].clientY - (swipeStartYRef.current ?? e.changedTouches[0].clientY);
                       touchStartXRef.current = null;
-                      if (Math.abs(dx) < 50) return;
+                      swipeStartYRef.current = null;
+                      if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
                       changeDate(dx < 0 ? 1 : -1);
                     }}
                   >
