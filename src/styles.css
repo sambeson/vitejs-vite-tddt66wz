@@ -1768,6 +1768,7 @@ button:focus {
 .pills-fade-container {
   position: relative;
   margin-bottom: 10px;
+  overflow: hidden;
 }
 
 .pills-fade-container::after {
@@ -1779,6 +1780,7 @@ button:focus {
   height: calc(100% - 6px);
   background: linear-gradient(to right, transparent, #f8f9fa);
   pointer-events: none;
+  z-index: 1;
 }
 
 .leaders-pills {
@@ -1787,9 +1789,11 @@ button:focus {
   overflow-x: auto;
   white-space: nowrap;
   padding-bottom: 6px;
+  padding-right: 48px;
   margin-bottom: 0;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  scroll-padding-right: 48px;
 }
 
 .leaders-pills::-webkit-scrollbar {
