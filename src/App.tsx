@@ -2537,6 +2537,9 @@ function App() {
     { key: 'baseOnBalls', label: 'BB' },
     { key: 'doubles', label: '2B' },
     { key: 'triples', label: '3B' },
+    { key: 'strikeOuts', label: 'K' },
+    { key: 'plateAppearances', label: 'PA' },
+    { key: 'gamesPlayed', label: 'G' },
   ];
 
   const PITCHING_RECORD_CATEGORIES: { key: string; label: string }[] = [
