@@ -26,7 +26,7 @@ const PITCHING_CATS = [
   'whip',
 ];
 
-const START_YEAR = 1980;
+const START_YEAR = 1900;
 const END_YEAR = 2025;
 
 async function fetchLeaders(season, cats, group) {

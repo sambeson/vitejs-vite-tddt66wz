@@ -1,5 +1,4915 @@
 {
   "hitting": {
+    "1900": {
+      "stolenBases": {
+        "playerId": 113461,
+        "playerName": "Patsy Donovan",
+        "value": "45"
+      },
+      "homeRuns": {
+        "playerId": 117890,
+        "playerName": "Herman Long",
+        "value": "12"
+      },
+      "battingAverage": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": ".381"
+      },
+      "doubles": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": "45"
+      },
+      "onBasePercentage": {
+        "playerId": 118726,
+        "playerName": "John McGraw",
+        "value": ".505"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": "1.007"
+      },
+      "runsBattedIn": {
+        "playerId": 114241,
+        "playerName": "Elmer Flick",
+        "value": "110"
+      },
+      "triples": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": "22"
+      },
+      "runs": {
+        "playerId": 123262,
+        "playerName": "Roy Thomas",
+        "value": "132"
+      },
+      "walks": {
+        "playerId": 123262,
+        "playerName": "Roy Thomas",
+        "value": "115"
+      },
+      "hits": {
+        "playerId": 116891,
+        "playerName": "Willie Keeler",
+        "value": "204"
+      }
+    },
+    "1901": {
+      "stolenBases": {
+        "playerId": 116413,
+        "playerName": "Frank Isbell",
+        "value": "52"
+      },
+      "homeRuns": {
+        "playerId": 112806,
+        "playerName": "Sam Crawford",
+        "value": "16"
+      },
+      "battingAverage": {
+        "playerId": 117414,
+        "playerName": "Nap Lajoie",
+        "value": ".421"
+      },
+      "doubles": {
+        "playerId": 117414,
+        "playerName": "Nap Lajoie",
+        "value": "48"
+      },
+      "onBasePercentage": {
+        "playerId": 117414,
+        "playerName": "Nap Lajoie",
+        "value": ".458"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 117414,
+        "playerName": "Nap Lajoie",
+        "value": "1.101"
+      },
+      "runsBattedIn": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": "126"
+      },
+      "triples": {
+        "playerId": 116908,
+        "playerName": "Bill Keister",
+        "value": "21"
+      },
+      "runs": {
+        "playerId": 117414,
+        "playerName": "Nap Lajoie",
+        "value": "145"
+      },
+      "walks": {
+        "playerId": 123262,
+        "playerName": "Roy Thomas",
+        "value": "100"
+      },
+      "hits": {
+        "playerId": 117414,
+        "playerName": "Nap Lajoie",
+        "value": "229"
+      }
+    },
+    "1902": {
+      "stolenBases": {
+        "playerId": 115576,
+        "playerName": "Topsy Hartsel",
+        "value": "47"
+      },
+      "homeRuns": {
+        "playerId": 122031,
+        "playerName": "Socks Seybold",
+        "value": "16"
+      },
+      "battingAverage": {
+        "playerId": 113218,
+        "playerName": "Ed Delahanty",
+        "value": ".376"
+      },
+      "onBasePercentage": {
+        "playerId": 113218,
+        "playerName": "Ed Delahanty",
+        "value": ".453"
+      },
+      "doubles": {
+        "playerId": 113111,
+        "playerName": "Harry Davis",
+        "value": "43"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 113218,
+        "playerName": "Ed Delahanty",
+        "value": "1.043"
+      },
+      "triples": {
+        "playerId": 112806,
+        "playerName": "Sam Crawford",
+        "value": "22"
+      },
+      "runsBattedIn": {
+        "playerId": 114406,
+        "playerName": "Buck Freeman",
+        "value": "121"
+      },
+      "runs": {
+        "playerId": 114490,
+        "playerName": "Dave Fultz",
+        "value": "109"
+      },
+      "walks": {
+        "playerId": 123262,
+        "playerName": "Roy Thomas",
+        "value": "107"
+      },
+      "hits": {
+        "playerId": 110752,
+        "playerName": "Ginger Beaumont",
+        "value": "193"
+      }
+    },
+    "1903": {
+      "stolenBases": {
+        "playerId": 112183,
+        "playerName": "Frank Chance",
+        "value": "67"
+      },
+      "homeRuns": {
+        "playerId": 114406,
+        "playerName": "Buck Freeman",
+        "value": "13"
+      },
+      "battingAverage": {
+        "playerId": 117414,
+        "playerName": "Nap Lajoie",
+        "value": ".357"
+      },
+      "doubles": {
+        "playerId": 122031,
+        "playerName": "Socks Seybold",
+        "value": "45"
+      },
+      "onBasePercentage": {
+        "playerId": 123262,
+        "playerName": "Roy Thomas",
+        "value": ".453"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 112352,
+        "playerName": "Fred Clarke",
+        "value": ".946"
+      },
+      "runsBattedIn": {
+        "playerId": 114406,
+        "playerName": "Buck Freeman",
+        "value": "104"
+      },
+      "triples": {
+        "playerId": 112806,
+        "playerName": "Sam Crawford",
+        "value": "25"
+      },
+      "runs": {
+        "playerId": 110752,
+        "playerName": "Ginger Beaumont",
+        "value": "137"
+      },
+      "walks": {
+        "playerId": 123262,
+        "playerName": "Roy Thomas",
+        "value": "107"
+      },
+      "hits": {
+        "playerId": 110752,
+        "playerName": "Ginger Beaumont",
+        "value": "209"
+      }
+    },
+    "1904": {
+      "stolenBases": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": "53"
+      },
+      "homeRuns": {
+        "playerId": 113111,
+        "playerName": "Harry Davis",
+        "value": "10"
+      },
+      "battingAverage": {
+        "playerId": 117414,
+        "playerName": "Nap Lajoie",
+        "value": ".382"
+      },
+      "onBasePercentage": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": ".423"
+      },
+      "doubles": {
+        "playerId": 117414,
+        "playerName": "Nap Lajoie",
+        "value": "49"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 117414,
+        "playerName": "Nap Lajoie",
+        "value": ".964"
+      },
+      "triples": {
+        "playerId": 112099,
+        "playerName": "Joe Cassidy",
+        "value": "19"
+      },
+      "runsBattedIn": {
+        "playerId": 117414,
+        "playerName": "Nap Lajoie",
+        "value": "102"
+      },
+      "runs": {
+        "playerId": 113495,
+        "playerName": "Patsy Dougherty",
+        "value": "113"
+      },
+      "walks": {
+        "playerId": 123262,
+        "playerName": "Roy Thomas",
+        "value": "102"
+      },
+      "hits": {
+        "playerId": 117414,
+        "playerName": "Nap Lajoie",
+        "value": "211"
+      }
+    },
+    "1905": {
+      "stolenBases": {
+        "playerId": 113312,
+        "playerName": "Art Devlin",
+        "value": "59"
+      },
+      "homeRuns": {
+        "playerId": 119942,
+        "playerName": "Fred Odwell",
+        "value": "9"
+      },
+      "battingAverage": {
+        "playerId": 122034,
+        "playerName": "Cy Seymour",
+        "value": ".377"
+      },
+      "doubles": {
+        "playerId": 113111,
+        "playerName": "Harry Davis",
+        "value": "47"
+      },
+      "onBasePercentage": {
+        "playerId": 112183,
+        "playerName": "Frank Chance",
+        "value": ".450"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 122034,
+        "playerName": "Cy Seymour",
+        "value": ".988"
+      },
+      "runsBattedIn": {
+        "playerId": 122034,
+        "playerName": "Cy Seymour",
+        "value": "121"
+      },
+      "triples": {
+        "playerId": 122034,
+        "playerName": "Cy Seymour",
+        "value": "21"
+      },
+      "runs": {
+        "playerId": 113444,
+        "playerName": "Mike Donlin",
+        "value": "124"
+      },
+      "walks": {
+        "playerId": 115576,
+        "playerName": "Topsy Hartsel",
+        "value": "121"
+      },
+      "hits": {
+        "playerId": 122034,
+        "playerName": "Cy Seymour",
+        "value": "219"
+      }
+    },
+    "1906": {
+      "stolenBases": {
+        "playerId": 112183,
+        "playerName": "Frank Chance",
+        "value": "57"
+      },
+      "homeRuns": {
+        "playerId": 113111,
+        "playerName": "Harry Davis",
+        "value": "12"
+      },
+      "battingAverage": {
+        "playerId": 122825,
+        "playerName": "George Stone",
+        "value": ".358"
+      },
+      "doubles": {
+        "playerId": 117414,
+        "playerName": "Nap Lajoie",
+        "value": "48"
+      },
+      "onBasePercentage": {
+        "playerId": 111433,
+        "playerName": "Roger Bresnahan",
+        "value": ".419"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 122825,
+        "playerName": "George Stone",
+        "value": ".918"
+      },
+      "runsBattedIn": {
+        "playerId": 113111,
+        "playerName": "Harry Davis",
+        "value": "96"
+      },
+      "triples": {
+        "playerId": 114241,
+        "playerName": "Elmer Flick",
+        "value": "22"
+      },
+      "runs": {
+        "playerId": 112183,
+        "playerName": "Frank Chance",
+        "value": "103"
+      },
+      "walks": {
+        "playerId": 123262,
+        "playerName": "Roy Thomas",
+        "value": "107"
+      },
+      "hits": {
+        "playerId": 117414,
+        "playerName": "Nap Lajoie",
+        "value": "214"
+      }
+    },
+    "1907": {
+      "stolenBases": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": "61"
+      },
+      "homeRuns": {
+        "playerId": 111372,
+        "playerName": "Dave Brain",
+        "value": "10"
+      },
+      "battingAverage": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".350"
+      },
+      "doubles": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": "38"
+      },
+      "onBasePercentage": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": ".408"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": ".921"
+      },
+      "runsBattedIn": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "119"
+      },
+      "triples": {
+        "playerId": 114241,
+        "playerName": "Elmer Flick",
+        "value": "18"
+      },
+      "runs": {
+        "playerId": 122059,
+        "playerName": "Spike Shannon",
+        "value": "104"
+      },
+      "walks": {
+        "playerId": 115576,
+        "playerName": "Topsy Hartsel",
+        "value": "106"
+      },
+      "hits": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "212"
+      }
+    },
+    "1908": {
+      "stolenBases": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": "53"
+      },
+      "homeRuns": {
+        "playerId": 116761,
+        "playerName": "Tim Jordan",
+        "value": "12"
+      },
+      "battingAverage": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": ".354"
+      },
+      "onBasePercentage": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": ".415"
+      },
+      "doubles": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": "39"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": ".957"
+      },
+      "triples": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "20"
+      },
+      "runsBattedIn": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": "109"
+      },
+      "runs": {
+        "playerId": 118758,
+        "playerName": "Matty McIntyre",
+        "value": "105"
+      },
+      "walks": {
+        "playerId": 115576,
+        "playerName": "Topsy Hartsel",
+        "value": "93"
+      },
+      "hits": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": "201"
+      }
+    },
+    "1909": {
+      "stolenBases": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "76"
+      },
+      "homeRuns": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "9"
+      },
+      "battingAverage": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".377"
+      },
+      "onBasePercentage": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".431"
+      },
+      "doubles": {
+        "playerId": 123784,
+        "playerName": "Honus Wagner",
+        "value": "39"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".948"
+      },
+      "triples": {
+        "playerId": 110480,
+        "playerName": "Home Run Baker",
+        "value": "19"
+      },
+      "runsBattedIn": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "107"
+      },
+      "runs": {
+        "playerId": 117582,
+        "playerName": "Tommy Leach",
+        "value": "126"
+      },
+      "walks": {
+        "playerId": 111794,
+        "playerName": "Donie Bush",
+        "value": "88"
+      },
+      "hits": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "216"
+      }
+    },
+    "1910": {
+      "stolenBases": {
+        "playerId": 112506,
+        "playerName": "Eddie Collins Sr.",
+        "value": "81"
+      },
+      "homeRuns": {
+        "playerId": 110761,
+        "playerName": "Fred Beck",
+        "value": "10"
+      },
+      "battingAverage": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".385"
+      },
+      "doubles": {
+        "playerId": 117414,
+        "playerName": "Nap Lajoie",
+        "value": "51"
+      },
+      "onBasePercentage": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".458"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "1.012"
+      },
+      "runsBattedIn": {
+        "playerId": 118135,
+        "playerName": "Sherry Magee",
+        "value": "123"
+      },
+      "triples": {
+        "playerId": 112806,
+        "playerName": "Sam Crawford",
+        "value": "19"
+      },
+      "runs": {
+        "playerId": 118135,
+        "playerName": "Sherry Magee",
+        "value": "110"
+      },
+      "walks": {
+        "playerId": 116275,
+        "playerName": "Miller Huggins",
+        "value": "116"
+      },
+      "strikeouts": {
+        "playerId": 116306,
+        "playerName": "John Hummel",
+        "value": "81"
+      },
+      "hits": {
+        "playerId": 117414,
+        "playerName": "Nap Lajoie",
+        "value": "227"
+      }
+    },
+    "1911": {
+      "stolenBases": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "83"
+      },
+      "homeRuns": {
+        "playerId": 121879,
+        "playerName": "Frank Schulte",
+        "value": "21"
+      },
+      "battingAverage": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".420"
+      },
+      "onBasePercentage": {
+        "playerId": 116432,
+        "playerName": "Joe Jackson",
+        "value": ".468"
+      },
+      "doubles": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "47"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "1.088"
+      },
+      "triples": {
+        "playerId": 113531,
+        "playerName": "Larry Doyle",
+        "value": "25"
+      },
+      "runsBattedIn": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "127"
+      },
+      "runs": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "147"
+      },
+      "strikeouts": {
+        "playerId": 110949,
+        "playerName": "Bob Bescher",
+        "value": "78"
+      },
+      "walks": {
+        "playerId": 122100,
+        "playerName": "Jimmy Sheckard",
+        "value": "147"
+      },
+      "hits": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "248"
+      }
+    },
+    "1912": {
+      "stolenBases": {
+        "playerId": 119046,
+        "playerName": "Clyde Milan",
+        "value": "88"
+      },
+      "homeRuns": {
+        "playerId": 124771,
+        "playerName": "Heinie Zimmerman",
+        "value": "14"
+      },
+      "battingAverage": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".410"
+      },
+      "onBasePercentage": {
+        "playerId": 122566,
+        "playerName": "Tristram Speaker",
+        "value": ".464"
+      },
+      "doubles": {
+        "playerId": 122566,
+        "playerName": "Tristram Speaker",
+        "value": "53"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "1.044"
+      },
+      "triples": {
+        "playerId": 124409,
+        "playerName": "Chief Wilson",
+        "value": "36"
+      },
+      "runsBattedIn": {
+        "playerId": 110480,
+        "playerName": "Home Run Baker",
+        "value": "130"
+      },
+      "runs": {
+        "playerId": 112506,
+        "playerName": "Eddie Collins Sr.",
+        "value": "137"
+      },
+      "strikeouts": {
+        "playerId": 118642,
+        "playerName": "Ed McDonald",
+        "value": "91"
+      },
+      "walks": {
+        "playerId": 122100,
+        "playerName": "Jimmy Sheckard",
+        "value": "122"
+      },
+      "hits": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "227"
+      }
+    },
+    "1913": {
+      "stolenBases": {
+        "playerId": 119046,
+        "playerName": "Clyde Milan",
+        "value": "75"
+      },
+      "homeRuns": {
+        "playerId": 112794,
+        "playerName": "Gavvy Cravath",
+        "value": "19"
+      },
+      "battingAverage": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".390"
+      },
+      "onBasePercentage": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".467"
+      },
+      "doubles": {
+        "playerId": 122411,
+        "playerName": "Red Smith",
+        "value": "40"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 116432,
+        "playerName": "Joe Jackson",
+        "value": "1.011"
+      },
+      "triples": {
+        "playerId": 112806,
+        "playerName": "Sam Crawford",
+        "value": "23"
+      },
+      "runsBattedIn": {
+        "playerId": 112794,
+        "playerName": "Gavvy Cravath",
+        "value": "128"
+      },
+      "runs": {
+        "playerId": 112506,
+        "playerName": "Eddie Collins Sr.",
+        "value": "125"
+      },
+      "strikeouts": {
+        "playerId": 119216,
+        "playerName": "Danny Moeller",
+        "value": "103"
+      },
+      "walks": {
+        "playerId": 122192,
+        "playerName": "Burt Shotton",
+        "value": "99"
+      },
+      "hits": {
+        "playerId": 116432,
+        "playerName": "Joe Jackson",
+        "value": "197"
+      }
+    },
+    "1914": {
+      "stolenBases": {
+        "playerId": 116860,
+        "playerName": "Benny Kauff",
+        "value": "75"
+      },
+      "homeRuns": {
+        "playerId": 112794,
+        "playerName": "Gavvy Cravath",
+        "value": "19"
+      },
+      "battingAverage": {
+        "playerId": 116860,
+        "playerName": "Benny Kauff",
+        "value": ".370"
+      },
+      "onBasePercentage": {
+        "playerId": 112506,
+        "playerName": "Eddie Collins Sr.",
+        "value": ".452"
+      },
+      "doubles": {
+        "playerId": 122566,
+        "playerName": "Tristram Speaker",
+        "value": "46"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 116860,
+        "playerName": "Benny Kauff",
+        "value": ".981"
+      },
+      "triples": {
+        "playerId": 112806,
+        "playerName": "Sam Crawford",
+        "value": "26"
+      },
+      "runsBattedIn": {
+        "playerId": 117497,
+        "playerName": "Frank LaPorte",
+        "value": "107"
+      },
+      "runs": {
+        "playerId": 112506,
+        "playerName": "Eddie Collins Sr.",
+        "value": "122"
+      },
+      "strikeouts": {
+        "playerId": 124286,
+        "playerName": "Gus Williams",
+        "value": "120"
+      },
+      "walks": {
+        "playerId": 111794,
+        "playerName": "Donie Bush",
+        "value": "112"
+      },
+      "hits": {
+        "playerId": 116860,
+        "playerName": "Benny Kauff",
+        "value": "211"
+      }
+    },
+    "1915": {
+      "stolenBases": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "96"
+      },
+      "homeRuns": {
+        "playerId": 112794,
+        "playerName": "Gavvy Cravath",
+        "value": "24"
+      },
+      "battingAverage": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".369"
+      },
+      "onBasePercentage": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".486"
+      },
+      "doubles": {
+        "playerId": 113531,
+        "playerName": "Larry Doyle",
+        "value": "40"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".973"
+      },
+      "triples": {
+        "playerId": 117900,
+        "playerName": "Tom Long",
+        "value": "25"
+      },
+      "runsBattedIn": {
+        "playerId": 112794,
+        "playerName": "Gavvy Cravath",
+        "value": "115"
+      },
+      "runs": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "144"
+      },
+      "strikeouts": {
+        "playerId": 118542,
+        "playerName": "Jack McCandless",
+        "value": "99"
+      },
+      "walks": {
+        "playerId": 112506,
+        "playerName": "Eddie Collins Sr.",
+        "value": "119"
+      },
+      "hits": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "208"
+      }
+    },
+    "1916": {
+      "stolenBases": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "68"
+      },
+      "homeRuns": {
+        "playerId": 120594,
+        "playerName": "Wally Pipp",
+        "value": "12"
+      },
+      "battingAverage": {
+        "playerId": 122566,
+        "playerName": "Tristram Speaker",
+        "value": ".386"
+      },
+      "doubles": {
+        "playerId": 119784,
+        "playerName": "Bert Niehoff",
+        "value": "42"
+      },
+      "onBasePercentage": {
+        "playerId": 122566,
+        "playerName": "Tristram Speaker",
+        "value": ".470"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 122566,
+        "playerName": "Tristram Speaker",
+        "value": ".972"
+      },
+      "runsBattedIn": {
+        "playerId": 120743,
+        "playerName": "Del Pratt",
+        "value": "103"
+      },
+      "triples": {
+        "playerId": 116432,
+        "playerName": "Joe Jackson",
+        "value": "21"
+      },
+      "runs": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "113"
+      },
+      "walks": {
+        "playerId": 122192,
+        "playerName": "Burt Shotton",
+        "value": "110"
+      },
+      "strikeouts": {
+        "playerId": 112794,
+        "playerName": "Gavvy Cravath",
+        "value": "89"
+      },
+      "hits": {
+        "playerId": 122566,
+        "playerName": "Tristram Speaker",
+        "value": "211"
+      }
+    },
+    "1917": {
+      "stolenBases": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "55"
+      },
+      "homeRuns": {
+        "playerId": 112794,
+        "playerName": "Gavvy Cravath",
+        "value": "12"
+      },
+      "battingAverage": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".383"
+      },
+      "onBasePercentage": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".444"
+      },
+      "doubles": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "44"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "1.014"
+      },
+      "triples": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "24"
+      },
+      "runsBattedIn": {
+        "playerId": 123681,
+        "playerName": "Bobby Veach",
+        "value": "103"
+      },
+      "runs": {
+        "playerId": 111794,
+        "playerName": "Donie Bush",
+        "value": "112"
+      },
+      "strikeouts": {
+        "playerId": 124310,
+        "playerName": "Cy Williams",
+        "value": "78"
+      },
+      "walks": {
+        "playerId": 115039,
+        "playerName": "Jack Graney",
+        "value": "94"
+      },
+      "hits": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "225"
+      }
+    },
+    "1918": {
+      "stolenBases": {
+        "playerId": 111989,
+        "playerName": "Max Carey",
+        "value": "58"
+      },
+      "homeRuns": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "11"
+      },
+      "battingAverage": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".382"
+      },
+      "onBasePercentage": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".440"
+      },
+      "doubles": {
+        "playerId": 122566,
+        "playerName": "Tristram Speaker",
+        "value": "33"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".955"
+      },
+      "triples": {
+        "playerId": 113069,
+        "playerName": "Jake Daubert",
+        "value": "15"
+      },
+      "runsBattedIn": {
+        "playerId": 123681,
+        "playerName": "Bobby Veach",
+        "value": "78"
+      },
+      "runs": {
+        "playerId": 115179,
+        "playerName": "Heinie Groh",
+        "value": "86"
+      },
+      "strikeouts": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "58"
+      },
+      "walks": {
+        "playerId": 112203,
+        "playerName": "Ray Chapman",
+        "value": "84"
+      },
+      "hits": {
+        "playerId": 111746,
+        "playerName": "George Burns",
+        "value": "178"
+      }
+    },
+    "1919": {
+      "stolenBases": {
+        "playerId": 111747,
+        "playerName": "George Burns",
+        "value": "40"
+      },
+      "homeRuns": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "29"
+      },
+      "battingAverage": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": ".384"
+      },
+      "onBasePercentage": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": ".456"
+      },
+      "doubles": {
+        "playerId": 123681,
+        "playerName": "Bobby Veach",
+        "value": "45"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "1.113"
+      },
+      "triples": {
+        "playerId": 123681,
+        "playerName": "Bobby Veach",
+        "value": "17"
+      },
+      "runsBattedIn": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "114"
+      },
+      "runs": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "103"
+      },
+      "strikeouts": {
+        "playerId": 120723,
+        "playerName": "Ray Powell",
+        "value": "79"
+      },
+      "walks": {
+        "playerId": 115039,
+        "playerName": "Jack Graney",
+        "value": "105"
+      },
+      "hits": {
+        "playerId": 112431,
+        "playerName": "Ty Cobb",
+        "value": "191"
+      }
+    },
+    "1920": {
+      "stolenBases": {
+        "playerId": 121137,
+        "playerName": "Sam Rice",
+        "value": "63"
+      },
+      "homeRuns": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "54"
+      },
+      "battingAverage": {
+        "playerId": 122280,
+        "playerName": "George Sisler",
+        "value": ".407"
+      },
+      "onBasePercentage": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": ".532"
+      },
+      "doubles": {
+        "playerId": 122566,
+        "playerName": "Tristram Speaker",
+        "value": "50"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "1.379"
+      },
+      "triples": {
+        "playerId": 119618,
+        "playerName": "Hi Myers",
+        "value": "22"
+      },
+      "runsBattedIn": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "137"
+      },
+      "runs": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "158"
+      },
+      "strikeouts": {
+        "playerId": 116942,
+        "playerName": "George Kelly",
+        "value": "92"
+      },
+      "walks": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "150"
+      },
+      "hits": {
+        "playerId": 122280,
+        "playerName": "George Sisler",
+        "value": "257"
+      }
+    },
+    "1921": {
+      "stolenBases": {
+        "playerId": 114448,
+        "playerName": "Frankie Frisch",
+        "value": "49"
+      },
+      "homeRuns": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "59"
+      },
+      "battingAverage": {
+        "playerId": 492560,
+        "playerName": "Oscar Charleston",
+        "value": ".434"
+      },
+      "onBasePercentage": {
+        "playerId": 492560,
+        "playerName": "Oscar Charleston",
+        "value": ".515"
+      },
+      "doubles": {
+        "playerId": 122566,
+        "playerName": "Tristram Speaker",
+        "value": "52"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "1.358"
+      },
+      "triples": {
+        "playerId": 116156,
+        "playerName": "Rogers Hornsby",
+        "value": "18"
+      },
+      "runsBattedIn": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "171"
+      },
+      "runs": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "177"
+      },
+      "strikeouts": {
+        "playerId": 119006,
+        "playerName": "Bob Meusel",
+        "value": "88"
+      },
+      "walks": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "145"
+      },
+      "hits": {
+        "playerId": 115705,
+        "playerName": "Harry Heilmann",
+        "value": "237"
+      }
+    },
+    "1922": {
+      "stolenBases": {
+        "playerId": 111989,
+        "playerName": "Max Carey",
+        "value": "51"
+      },
+      "homeRuns": {
+        "playerId": 116156,
+        "playerName": "Rogers Hornsby",
+        "value": "42"
+      },
+      "battingAverage": {
+        "playerId": 122280,
+        "playerName": "George Sisler",
+        "value": ".420"
+      },
+      "onBasePercentage": {
+        "playerId": 122566,
+        "playerName": "Tristram Speaker",
+        "value": ".474"
+      },
+      "doubles": {
+        "playerId": 122566,
+        "playerName": "Tristram Speaker",
+        "value": "48"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 116156,
+        "playerName": "Rogers Hornsby",
+        "value": "1.181"
+      },
+      "triples": {
+        "playerId": 113069,
+        "playerName": "Jake Daubert",
+        "value": "22"
+      },
+      "runsBattedIn": {
+        "playerId": 124321,
+        "playerName": "Ken Williams",
+        "value": "155"
+      },
+      "runs": {
+        "playerId": 116156,
+        "playerName": "Rogers Hornsby",
+        "value": "141"
+      },
+      "strikeouts": {
+        "playerId": 113685,
+        "playerName": "Jimmy Dykes",
+        "value": "98"
+      },
+      "walks": {
+        "playerId": 124490,
+        "playerName": "Whitey Witt",
+        "value": "89"
+      },
+      "hits": {
+        "playerId": 116156,
+        "playerName": "Rogers Hornsby",
+        "value": "250"
+      }
+    },
+    "1923": {
+      "stolenBases": {
+        "playerId": 111989,
+        "playerName": "Max Carey",
+        "value": "51"
+      },
+      "homeRuns": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "41"
+      },
+      "battingAverage": {
+        "playerId": 818393,
+        "playerName": "Biz Mackey",
+        "value": ".428"
+      },
+      "doubles": {
+        "playerId": 122566,
+        "playerName": "Tristram Speaker",
+        "value": "59"
+      },
+      "onBasePercentage": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": ".545"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "1.309"
+      },
+      "runsBattedIn": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "131"
+      },
+      "triples": {
+        "playerId": 111989,
+        "playerName": "Max Carey",
+        "value": "19"
+      },
+      "runs": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "151"
+      },
+      "walks": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "170"
+      },
+      "strikeouts": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "93"
+      },
+      "hits": {
+        "playerId": 114448,
+        "playerName": "Frankie Frisch",
+        "value": "223"
+      }
+    },
+    "1924": {
+      "stolenBases": {
+        "playerId": 111989,
+        "playerName": "Max Carey",
+        "value": "49"
+      },
+      "homeRuns": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "46"
+      },
+      "battingAverage": {
+        "playerId": 116156,
+        "playerName": "Rogers Hornsby",
+        "value": ".424"
+      },
+      "doubles": {
+        "playerId": 115705,
+        "playerName": "Harry Heilmann",
+        "value": "45"
+      },
+      "onBasePercentage": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": ".513"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 492560,
+        "playerName": "Oscar Charleston",
+        "value": "1.259"
+      },
+      "runsBattedIn": {
+        "playerId": 116942,
+        "playerName": "George Kelly",
+        "value": "136"
+      },
+      "triples": {
+        "playerId": 121497,
+        "playerName": "Edd Roush",
+        "value": "21"
+      },
+      "runs": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "143"
+      },
+      "walks": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "142"
+      },
+      "strikeouts": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "81"
+      },
+      "hits": {
+        "playerId": 116156,
+        "playerName": "Rogers Hornsby",
+        "value": "227"
+      }
+    },
+    "1925": {
+      "stolenBases": {
+        "playerId": 111989,
+        "playerName": "Max Carey",
+        "value": "46"
+      },
+      "homeRuns": {
+        "playerId": 116156,
+        "playerName": "Rogers Hornsby",
+        "value": "39"
+      },
+      "battingAverage": {
+        "playerId": 492560,
+        "playerName": "Oscar Charleston",
+        "value": ".419"
+      },
+      "onBasePercentage": {
+        "playerId": 492560,
+        "playerName": "Oscar Charleston",
+        "value": ".522"
+      },
+      "doubles": {
+        "playerId": 111266,
+        "playerName": "Jim Bottomley",
+        "value": "44"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 492560,
+        "playerName": "Oscar Charleston",
+        "value": "1.295"
+      },
+      "triples": {
+        "playerId": 112979,
+        "playerName": "Kiki Cuyler",
+        "value": "26"
+      },
+      "runsBattedIn": {
+        "playerId": 116156,
+        "playerName": "Rogers Hornsby",
+        "value": "143"
+      },
+      "runs": {
+        "playerId": 112979,
+        "playerName": "Kiki Cuyler",
+        "value": "144"
+      },
+      "strikeouts": {
+        "playerId": 115572,
+        "playerName": "Gabby Hartnett",
+        "value": "77"
+      },
+      "walks": {
+        "playerId": 116825,
+        "playerName": "Willie Kamm",
+        "value": "90"
+      },
+      "hits": {
+        "playerId": 122240,
+        "playerName": "Al Simmons",
+        "value": "253"
+      }
+    },
+    "1926": {
+      "stolenBases": {
+        "playerId": 492555,
+        "playerName": "Cool Papa Bell",
+        "value": "36"
+      },
+      "homeRuns": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "47"
+      },
+      "battingAverage": {
+        "playerId": 817055,
+        "playerName": "Mule Suttles",
+        "value": ".425"
+      },
+      "onBasePercentage": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": ".516"
+      },
+      "doubles": {
+        "playerId": 111746,
+        "playerName": "George Burns",
+        "value": "64"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 817055,
+        "playerName": "Mule Suttles",
+        "value": "1.349"
+      },
+      "triples": {
+        "playerId": 123905,
+        "playerName": "Paul Waner",
+        "value": "22"
+      },
+      "runsBattedIn": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "146"
+      },
+      "runs": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "139"
+      },
+      "strikeouts": {
+        "playerId": 117577,
+        "playerName": "Tony Lazzeri",
+        "value": "96"
+      },
+      "walks": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "144"
+      },
+      "hits": {
+        "playerId": 111746,
+        "playerName": "George Burns",
+        "value": "216"
+      }
+    },
+    "1927": {
+      "stolenBases": {
+        "playerId": 114448,
+        "playerName": "Frankie Frisch",
+        "value": "48"
+      },
+      "homeRuns": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "60"
+      },
+      "battingAverage": {
+        "playerId": 816505,
+        "playerName": "Jud Wilson",
+        "value": ".429"
+      },
+      "onBasePercentage": {
+        "playerId": 492560,
+        "playerName": "Oscar Charleston",
+        "value": ".500"
+      },
+      "doubles": {
+        "playerId": 114680,
+        "playerName": "Lou Gehrig",
+        "value": "52"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "1.258"
+      },
+      "triples": {
+        "playerId": 112533,
+        "playerName": "Earle Combs",
+        "value": "23"
+      },
+      "runsBattedIn": {
+        "playerId": 114680,
+        "playerName": "Lou Gehrig",
+        "value": "175"
+      },
+      "runs": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "158"
+      },
+      "strikeouts": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "89"
+      },
+      "walks": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "137"
+      },
+      "hits": {
+        "playerId": 123905,
+        "playerName": "Paul Waner",
+        "value": "237"
+      }
+    },
+    "1928": {
+      "stolenBases": {
+        "playerId": 112979,
+        "playerName": "Kiki Cuyler",
+        "value": "37"
+      },
+      "homeRuns": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "54"
+      },
+      "battingAverage": {
+        "playerId": 816505,
+        "playerName": "Jud Wilson",
+        "value": ".399"
+      },
+      "doubles": {
+        "playerId": 123905,
+        "playerName": "Paul Waner",
+        "value": "50"
+      },
+      "onBasePercentage": {
+        "playerId": 116156,
+        "playerName": "Rogers Hornsby",
+        "value": ".498"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 819748,
+        "playerName": "Rap Dixon",
+        "value": "1.179"
+      },
+      "runsBattedIn": {
+        "playerId": 114680,
+        "playerName": "Lou Gehrig",
+        "value": "142"
+      },
+      "triples": {
+        "playerId": 112533,
+        "playerName": "Earle Combs",
+        "value": "21"
+      },
+      "runs": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "163"
+      },
+      "walks": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "137"
+      },
+      "strikeouts": {
+        "playerId": 124412,
+        "playerName": "Hack Wilson",
+        "value": "94"
+      },
+      "hits": {
+        "playerId": 118265,
+        "playerName": "Heinie Manush",
+        "value": "241"
+      }
+    },
+    "1929": {
+      "stolenBases": {
+        "playerId": 492555,
+        "playerName": "Cool Papa Bell",
+        "value": "48"
+      },
+      "homeRuns": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "46"
+      },
+      "battingAverage": {
+        "playerId": 817207,
+        "playerName": "Charlie Smith",
+        "value": ".449"
+      },
+      "onBasePercentage": {
+        "playerId": 817207,
+        "playerName": "Charlie Smith",
+        "value": ".550"
+      },
+      "doubles": {
+        "playerId": 114395,
+        "playerName": "Johnny Frederick",
+        "value": "52"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 817207,
+        "playerName": "Charlie Smith",
+        "value": "1.424"
+      },
+      "triples": {
+        "playerId": 123904,
+        "playerName": "Lloyd Waner",
+        "value": "20"
+      },
+      "runsBattedIn": {
+        "playerId": 124412,
+        "playerName": "Hack Wilson",
+        "value": "159"
+      },
+      "runs": {
+        "playerId": 116156,
+        "playerName": "Rogers Hornsby",
+        "value": "156"
+      },
+      "strikeouts": {
+        "playerId": 124412,
+        "playerName": "Hack Wilson",
+        "value": "83"
+      },
+      "walks": {
+        "playerId": 111020,
+        "playerName": "Max Bishop",
+        "value": "128"
+      },
+      "hits": {
+        "playerId": 119941,
+        "playerName": "Lefty O'Doul",
+        "value": "254"
+      }
+    },
+    "1930": {
+      "stolenBases": {
+        "playerId": 112979,
+        "playerName": "Kiki Cuyler",
+        "value": "37"
+      },
+      "homeRuns": {
+        "playerId": 124412,
+        "playerName": "Hack Wilson",
+        "value": "56"
+      },
+      "battingAverage": {
+        "playerId": 123203,
+        "playerName": "Bill Terry",
+        "value": ".401"
+      },
+      "onBasePercentage": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": ".493"
+      },
+      "doubles": {
+        "playerId": 117141,
+        "playerName": "Chuck Klein",
+        "value": "59"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "1.225"
+      },
+      "triples": {
+        "playerId": 112541,
+        "playerName": "Adam Comorosky",
+        "value": "23"
+      },
+      "runsBattedIn": {
+        "playerId": 124412,
+        "playerName": "Hack Wilson",
+        "value": "191"
+      },
+      "runs": {
+        "playerId": 117141,
+        "playerName": "Chuck Klein",
+        "value": "158"
+      },
+      "strikeouts": {
+        "playerId": 124412,
+        "playerName": "Hack Wilson",
+        "value": "84"
+      },
+      "walks": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "136"
+      },
+      "hits": {
+        "playerId": 123203,
+        "playerName": "Bill Terry",
+        "value": "254"
+      }
+    },
+    "1931": {
+      "stolenBases": {
+        "playerId": 112205,
+        "playerName": "Ben Chapman",
+        "value": "61"
+      },
+      "homeRuns": {
+        "playerId": 114680,
+        "playerName": "Lou Gehrig",
+        "value": "46"
+      },
+      "battingAverage": {
+        "playerId": 122240,
+        "playerName": "Al Simmons",
+        "value": ".390"
+      },
+      "onBasePercentage": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": ".495"
+      },
+      "doubles": {
+        "playerId": 124017,
+        "playerName": "Earl Webb",
+        "value": "67"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "1.195"
+      },
+      "triples": {
+        "playerId": 123203,
+        "playerName": "Bill Terry",
+        "value": "20"
+      },
+      "runsBattedIn": {
+        "playerId": 114680,
+        "playerName": "Lou Gehrig",
+        "value": "184"
+      },
+      "runs": {
+        "playerId": 114680,
+        "playerName": "Lou Gehrig",
+        "value": "163"
+      },
+      "strikeouts": {
+        "playerId": 112926,
+        "playerName": "Nick Cullop",
+        "value": "86"
+      },
+      "walks": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "128"
+      },
+      "hits": {
+        "playerId": 123904,
+        "playerName": "Lloyd Waner",
+        "value": "214"
+      }
+    },
+    "1932": {
+      "stolenBases": {
+        "playerId": 112205,
+        "playerName": "Ben Chapman",
+        "value": "38"
+      },
+      "homeRuns": {
+        "playerId": 114367,
+        "playerName": "Jimmie Foxx",
+        "value": "58"
+      },
+      "battingAverage": {
+        "playerId": 817070,
+        "playerName": "Joe Strong",
+        "value": ".400"
+      },
+      "doubles": {
+        "playerId": 123905,
+        "playerName": "Paul Waner",
+        "value": "62"
+      },
+      "onBasePercentage": {
+        "playerId": 817070,
+        "playerName": "Joe Strong",
+        "value": ".495"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 114367,
+        "playerName": "Jimmie Foxx",
+        "value": "1.218"
+      },
+      "runsBattedIn": {
+        "playerId": 114367,
+        "playerName": "Jimmie Foxx",
+        "value": "169"
+      },
+      "triples": {
+        "playerId": 115808,
+        "playerName": "Babe Herman",
+        "value": "19"
+      },
+      "runs": {
+        "playerId": 117141,
+        "playerName": "Chuck Klein",
+        "value": "152"
+      },
+      "walks": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "130"
+      },
+      "strikeouts": {
+        "playerId": 111922,
+        "playerName": "Bruce Campbell",
+        "value": "104"
+      },
+      "hits": {
+        "playerId": 117141,
+        "playerName": "Chuck Klein",
+        "value": "226"
+      }
+    },
+    "1933": {
+      "stolenBases": {
+        "playerId": 112205,
+        "playerName": "Ben Chapman",
+        "value": "27"
+      },
+      "homeRuns": {
+        "playerId": 114367,
+        "playerName": "Jimmie Foxx",
+        "value": "48"
+      },
+      "battingAverage": {
+        "playerId": 492568,
+        "playerName": "Josh Gibson",
+        "value": ".395"
+      },
+      "doubles": {
+        "playerId": 112854,
+        "playerName": "Joe Cronin",
+        "value": "45"
+      },
+      "onBasePercentage": {
+        "playerId": 112437,
+        "playerName": "Mickey Cochrane",
+        "value": ".459"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 492568,
+        "playerName": "Josh Gibson",
+        "value": "1.191"
+      },
+      "runsBattedIn": {
+        "playerId": 114367,
+        "playerName": "Jimmie Foxx",
+        "value": "163"
+      },
+      "triples": {
+        "playerId": 123671,
+        "playerName": "Arky Vaughan",
+        "value": "19"
+      },
+      "runs": {
+        "playerId": 114680,
+        "playerName": "Lou Gehrig",
+        "value": "138"
+      },
+      "walks": {
+        "playerId": 121578,
+        "playerName": "Babe Ruth",
+        "value": "114"
+      },
+      "strikeouts": {
+        "playerId": 114367,
+        "playerName": "Jimmie Foxx",
+        "value": "93"
+      },
+      "hits": {
+        "playerId": 117141,
+        "playerName": "Chuck Klein",
+        "value": "223"
+      }
+    },
+    "1934": {
+      "stolenBases": {
+        "playerId": 124091,
+        "playerName": "Billy Werber",
+        "value": "40"
+      },
+      "homeRuns": {
+        "playerId": 114680,
+        "playerName": "Lou Gehrig",
+        "value": "49"
+      },
+      "battingAverage": {
+        "playerId": 817157,
+        "playerName": "Felton Snow",
+        "value": ".373"
+      },
+      "doubles": {
+        "playerId": 115096,
+        "playerName": "Hank Greenberg",
+        "value": "63"
+      },
+      "onBasePercentage": {
+        "playerId": 114680,
+        "playerName": "Lou Gehrig",
+        "value": ".465"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 114680,
+        "playerName": "Lou Gehrig",
+        "value": "1.171"
+      },
+      "runsBattedIn": {
+        "playerId": 114680,
+        "playerName": "Lou Gehrig",
+        "value": "165"
+      },
+      "triples": {
+        "playerId": 118904,
+        "playerName": "Joe Medwick",
+        "value": "18"
+      },
+      "runs": {
+        "playerId": 114682,
+        "playerName": "Charlie Gehringer",
+        "value": "135"
+      },
+      "walks": {
+        "playerId": 114367,
+        "playerName": "Jimmie Foxx",
+        "value": "111"
+      },
+      "strikeouts": {
+        "playerId": 112404,
+        "playerName": "Harlond Clift",
+        "value": "100"
+      },
+      "hits": {
+        "playerId": 123905,
+        "playerName": "Paul Waner",
+        "value": "217"
+      }
+    },
+    "1935": {
+      "stolenBases": {
+        "playerId": 124091,
+        "playerName": "Billy Werber",
+        "value": "29"
+      },
+      "homeRuns": {
+        "playerId": 114367,
+        "playerName": "Jimmie Foxx",
+        "value": "36"
+      },
+      "battingAverage": {
+        "playerId": 818520,
+        "playerName": "Buck Leonard",
+        "value": ".409"
+      },
+      "onBasePercentage": {
+        "playerId": 123671,
+        "playerName": "Arky Vaughan",
+        "value": ".491"
+      },
+      "doubles": {
+        "playerId": 115809,
+        "playerName": "Billy Herman",
+        "value": "57"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 492568,
+        "playerName": "Josh Gibson",
+        "value": "1.132"
+      },
+      "triples": {
+        "playerId": 123757,
+        "playerName": "Joe Vosmik",
+        "value": "20"
+      },
+      "runsBattedIn": {
+        "playerId": 115096,
+        "playerName": "Hank Greenberg",
+        "value": "170"
+      },
+      "runs": {
+        "playerId": 114525,
+        "playerName": "Augie Galan",
+        "value": "133"
+      },
+      "strikeouts": {
+        "playerId": 111905,
+        "playerName": "Dolph Camilli",
+        "value": "113"
+      },
+      "walks": {
+        "playerId": 114680,
+        "playerName": "Lou Gehrig",
+        "value": "132"
+      },
+      "hits": {
+        "playerId": 115809,
+        "playerName": "Billy Herman",
+        "value": "227"
+      }
+    },
+    "1936": {
+      "stolenBases": {
+        "playerId": 117520,
+        "playerName": "Lyn Lary",
+        "value": "37"
+      },
+      "homeRuns": {
+        "playerId": 114680,
+        "playerName": "Lou Gehrig",
+        "value": "49"
+      },
+      "battingAverage": {
+        "playerId": 492568,
+        "playerName": "Josh Gibson",
+        "value": ".389"
+      },
+      "onBasePercentage": {
+        "playerId": 492568,
+        "playerName": "Josh Gibson",
+        "value": ".478"
+      },
+      "doubles": {
+        "playerId": 118904,
+        "playerName": "Joe Medwick",
+        "value": "64"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 492568,
+        "playerName": "Josh Gibson",
+        "value": "1.261"
+      },
+      "triples": {
+        "playerId": 110396,
+        "playerName": "Earl Averill Sr.",
+        "value": "15"
+      },
+      "runsBattedIn": {
+        "playerId": 123474,
+        "playerName": "Hal Trosky Sr.",
+        "value": "162"
+      },
+      "runs": {
+        "playerId": 114680,
+        "playerName": "Lou Gehrig",
+        "value": "167"
+      },
+      "strikeouts": {
+        "playerId": 114367,
+        "playerName": "Jimmie Foxx",
+        "value": "119"
+      },
+      "walks": {
+        "playerId": 114680,
+        "playerName": "Lou Gehrig",
+        "value": "130"
+      },
+      "hits": {
+        "playerId": 110396,
+        "playerName": "Earl Averill Sr.",
+        "value": "232"
+      }
+    },
+    "1937": {
+      "stolenBases": {
+        "playerId": 112205,
+        "playerName": "Ben Chapman",
+        "value": "35"
+      },
+      "homeRuns": {
+        "playerId": 113376,
+        "playerName": "Joe DiMaggio",
+        "value": "46"
+      },
+      "battingAverage": {
+        "playerId": 492568,
+        "playerName": "Josh Gibson",
+        "value": ".417"
+      },
+      "onBasePercentage": {
+        "playerId": 492568,
+        "playerName": "Josh Gibson",
+        "value": ".500"
+      },
+      "doubles": {
+        "playerId": 118904,
+        "playerName": "Joe Medwick",
+        "value": "56"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 492568,
+        "playerName": "Josh Gibson",
+        "value": "1.474"
+      },
+      "triples": {
+        "playerId": 123671,
+        "playerName": "Arky Vaughan",
+        "value": "17"
+      },
+      "runsBattedIn": {
+        "playerId": 115096,
+        "playerName": "Hank Greenberg",
+        "value": "183"
+      },
+      "runs": {
+        "playerId": 113376,
+        "playerName": "Joe DiMaggio",
+        "value": "151"
+      },
+      "strikeouts": {
+        "playerId": 113377,
+        "playerName": "Vince DiMaggio",
+        "value": "111"
+      },
+      "walks": {
+        "playerId": 114680,
+        "playerName": "Lou Gehrig",
+        "value": "127"
+      },
+      "hits": {
+        "playerId": 118904,
+        "playerName": "Joe Medwick",
+        "value": "237"
+      }
+    },
+    "1938": {
+      "stolenBases": {
+        "playerId": 112861,
+        "playerName": "Frankie Crosetti",
+        "value": "27"
+      },
+      "homeRuns": {
+        "playerId": 115096,
+        "playerName": "Hank Greenberg",
+        "value": "58"
+      },
+      "battingAverage": {
+        "playerId": 818520,
+        "playerName": "Buck Leonard",
+        "value": ".418"
+      },
+      "onBasePercentage": {
+        "playerId": 818520,
+        "playerName": "Buck Leonard",
+        "value": ".500"
+      },
+      "doubles": {
+        "playerId": 112854,
+        "playerName": "Joe Cronin",
+        "value": "51"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 818520,
+        "playerName": "Buck Leonard",
+        "value": "1.239"
+      },
+      "triples": {
+        "playerId": 115674,
+        "playerName": "Jeff Heath",
+        "value": "18"
+      },
+      "runsBattedIn": {
+        "playerId": 114367,
+        "playerName": "Jimmie Foxx",
+        "value": "175"
+      },
+      "runs": {
+        "playerId": 115096,
+        "playerName": "Hank Greenberg",
+        "value": "144"
+      },
+      "strikeouts": {
+        "playerId": 113377,
+        "playerName": "Vince DiMaggio",
+        "value": "134"
+      },
+      "walks": {
+        "playerId": 111905,
+        "playerName": "Dolph Camilli",
+        "value": "119"
+      },
+      "hits": {
+        "playerId": 118593,
+        "playerName": "Frank McCormick",
+        "value": "209"
+      }
+    },
+    "1939": {
+      "stolenBases": {
+        "playerId": 112080,
+        "playerName": "George Case",
+        "value": "51"
+      },
+      "homeRuns": {
+        "playerId": 114367,
+        "playerName": "Jimmie Foxx",
+        "value": "35"
+      },
+      "battingAverage": {
+        "playerId": 113376,
+        "playerName": "Joe DiMaggio",
+        "value": ".381"
+      },
+      "onBasePercentage": {
+        "playerId": 114367,
+        "playerName": "Jimmie Foxx",
+        "value": ".464"
+      },
+      "doubles": {
+        "playerId": 122319,
+        "playerName": "Enos Slaughter",
+        "value": "52"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 114367,
+        "playerName": "Jimmie Foxx",
+        "value": "1.158"
+      },
+      "triples": {
+        "playerId": 115809,
+        "playerName": "Billy Herman",
+        "value": "18"
+      },
+      "runsBattedIn": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "145"
+      },
+      "runs": {
+        "playerId": 121410,
+        "playerName": "Red Rolfe",
+        "value": "139"
+      },
+      "strikeouts": {
+        "playerId": 111905,
+        "playerName": "Dolph Camilli",
+        "value": "107"
+      },
+      "walks": {
+        "playerId": 112404,
+        "playerName": "Harlond Clift",
+        "value": "111"
+      },
+      "hits": {
+        "playerId": 121410,
+        "playerName": "Red Rolfe",
+        "value": "213"
+      }
+    },
+    "1940": {
+      "stolenBases": {
+        "playerId": 112080,
+        "playerName": "George Case",
+        "value": "35"
+      },
+      "homeRuns": {
+        "playerId": 119207,
+        "playerName": "Johnny Mize",
+        "value": "43"
+      },
+      "battingAverage": {
+        "playerId": 818520,
+        "playerName": "Buck Leonard",
+        "value": ".378"
+      },
+      "onBasePercentage": {
+        "playerId": 818520,
+        "playerName": "Buck Leonard",
+        "value": ".491"
+      },
+      "doubles": {
+        "playerId": 115096,
+        "playerName": "Hank Greenberg",
+        "value": "50"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 818520,
+        "playerName": "Buck Leonard",
+        "value": "1.129"
+      },
+      "triples": {
+        "playerId": 118604,
+        "playerName": "Barney McCosky",
+        "value": "19"
+      },
+      "runsBattedIn": {
+        "playerId": 115096,
+        "playerName": "Hank Greenberg",
+        "value": "150"
+      },
+      "runs": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "134"
+      },
+      "strikeouts": {
+        "playerId": 121473,
+        "playerName": "Chet Ross",
+        "value": "127"
+      },
+      "walks": {
+        "playerId": 114235,
+        "playerName": "Elbie Fletcher",
+        "value": "119"
+      },
+      "hits": {
+        "playerId": 112785,
+        "playerName": "Doc Cramer",
+        "value": "200"
+      }
+    },
+    "1941": {
+      "stolenBases": {
+        "playerId": 112080,
+        "playerName": "George Case",
+        "value": "33"
+      },
+      "homeRuns": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "37"
+      },
+      "battingAverage": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": ".406"
+      },
+      "doubles": {
+        "playerId": 111272,
+        "playerName": "Lou Boudreau",
+        "value": "45"
+      },
+      "onBasePercentage": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": ".551"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "1.286"
+      },
+      "runsBattedIn": {
+        "playerId": 113376,
+        "playerName": "Joe DiMaggio",
+        "value": "125"
+      },
+      "triples": {
+        "playerId": 115674,
+        "playerName": "Jeff Heath",
+        "value": "20"
+      },
+      "runs": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "135"
+      },
+      "walks": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "145"
+      },
+      "strikeouts": {
+        "playerId": 111905,
+        "playerName": "Dolph Camilli",
+        "value": "115"
+      },
+      "hits": {
+        "playerId": 123443,
+        "playerName": "Cecil Travis",
+        "value": "218"
+      }
+    },
+    "1942": {
+      "stolenBases": {
+        "playerId": 112080,
+        "playerName": "George Case",
+        "value": "44"
+      },
+      "homeRuns": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "36"
+      },
+      "battingAverage": {
+        "playerId": 111600,
+        "playerName": "Willard Brown",
+        "value": ".379"
+      },
+      "onBasePercentage": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": ".499"
+      },
+      "doubles": {
+        "playerId": 117238,
+        "playerName": "Don Kolloway",
+        "value": "40"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "1.147"
+      },
+      "triples": {
+        "playerId": 122319,
+        "playerName": "Enos Slaughter",
+        "value": "17"
+      },
+      "runsBattedIn": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "137"
+      },
+      "runs": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "141"
+      },
+      "strikeouts": {
+        "playerId": 114967,
+        "playerName": "Joe Gordon",
+        "value": "95"
+      },
+      "walks": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "145"
+      },
+      "hits": {
+        "playerId": 120450,
+        "playerName": "Johnny Pesky",
+        "value": "205"
+      }
+    },
+    "1943": {
+      "stolenBases": {
+        "playerId": 112080,
+        "playerName": "George Case",
+        "value": "61"
+      },
+      "homeRuns": {
+        "playerId": 124678,
+        "playerName": "Rudy York",
+        "value": "34"
+      },
+      "battingAverage": {
+        "playerId": 492568,
+        "playerName": "Josh Gibson",
+        "value": ".466"
+      },
+      "onBasePercentage": {
+        "playerId": 492568,
+        "playerName": "Josh Gibson",
+        "value": ".564"
+      },
+      "doubles": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": "48"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 492568,
+        "playerName": "Josh Gibson",
+        "value": "1.435"
+      },
+      "triples": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": "20"
+      },
+      "runsBattedIn": {
+        "playerId": 119774,
+        "playerName": "Bill Nicholson",
+        "value": "128"
+      },
+      "runs": {
+        "playerId": 123671,
+        "playerName": "Arky Vaughan",
+        "value": "114"
+      },
+      "strikeouts": {
+        "playerId": 113377,
+        "playerName": "Vince DiMaggio",
+        "value": "126"
+      },
+      "walks": {
+        "playerId": 116919,
+        "playerName": "Charlie Keller",
+        "value": "106"
+      },
+      "hits": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": "220"
+      }
+    },
+    "1944": {
+      "stolenBases": {
+        "playerId": 122806,
+        "playerName": "Snuffy Stirnweiss",
+        "value": "55"
+      },
+      "homeRuns": {
+        "playerId": 119774,
+        "playerName": "Bill Nicholson",
+        "value": "33"
+      },
+      "battingAverage": {
+        "playerId": 816668,
+        "playerName": "Jim West",
+        "value": ".364"
+      },
+      "onBasePercentage": {
+        "playerId": 818520,
+        "playerName": "Buck Leonard",
+        "value": ".450"
+      },
+      "doubles": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": "51"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 818520,
+        "playerName": "Buck Leonard",
+        "value": "1.070"
+      },
+      "triples": {
+        "playerId": 110614,
+        "playerName": "Johnny Barrett",
+        "value": "19"
+      },
+      "runsBattedIn": {
+        "playerId": 119774,
+        "playerName": "Bill Nicholson",
+        "value": "122"
+      },
+      "runs": {
+        "playerId": 122806,
+        "playerName": "Snuffy Stirnweiss",
+        "value": "125"
+      },
+      "strikeouts": {
+        "playerId": 121972,
+        "playerName": "Pat Seerey",
+        "value": "99"
+      },
+      "walks": {
+        "playerId": 114525,
+        "playerName": "Augie Galan",
+        "value": "101"
+      },
+      "hits": {
+        "playerId": 122806,
+        "playerName": "Snuffy Stirnweiss",
+        "value": "205"
+      }
+    },
+    "1945": {
+      "stolenBases": {
+        "playerId": 122806,
+        "playerName": "Snuffy Stirnweiss",
+        "value": "33"
+      },
+      "homeRuns": {
+        "playerId": 116106,
+        "playerName": "Tommy Holmes",
+        "value": "28"
+      },
+      "battingAverage": {
+        "playerId": 820646,
+        "playerName": "Frank Austin",
+        "value": ".375"
+      },
+      "onBasePercentage": {
+        "playerId": 492568,
+        "playerName": "Josh Gibson",
+        "value": ".459"
+      },
+      "doubles": {
+        "playerId": 116106,
+        "playerName": "Tommy Holmes",
+        "value": "47"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 492568,
+        "playerName": "Josh Gibson",
+        "value": "1.055"
+      },
+      "triples": {
+        "playerId": 122806,
+        "playerName": "Snuffy Stirnweiss",
+        "value": "22"
+      },
+      "runsBattedIn": {
+        "playerId": 123820,
+        "playerName": "Dixie Walker",
+        "value": "124"
+      },
+      "runs": {
+        "playerId": 122666,
+        "playerName": "Eddie Stanky",
+        "value": "128"
+      },
+      "strikeouts": {
+        "playerId": 121972,
+        "playerName": "Pat Seerey",
+        "value": "97"
+      },
+      "walks": {
+        "playerId": 122666,
+        "playerName": "Eddie Stanky",
+        "value": "148"
+      },
+      "hits": {
+        "playerId": 116106,
+        "playerName": "Tommy Holmes",
+        "value": "224"
+      }
+    },
+    "1946": {
+      "stolenBases": {
+        "playerId": 121050,
+        "playerName": "Pete Reiser",
+        "value": "34"
+      },
+      "homeRuns": {
+        "playerId": 115096,
+        "playerName": "Hank Greenberg",
+        "value": "44"
+      },
+      "battingAverage": {
+        "playerId": 116403,
+        "playerName": "Monte Irvin",
+        "value": ".369"
+      },
+      "onBasePercentage": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": ".497"
+      },
+      "doubles": {
+        "playerId": 123711,
+        "playerName": "Mickey Vernon",
+        "value": "51"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "1.164"
+      },
+      "triples": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": "20"
+      },
+      "runsBattedIn": {
+        "playerId": 122319,
+        "playerName": "Enos Slaughter",
+        "value": "130"
+      },
+      "runs": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "142"
+      },
+      "strikeouts": {
+        "playerId": 117072,
+        "playerName": "Ralph Kiner",
+        "value": "109"
+      },
+      "walks": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "156"
+      },
+      "hits": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": "228"
+      }
+    },
+    "1947": {
+      "stolenBases": {
+        "playerId": 113368,
+        "playerName": "Bob Dillinger",
+        "value": "34"
+      },
+      "homeRuns": {
+        "playerId": 117072,
+        "playerName": "Ralph Kiner",
+        "value": "51"
+      },
+      "battingAverage": {
+        "playerId": 818616,
+        "playerName": "Henry Kimbro",
+        "value": ".385"
+      },
+      "onBasePercentage": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": ".499"
+      },
+      "doubles": {
+        "playerId": 111272,
+        "playerName": "Lou Boudreau",
+        "value": "45"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "1.133"
+      },
+      "triples": {
+        "playerId": 123825,
+        "playerName": "Harry Walker",
+        "value": "16"
+      },
+      "runsBattedIn": {
+        "playerId": 119207,
+        "playerName": "Johnny Mize",
+        "value": "138"
+      },
+      "runs": {
+        "playerId": 119207,
+        "playerName": "Johnny Mize",
+        "value": "137"
+      },
+      "strikeouts": {
+        "playerId": 116744,
+        "playerName": "Eddie Joost",
+        "value": "110"
+      },
+      "walks": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "162"
+      },
+      "hits": {
+        "playerId": 120450,
+        "playerName": "Johnny Pesky",
+        "value": "207"
+      }
+    },
+    "1948": {
+      "stolenBases": {
+        "playerId": 110349,
+        "playerName": "Richie Ashburn",
+        "value": "32"
+      },
+      "homeRuns": {
+        "playerId": 117072,
+        "playerName": "Ralph Kiner",
+        "value": "40"
+      },
+      "battingAverage": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": ".376"
+      },
+      "doubles": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": "46"
+      },
+      "onBasePercentage": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": ".497"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": "1.152"
+      },
+      "runsBattedIn": {
+        "playerId": 113376,
+        "playerName": "Joe DiMaggio",
+        "value": "155"
+      },
+      "triples": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": "18"
+      },
+      "runs": {
+        "playerId": 115778,
+        "playerName": "Tommy Henrich",
+        "value": "138"
+      },
+      "walks": {
+        "playerId": 113813,
+        "playerName": "Bob Elliott",
+        "value": "131"
+      },
+      "strikeouts": {
+        "playerId": 121972,
+        "playerName": "Pat Seerey",
+        "value": "102"
+      },
+      "hits": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": "230"
+      }
+    },
+    "1949": {
+      "stolenBases": {
+        "playerId": 121314,
+        "playerName": "Jackie Robinson",
+        "value": "37"
+      },
+      "homeRuns": {
+        "playerId": 117072,
+        "playerName": "Ralph Kiner",
+        "value": "54"
+      },
+      "battingAverage": {
+        "playerId": 116913,
+        "playerName": "George Kell",
+        "value": ".343"
+      },
+      "onBasePercentage": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": ".490"
+      },
+      "doubles": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": "41"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "1.140"
+      },
+      "triples": {
+        "playerId": 119197,
+        "playerName": "Dale Mitchell",
+        "value": "23"
+      },
+      "runsBattedIn": {
+        "playerId": 122749,
+        "playerName": "Vern Stephens",
+        "value": "159"
+      },
+      "runs": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "150"
+      },
+      "strikeouts": {
+        "playerId": 122488,
+        "playerName": "Duke Snider",
+        "value": "92"
+      },
+      "walks": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "162"
+      },
+      "hits": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": "207"
+      }
+    },
+    "1950": {
+      "stolenBases": {
+        "playerId": 116542,
+        "playerName": "Sam Jethroe",
+        "value": "35"
+      },
+      "homeRuns": {
+        "playerId": 117072,
+        "playerName": "Ralph Kiner",
+        "value": "47"
+      },
+      "battingAverage": {
+        "playerId": 114952,
+        "playerName": "Billy Goodman",
+        "value": ".354"
+      },
+      "onBasePercentage": {
+        "playerId": 122666,
+        "playerName": "Eddie Stanky",
+        "value": ".460"
+      },
+      "doubles": {
+        "playerId": 116913,
+        "playerName": "George Kell",
+        "value": "56"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": "1.033"
+      },
+      "triples": {
+        "playerId": 110349,
+        "playerName": "Richie Ashburn",
+        "value": "14"
+      },
+      "runsBattedIn": {
+        "playerId": 113575,
+        "playerName": "Walt Dropo",
+        "value": "144"
+      },
+      "runs": {
+        "playerId": 113375,
+        "playerName": "Dom DiMaggio",
+        "value": "131"
+      },
+      "strikeouts": {
+        "playerId": 122338,
+        "playerName": "Roy Smalley Jr.",
+        "value": "114"
+      },
+      "walks": {
+        "playerId": 122666,
+        "playerName": "Eddie Stanky",
+        "value": "144"
+      },
+      "hits": {
+        "playerId": 116913,
+        "playerName": "George Kell",
+        "value": "218"
+      }
+    },
+    "1951": {
+      "stolenBases": {
+        "playerId": 116542,
+        "playerName": "Sam Jethroe",
+        "value": "35"
+      },
+      "homeRuns": {
+        "playerId": 117072,
+        "playerName": "Ralph Kiner",
+        "value": "42"
+      },
+      "battingAverage": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": ".355"
+      },
+      "onBasePercentage": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": ".464"
+      },
+      "doubles": {
+        "playerId": 113052,
+        "playerName": "Alvin Dark",
+        "value": "41"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 117072,
+        "playerName": "Ralph Kiner",
+        "value": "1.079"
+      },
+      "triples": {
+        "playerId": 119176,
+        "playerName": "Minnie Minoso",
+        "value": "14"
+      },
+      "runsBattedIn": {
+        "playerId": 124759,
+        "playerName": "Gus Zernial",
+        "value": "129"
+      },
+      "runs": {
+        "playerId": 117072,
+        "playerName": "Ralph Kiner",
+        "value": "124"
+      },
+      "strikeouts": {
+        "playerId": 124759,
+        "playerName": "Gus Zernial",
+        "value": "101"
+      },
+      "walks": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "144"
+      },
+      "hits": {
+        "playerId": 110349,
+        "playerName": "Richie Ashburn",
+        "value": "221"
+      }
+    },
+    "1952": {
+      "stolenBases": {
+        "playerId": 121010,
+        "playerName": "Pee Wee Reese",
+        "value": "30"
+      },
+      "homeRuns": {
+        "playerId": 117072,
+        "playerName": "Ralph Kiner",
+        "value": "37"
+      },
+      "battingAverage": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": ".336"
+      },
+      "onBasePercentage": {
+        "playerId": 121314,
+        "playerName": "Jackie Robinson",
+        "value": ".440"
+      },
+      "doubles": {
+        "playerId": 113979,
+        "playerName": "Ferris Fain",
+        "value": "43"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": ".970"
+      },
+      "triples": {
+        "playerId": 123308,
+        "playerName": "Bobby Thomson",
+        "value": "14"
+      },
+      "runsBattedIn": {
+        "playerId": 121710,
+        "playerName": "Hank Sauer",
+        "value": "121"
+      },
+      "runs": {
+        "playerId": 115742,
+        "playerName": "Solly Hemus",
+        "value": "105"
+      },
+      "strikeouts": {
+        "playerId": 118416,
+        "playerName": "Eddie Mathews",
+        "value": "115"
+      },
+      "walks": {
+        "playerId": 124682,
+        "playerName": "Eddie Yost",
+        "value": "129"
+      },
+      "hits": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": "194"
+      }
+    },
+    "1953": {
+      "stolenBases": {
+        "playerId": 111638,
+        "playerName": "Bill Bruton",
+        "value": "26"
+      },
+      "homeRuns": {
+        "playerId": 118416,
+        "playerName": "Eddie Mathews",
+        "value": "47"
+      },
+      "battingAverage": {
+        "playerId": 114495,
+        "playerName": "Carl Furillo",
+        "value": ".344"
+      },
+      "doubles": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": "53"
+      },
+      "onBasePercentage": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": ".437"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": "1.046"
+      },
+      "runsBattedIn": {
+        "playerId": 121461,
+        "playerName": "Al Rosen",
+        "value": "145"
+      },
+      "triples": {
+        "playerId": 114810,
+        "playerName": "Jim Gilliam",
+        "value": "17"
+      },
+      "runs": {
+        "playerId": 122488,
+        "playerName": "Duke Snider",
+        "value": "132"
+      },
+      "walks": {
+        "playerId": 124682,
+        "playerName": "Eddie Yost",
+        "value": "123"
+      },
+      "strikeouts": {
+        "playerId": 110995,
+        "playerName": "Steve Bilko",
+        "value": "125"
+      },
+      "hits": {
+        "playerId": 117354,
+        "playerName": "Harvey Kuenn",
+        "value": "209"
+      }
+    },
+    "1954": {
+      "stolenBases": {
+        "playerId": 111638,
+        "playerName": "Bill Bruton",
+        "value": "34"
+      },
+      "homeRuns": {
+        "playerId": 117172,
+        "playerName": "Ted Kluszewski",
+        "value": "49"
+      },
+      "battingAverage": {
+        "playerId": 118495,
+        "playerName": "Willie Mays",
+        "value": ".345"
+      },
+      "onBasePercentage": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": ".513"
+      },
+      "doubles": {
+        "playerId": 119602,
+        "playerName": "Stan Musial",
+        "value": "41"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "1.148"
+      },
+      "triples": {
+        "playerId": 119176,
+        "playerName": "Minnie Minoso",
+        "value": "18"
+      },
+      "runsBattedIn": {
+        "playerId": 117172,
+        "playerName": "Ted Kluszewski",
+        "value": "141"
+      },
+      "runs": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": "129"
+      },
+      "strikeouts": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": "107"
+      },
+      "walks": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "136"
+      },
+      "hits": {
+        "playerId": 119474,
+        "playerName": "Don Mueller",
+        "value": "212"
+      }
+    },
+    "1955": {
+      "stolenBases": {
+        "playerId": 111638,
+        "playerName": "Bill Bruton",
+        "value": "25"
+      },
+      "homeRuns": {
+        "playerId": 118495,
+        "playerName": "Willie Mays",
+        "value": "51"
+      },
+      "battingAverage": {
+        "playerId": 116822,
+        "playerName": "Al Kaline",
+        "value": ".340"
+      },
+      "onBasePercentage": {
+        "playerId": 110349,
+        "playerName": "Richie Ashburn",
+        "value": ".449"
+      },
+      "doubles": {
+        "playerId": 117354,
+        "playerName": "Harvey Kuenn",
+        "value": "38"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 118495,
+        "playerName": "Willie Mays",
+        "value": "1.059"
+      },
+      "triples": {
+        "playerId": 117897,
+        "playerName": "Dale Long",
+        "value": "13"
+      },
+      "runsBattedIn": {
+        "playerId": 122488,
+        "playerName": "Duke Snider",
+        "value": "136"
+      },
+      "runs": {
+        "playerId": 122488,
+        "playerName": "Duke Snider",
+        "value": "126"
+      },
+      "strikeouts": {
+        "playerId": 124747,
+        "playerName": "Norm Zauchin",
+        "value": "105"
+      },
+      "walks": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": "113"
+      },
+      "hits": {
+        "playerId": 116822,
+        "playerName": "Al Kaline",
+        "value": "200"
+      }
+    },
+    "1956": {
+      "stolenBases": {
+        "playerId": 118495,
+        "playerName": "Willie Mays",
+        "value": "40"
+      },
+      "homeRuns": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": "52"
+      },
+      "battingAverage": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": ".353"
+      },
+      "onBasePercentage": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": ".479"
+      },
+      "doubles": {
+        "playerId": 120568,
+        "playerName": "Jim Piersall",
+        "value": "40"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": "1.169"
+      },
+      "triples": {
+        "playerId": 111638,
+        "playerName": "Bill Bruton",
+        "value": "15"
+      },
+      "runsBattedIn": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": "130"
+      },
+      "runs": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": "132"
+      },
+      "strikeouts": {
+        "playerId": 117670,
+        "playerName": "Jim Lemon",
+        "value": "138"
+      },
+      "walks": {
+        "playerId": 124682,
+        "playerName": "Eddie Yost",
+        "value": "151"
+      },
+      "hits": {
+        "playerId": 110001,
+        "playerName": "Hank Aaron",
+        "value": "200"
+      }
+    },
+    "1957": {
+      "stolenBases": {
+        "playerId": 118495,
+        "playerName": "Willie Mays",
+        "value": "38"
+      },
+      "homeRuns": {
+        "playerId": 110001,
+        "playerName": "Hank Aaron",
+        "value": "44"
+      },
+      "battingAverage": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": ".388"
+      },
+      "onBasePercentage": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": ".526"
+      },
+      "doubles": {
+        "playerId": 115988,
+        "playerName": "Don Hoak",
+        "value": "39"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "1.257"
+      },
+      "triples": {
+        "playerId": 118495,
+        "playerName": "Willie Mays",
+        "value": "20"
+      },
+      "runsBattedIn": {
+        "playerId": 110001,
+        "playerName": "Hank Aaron",
+        "value": "132"
+      },
+      "runs": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": "121"
+      },
+      "strikeouts": {
+        "playerId": 122488,
+        "playerName": "Duke Snider",
+        "value": "104"
+      },
+      "walks": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": "146"
+      },
+      "hits": {
+        "playerId": 121851,
+        "playerName": "Red Schoendienst",
+        "value": "200"
+      }
+    },
+    "1958": {
+      "stolenBases": {
+        "playerId": 118495,
+        "playerName": "Willie Mays",
+        "value": "31"
+      },
+      "homeRuns": {
+        "playerId": 110533,
+        "playerName": "Ernie Banks",
+        "value": "47"
+      },
+      "battingAverage": {
+        "playerId": 110349,
+        "playerName": "Richie Ashburn",
+        "value": ".350"
+      },
+      "doubles": {
+        "playerId": 117354,
+        "playerName": "Harvey Kuenn",
+        "value": "39"
+      },
+      "onBasePercentage": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": ".458"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 124341,
+        "playerName": "Ted Williams",
+        "value": "1.042"
+      },
+      "runsBattedIn": {
+        "playerId": 110533,
+        "playerName": "Ernie Banks",
+        "value": "129"
+      },
+      "triples": {
+        "playerId": 110349,
+        "playerName": "Richie Ashburn",
+        "value": "13"
+      },
+      "runs": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": "127"
+      },
+      "walks": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": "129"
+      },
+      "strikeouts": {
+        "playerId": 117670,
+        "playerName": "Jim Lemon",
+        "value": "120"
+      },
+      "hits": {
+        "playerId": 110349,
+        "playerName": "Richie Ashburn",
+        "value": "215"
+      }
+    },
+    "1959": {
+      "stolenBases": {
+        "playerId": 110290,
+        "playerName": "Luis Aparicio",
+        "value": "56"
+      },
+      "homeRuns": {
+        "playerId": 118416,
+        "playerName": "Eddie Mathews",
+        "value": "46"
+      },
+      "battingAverage": {
+        "playerId": 110001,
+        "playerName": "Hank Aaron",
+        "value": ".355"
+      },
+      "doubles": {
+        "playerId": 120590,
+        "playerName": "Vada Pinson",
+        "value": "47"
+      },
+      "onBasePercentage": {
+        "playerId": 112944,
+        "playerName": "Joe Cunningham",
+        "value": ".453"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 110001,
+        "playerName": "Hank Aaron",
+        "value": "1.037"
+      },
+      "runsBattedIn": {
+        "playerId": 110533,
+        "playerName": "Ernie Banks",
+        "value": "143"
+      },
+      "triples": {
+        "playerId": 119279,
+        "playerName": "Wally Moon",
+        "value": "11"
+      },
+      "runs": {
+        "playerId": 120590,
+        "playerName": "Vada Pinson",
+        "value": "131"
+      },
+      "walks": {
+        "playerId": 124682,
+        "playerName": "Eddie Yost",
+        "value": "135"
+      },
+      "strikeouts": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": "126"
+      },
+      "hits": {
+        "playerId": 110001,
+        "playerName": "Hank Aaron",
+        "value": "223"
+      }
+    },
+    "1960": {
+      "stolenBases": {
+        "playerId": 110290,
+        "playerName": "Luis Aparicio",
+        "value": "51"
+      },
+      "homeRuns": {
+        "playerId": 110533,
+        "playerName": "Ernie Banks",
+        "value": "41"
+      },
+      "battingAverage": {
+        "playerId": 115176,
+        "playerName": "Dick Groat",
+        "value": ".325"
+      },
+      "onBasePercentage": {
+        "playerId": 110349,
+        "playerName": "Richie Ashburn",
+        "value": ".415"
+      },
+      "doubles": {
+        "playerId": 120590,
+        "playerName": "Vada Pinson",
+        "value": "37"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 121311,
+        "playerName": "Frank Robinson",
+        "value": "1.002"
+      },
+      "triples": {
+        "playerId": 111638,
+        "playerName": "Bill Bruton",
+        "value": "13"
+      },
+      "runsBattedIn": {
+        "playerId": 110001,
+        "playerName": "Hank Aaron",
+        "value": "126"
+      },
+      "runs": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": "119"
+      },
+      "strikeouts": {
+        "playerId": 115843,
+        "playerName": "Pancho Herrera",
+        "value": "136"
+      },
+      "walks": {
+        "playerId": 124682,
+        "playerName": "Eddie Yost",
+        "value": "125"
+      },
+      "hits": {
+        "playerId": 118495,
+        "playerName": "Willie Mays",
+        "value": "190"
+      }
+    },
+    "1961": {
+      "stolenBases": {
+        "playerId": 110290,
+        "playerName": "Luis Aparicio",
+        "value": "53"
+      },
+      "homeRuns": {
+        "playerId": 118287,
+        "playerName": "Roger Maris",
+        "value": "61"
+      },
+      "battingAverage": {
+        "playerId": 112090,
+        "playerName": "Norm Cash",
+        "value": ".361"
+      },
+      "onBasePercentage": {
+        "playerId": 112090,
+        "playerName": "Norm Cash",
+        "value": ".487"
+      },
+      "doubles": {
+        "playerId": 116822,
+        "playerName": "Al Kaline",
+        "value": "41"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 112090,
+        "playerName": "Norm Cash",
+        "value": "1.149"
+      },
+      "triples": {
+        "playerId": 124533,
+        "playerName": "Jake Wood",
+        "value": "14"
+      },
+      "runsBattedIn": {
+        "playerId": 112157,
+        "playerName": "Orlando Cepeda",
+        "value": "142"
+      },
+      "runs": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": "132"
+      },
+      "strikeouts": {
+        "playerId": 124533,
+        "playerName": "Jake Wood",
+        "value": "141"
+      },
+      "walks": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": "126"
+      },
+      "hits": {
+        "playerId": 120590,
+        "playerName": "Vada Pinson",
+        "value": "208"
+      }
+    },
+    "1962": {
+      "stolenBases": {
+        "playerId": 124371,
+        "playerName": "Maury Wills",
+        "value": "104"
+      },
+      "homeRuns": {
+        "playerId": 118495,
+        "playerName": "Willie Mays",
+        "value": "49"
+      },
+      "battingAverage": {
+        "playerId": 113112,
+        "playerName": "Tommy Davis",
+        "value": ".346"
+      },
+      "onBasePercentage": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": ".486"
+      },
+      "doubles": {
+        "playerId": 121311,
+        "playerName": "Frank Robinson",
+        "value": "51"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": "1.091"
+      },
+      "triples": {
+        "playerId": 112293,
+        "playerName": "Gino Cimoli",
+        "value": "15"
+      },
+      "runsBattedIn": {
+        "playerId": 113112,
+        "playerName": "Tommy Davis",
+        "value": "153"
+      },
+      "runs": {
+        "playerId": 121311,
+        "playerName": "Frank Robinson",
+        "value": "134"
+      },
+      "strikeouts": {
+        "playerId": 117051,
+        "playerName": "Harmon Killebrew",
+        "value": "142"
+      },
+      "walks": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": "122"
+      },
+      "hits": {
+        "playerId": 113112,
+        "playerName": "Tommy Davis",
+        "value": "230"
+      }
+    },
+    "1963": {
+      "stolenBases": {
+        "playerId": 110290,
+        "playerName": "Luis Aparicio",
+        "value": "40"
+      },
+      "homeRuns": {
+        "playerId": 117051,
+        "playerName": "Harmon Killebrew",
+        "value": "45"
+      },
+      "battingAverage": {
+        "playerId": 113112,
+        "playerName": "Tommy Davis",
+        "value": ".326"
+      },
+      "doubles": {
+        "playerId": 115176,
+        "playerName": "Dick Groat",
+        "value": "43"
+      },
+      "onBasePercentage": {
+        "playerId": 124650,
+        "playerName": "Carl Yastrzemski",
+        "value": ".418"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 110001,
+        "playerName": "Hank Aaron",
+        "value": ".977"
+      },
+      "runsBattedIn": {
+        "playerId": 110001,
+        "playerName": "Hank Aaron",
+        "value": "130"
+      },
+      "triples": {
+        "playerId": 120590,
+        "playerName": "Vada Pinson",
+        "value": "14"
+      },
+      "runs": {
+        "playerId": 110001,
+        "playerName": "Hank Aaron",
+        "value": "121"
+      },
+      "walks": {
+        "playerId": 118416,
+        "playerName": "Eddie Mathews",
+        "value": "124"
+      },
+      "strikeouts": {
+        "playerId": 119769,
+        "playerName": "Dave Nicholson",
+        "value": "175"
+      },
+      "hits": {
+        "playerId": 120590,
+        "playerName": "Vada Pinson",
+        "value": "204"
+      }
+    },
+    "1964": {
+      "stolenBases": {
+        "playerId": 110290,
+        "playerName": "Luis Aparicio",
+        "value": "57"
+      },
+      "homeRuns": {
+        "playerId": 117051,
+        "playerName": "Harmon Killebrew",
+        "value": "49"
+      },
+      "battingAverage": {
+        "playerId": 112391,
+        "playerName": "Roberto Clemente",
+        "value": ".339"
+      },
+      "doubles": {
+        "playerId": 118481,
+        "playerName": "Lee Maye",
+        "value": "44"
+      },
+      "onBasePercentage": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": ".423"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 118258,
+        "playerName": "Mickey Mantle",
+        "value": "1.014"
+      },
+      "runsBattedIn": {
+        "playerId": 111321,
+        "playerName": "Ken Boyer",
+        "value": "119"
+      },
+      "triples": {
+        "playerId": 110157,
+        "playerName": "Dick Allen",
+        "value": "13"
+      },
+      "runs": {
+        "playerId": 110157,
+        "playerName": "Dick Allen",
+        "value": "125"
+      },
+      "walks": {
+        "playerId": 122209,
+        "playerName": "Norm Siebern",
+        "value": "106"
+      },
+      "strikeouts": {
+        "playerId": 118418,
+        "playerName": "Nelson Mathews",
+        "value": "143"
+      },
+      "hits": {
+        "playerId": 119980,
+        "playerName": "Tony Oliva",
+        "value": "217"
+      }
+    },
+    "1965": {
+      "stolenBases": {
+        "playerId": 124371,
+        "playerName": "Maury Wills",
+        "value": "94"
+      },
+      "homeRuns": {
+        "playerId": 118495,
+        "playerName": "Willie Mays",
+        "value": "52"
+      },
+      "battingAverage": {
+        "playerId": 112391,
+        "playerName": "Roberto Clemente",
+        "value": ".329"
+      },
+      "onBasePercentage": {
+        "playerId": 118495,
+        "playerName": "Willie Mays",
+        "value": ".398"
+      },
+      "doubles": {
+        "playerId": 123713,
+        "playerName": "Zoilo Versalles",
+        "value": "45"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 118495,
+        "playerName": "Willie Mays",
+        "value": "1.043"
+      },
+      "triples": {
+        "playerId": 111895,
+        "playerName": "Johnny Callison",
+        "value": "16"
+      },
+      "runsBattedIn": {
+        "playerId": 116579,
+        "playerName": "Deron Johnson",
+        "value": "130"
+      },
+      "runs": {
+        "playerId": 115495,
+        "playerName": "Tommy Harper",
+        "value": "126"
+      },
+      "strikeouts": {
+        "playerId": 110157,
+        "playerName": "Dick Allen",
+        "value": "150"
+      },
+      "walks": {
+        "playerId": 119371,
+        "playerName": "Joe Morgan",
+        "value": "97"
+      },
+      "hits": {
+        "playerId": 121454,
+        "playerName": "Pete Rose",
+        "value": "209"
+      }
+    },
+    "1966": {
+      "stolenBases": {
+        "playerId": 111495,
+        "playerName": "Lou Brock",
+        "value": "74"
+      },
+      "homeRuns": {
+        "playerId": 121311,
+        "playerName": "Frank Robinson",
+        "value": "49"
+      },
+      "battingAverage": {
+        "playerId": 110188,
+        "playerName": "Matty Alou",
+        "value": ".342"
+      },
+      "onBasePercentage": {
+        "playerId": 121697,
+        "playerName": "Ron Santo",
+        "value": ".412"
+      },
+      "doubles": {
+        "playerId": 111895,
+        "playerName": "Johnny Callison",
+        "value": "40"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 121311,
+        "playerName": "Frank Robinson",
+        "value": "1.047"
+      },
+      "triples": {
+        "playerId": 118563,
+        "playerName": "Tim McCarver",
+        "value": "13"
+      },
+      "runsBattedIn": {
+        "playerId": 110001,
+        "playerName": "Hank Aaron",
+        "value": "127"
+      },
+      "runs": {
+        "playerId": 110186,
+        "playerName": "Felipe Alou",
+        "value": "122"
+      },
+      "strikeouts": {
+        "playerId": 121932,
+        "playerName": "George Scott",
+        "value": "152"
+      },
+      "walks": {
+        "playerId": 117051,
+        "playerName": "Harmon Killebrew",
+        "value": "103"
+      },
+      "hits": {
+        "playerId": 110186,
+        "playerName": "Felipe Alou",
+        "value": "218"
+      }
+    },
+    "1967": {
+      "stolenBases": {
+        "playerId": 111916,
+        "playerName": "Bert Campaneris",
+        "value": "55"
+      },
+      "homeRuns": {
+        "playerId": 117051,
+        "playerName": "Harmon Killebrew",
+        "value": "44"
+      },
+      "battingAverage": {
+        "playerId": 112391,
+        "playerName": "Roberto Clemente",
+        "value": ".357"
+      },
+      "onBasePercentage": {
+        "playerId": 124650,
+        "playerName": "Carl Yastrzemski",
+        "value": ".418"
+      },
+      "doubles": {
+        "playerId": 122699,
+        "playerName": "Rusty Staub",
+        "value": "44"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 124650,
+        "playerName": "Carl Yastrzemski",
+        "value": "1.040"
+      },
+      "triples": {
+        "playerId": 120590,
+        "playerName": "Vada Pinson",
+        "value": "13"
+      },
+      "runsBattedIn": {
+        "playerId": 124650,
+        "playerName": "Carl Yastrzemski",
+        "value": "121"
+      },
+      "runs": {
+        "playerId": 110001,
+        "playerName": "Hank Aaron",
+        "value": "113"
+      },
+      "strikeouts": {
+        "playerId": 116205,
+        "playerName": "Frank Howard",
+        "value": "155"
+      },
+      "walks": {
+        "playerId": 117051,
+        "playerName": "Harmon Killebrew",
+        "value": "131"
+      },
+      "hits": {
+        "playerId": 112391,
+        "playerName": "Roberto Clemente",
+        "value": "209"
+      }
+    },
+    "1968": {
+      "stolenBases": {
+        "playerId": 111495,
+        "playerName": "Lou Brock",
+        "value": "62"
+      },
+      "homeRuns": {
+        "playerId": 116205,
+        "playerName": "Frank Howard",
+        "value": "44"
+      },
+      "battingAverage": {
+        "playerId": 121454,
+        "playerName": "Pete Rose",
+        "value": ".335"
+      },
+      "onBasePercentage": {
+        "playerId": 124650,
+        "playerName": "Carl Yastrzemski",
+        "value": ".426"
+      },
+      "doubles": {
+        "playerId": 111495,
+        "playerName": "Lou Brock",
+        "value": "46"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 118605,
+        "playerName": "Willie McCovey",
+        "value": ".923"
+      },
+      "triples": {
+        "playerId": 111495,
+        "playerName": "Lou Brock",
+        "value": "14"
+      },
+      "runsBattedIn": {
+        "playerId": 115503,
+        "playerName": "Ken Harrelson",
+        "value": "109"
+      },
+      "runs": {
+        "playerId": 110774,
+        "playerName": "Glenn Beckert",
+        "value": "98"
+      },
+      "strikeouts": {
+        "playerId": 116439,
+        "playerName": "Reggie Jackson",
+        "value": "171"
+      },
+      "walks": {
+        "playerId": 124650,
+        "playerName": "Carl Yastrzemski",
+        "value": "119"
+      },
+      "hits": {
+        "playerId": 110186,
+        "playerName": "Felipe Alou",
+        "value": "210"
+      }
+    },
+    "1969": {
+      "stolenBases": {
+        "playerId": 115495,
+        "playerName": "Tommy Harper",
+        "value": "73"
+      },
+      "homeRuns": {
+        "playerId": 117051,
+        "playerName": "Harmon Killebrew",
+        "value": "49"
+      },
+      "battingAverage": {
+        "playerId": 121454,
+        "playerName": "Pete Rose",
+        "value": ".348"
+      },
+      "onBasePercentage": {
+        "playerId": 118605,
+        "playerName": "Willie McCovey",
+        "value": ".453"
+      },
+      "doubles": {
+        "playerId": 110188,
+        "playerName": "Matty Alou",
+        "value": "41"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 118605,
+        "playerName": "Willie McCovey",
+        "value": "1.109"
+      },
+      "triples": {
+        "playerId": 112391,
+        "playerName": "Roberto Clemente",
+        "value": "12"
+      },
+      "runsBattedIn": {
+        "playerId": 117051,
+        "playerName": "Harmon Killebrew",
+        "value": "140"
+      },
+      "runs": {
+        "playerId": 116439,
+        "playerName": "Reggie Jackson",
+        "value": "123"
+      },
+      "strikeouts": {
+        "playerId": 111189,
+        "playerName": "Bobby Bonds",
+        "value": "187"
+      },
+      "walks": {
+        "playerId": 124634,
+        "playerName": "Jimmy Wynn",
+        "value": "148"
+      },
+      "hits": {
+        "playerId": 110188,
+        "playerName": "Matty Alou",
+        "value": "231"
+      }
+    },
+    "1970": {
+      "stolenBases": {
+        "playerId": 123377,
+        "playerName": "Bobby Tolan",
+        "value": "57"
+      },
+      "homeRuns": {
+        "playerId": 110849,
+        "playerName": "Johnny Bench",
+        "value": "45"
+      },
+      "battingAverage": {
+        "playerId": 112071,
+        "playerName": "Rico Carty",
+        "value": ".366"
+      },
+      "onBasePercentage": {
+        "playerId": 112071,
+        "playerName": "Rico Carty",
+        "value": ".454"
+      },
+      "doubles": {
+        "playerId": 120232,
+        "playerName": "Wes Parker",
+        "value": "47"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 118605,
+        "playerName": "Willie McCovey",
+        "value": "1.056"
+      },
+      "triples": {
+        "playerId": 113146,
+        "playerName": "Willie Davis",
+        "value": "16"
+      },
+      "runsBattedIn": {
+        "playerId": 110849,
+        "playerName": "Johnny Bench",
+        "value": "148"
+      },
+      "runs": {
+        "playerId": 124290,
+        "playerName": "Billy Williams",
+        "value": "137"
+      },
+      "strikeouts": {
+        "playerId": 111189,
+        "playerName": "Bobby Bonds",
+        "value": "189"
+      },
+      "walks": {
+        "playerId": 118605,
+        "playerName": "Willie McCovey",
+        "value": "137"
+      },
+      "hits": {
+        "playerId": 121454,
+        "playerName": "Pete Rose",
+        "value": "205"
+      }
+    },
+    "1971": {
+      "stolenBases": {
+        "playerId": 111495,
+        "playerName": "Lou Brock",
+        "value": "64"
+      },
+      "homeRuns": {
+        "playerId": 122685,
+        "playerName": "Willie Stargell",
+        "value": "48"
+      },
+      "battingAverage": {
+        "playerId": 123406,
+        "playerName": "Joe Torre",
+        "value": ".363"
+      },
+      "onBasePercentage": {
+        "playerId": 119535,
+        "playerName": "Bobby Murcer",
+        "value": ".427"
+      },
+      "doubles": {
+        "playerId": 112153,
+        "playerName": "Cesar Cedeno",
+        "value": "40"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 110001,
+        "playerName": "Hank Aaron",
+        "value": "1.079"
+      },
+      "triples": {
+        "playerId": 119001,
+        "playerName": "Roger Metzger",
+        "value": "11"
+      },
+      "runsBattedIn": {
+        "playerId": 123406,
+        "playerName": "Joe Torre",
+        "value": "137"
+      },
+      "runs": {
+        "playerId": 111495,
+        "playerName": "Lou Brock",
+        "value": "126"
+      },
+      "strikeouts": {
+        "playerId": 116439,
+        "playerName": "Reggie Jackson",
+        "value": "161"
+      },
+      "walks": {
+        "playerId": 117051,
+        "playerName": "Harmon Killebrew",
+        "value": "114"
+      },
+      "hits": {
+        "playerId": 123406,
+        "playerName": "Joe Torre",
+        "value": "230"
+      }
+    },
+    "1972": {
+      "stolenBases": {
+        "playerId": 111495,
+        "playerName": "Lou Brock",
+        "value": "63"
+      },
+      "homeRuns": {
+        "playerId": 110849,
+        "playerName": "Johnny Bench",
+        "value": "40"
+      },
+      "battingAverage": {
+        "playerId": 124290,
+        "playerName": "Billy Williams",
+        "value": ".333"
+      },
+      "onBasePercentage": {
+        "playerId": 110157,
+        "playerName": "Dick Allen",
+        "value": ".420"
+      },
+      "doubles": {
+        "playerId": 112153,
+        "playerName": "Cesar Cedeno",
+        "value": "39"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 110157,
+        "playerName": "Dick Allen",
+        "value": "1.023"
+      },
+      "triples": {
+        "playerId": 111281,
+        "playerName": "Larry Bowa",
+        "value": "13"
+      },
+      "runsBattedIn": {
+        "playerId": 110849,
+        "playerName": "Johnny Bench",
+        "value": "125"
+      },
+      "runs": {
+        "playerId": 119371,
+        "playerName": "Joe Morgan",
+        "value": "122"
+      },
+      "strikeouts": {
+        "playerId": 113059,
+        "playerName": "Bobby Darwin",
+        "value": "145"
+      },
+      "walks": {
+        "playerId": 119371,
+        "playerName": "Joe Morgan",
+        "value": "115"
+      },
+      "hits": {
+        "playerId": 121454,
+        "playerName": "Pete Rose",
+        "value": "198"
+      }
+    },
+    "1973": {
+      "stolenBases": {
+        "playerId": 111495,
+        "playerName": "Lou Brock",
+        "value": "70"
+      },
+      "homeRuns": {
+        "playerId": 122685,
+        "playerName": "Willie Stargell",
+        "value": "44"
+      },
+      "battingAverage": {
+        "playerId": 111986,
+        "playerName": "Rod Carew",
+        "value": ".350"
+      },
+      "doubles": {
+        "playerId": 122685,
+        "playerName": "Willie Stargell",
+        "value": "43"
+      },
+      "onBasePercentage": {
+        "playerId": 122272,
+        "playerName": "Ken Singleton",
+        "value": ".425"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 122685,
+        "playerName": "Willie Stargell",
+        "value": "1.038"
+      },
+      "runsBattedIn": {
+        "playerId": 122685,
+        "playerName": "Willie Stargell",
+        "value": "119"
+      },
+      "triples": {
+        "playerId": 119001,
+        "playerName": "Roger Metzger",
+        "value": "14"
+      },
+      "runs": {
+        "playerId": 111189,
+        "playerName": "Bobby Bonds",
+        "value": "131"
+      },
+      "walks": {
+        "playerId": 113935,
+        "playerName": "Darrell Evans",
+        "value": "124"
+      },
+      "strikeouts": {
+        "playerId": 111189,
+        "playerName": "Bobby Bonds",
+        "value": "148"
+      },
+      "hits": {
+        "playerId": 121454,
+        "playerName": "Pete Rose",
+        "value": "230"
+      }
+    },
+    "1974": {
+      "stolenBases": {
+        "playerId": 111495,
+        "playerName": "Lou Brock",
+        "value": "118"
+      },
+      "homeRuns": {
+        "playerId": 121836,
+        "playerName": "Mike Schmidt",
+        "value": "36"
+      },
+      "battingAverage": {
+        "playerId": 111986,
+        "playerName": "Rod Carew",
+        "value": ".364"
+      },
+      "doubles": {
+        "playerId": 121454,
+        "playerName": "Pete Rose",
+        "value": "45"
+      },
+      "onBasePercentage": {
+        "playerId": 111986,
+        "playerName": "Rod Carew",
+        "value": ".433"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 122685,
+        "playerName": "Willie Stargell",
+        "value": ".944"
+      },
+      "runsBattedIn": {
+        "playerId": 110849,
+        "playerName": "Johnny Bench",
+        "value": "129"
+      },
+      "triples": {
+        "playerId": 114627,
+        "playerName": "Ralph Garr",
+        "value": "17"
+      },
+      "runs": {
+        "playerId": 121454,
+        "playerName": "Pete Rose",
+        "value": "110"
+      },
+      "walks": {
+        "playerId": 113935,
+        "playerName": "Darrell Evans",
+        "value": "126"
+      },
+      "strikeouts": {
+        "playerId": 121836,
+        "playerName": "Mike Schmidt",
+        "value": "138"
+      },
+      "hits": {
+        "playerId": 111986,
+        "playerName": "Rod Carew",
+        "value": "218"
+      }
+    },
+    "1975": {
+      "stolenBases": {
+        "playerId": 117912,
+        "playerName": "Davey Lopes",
+        "value": "77"
+      },
+      "homeRuns": {
+        "playerId": 121836,
+        "playerName": "Mike Schmidt",
+        "value": "38"
+      },
+      "battingAverage": {
+        "playerId": 111986,
+        "playerName": "Rod Carew",
+        "value": ".359"
+      },
+      "onBasePercentage": {
+        "playerId": 119371,
+        "playerName": "Joe Morgan",
+        "value": ".466"
+      },
+      "doubles": {
+        "playerId": 118040,
+        "playerName": "Fred Lynn",
+        "value": "47"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 119371,
+        "playerName": "Joe Morgan",
+        "value": ".974"
+      },
+      "triples": {
+        "playerId": 111437,
+        "playerName": "George Brett",
+        "value": "13"
+      },
+      "runsBattedIn": {
+        "playerId": 118023,
+        "playerName": "Greg Luzinski",
+        "value": "120"
+      },
+      "runs": {
+        "playerId": 121454,
+        "playerName": "Pete Rose",
+        "value": "112"
+      },
+      "strikeouts": {
+        "playerId": 121836,
+        "playerName": "Mike Schmidt",
+        "value": "180"
+      },
+      "walks": {
+        "playerId": 119371,
+        "playerName": "Joe Morgan",
+        "value": "132"
+      },
+      "hits": {
+        "playerId": 112089,
+        "playerName": "Dave Cash",
+        "value": "213"
+      }
+    },
+    "1976": {
+      "stolenBases": {
+        "playerId": 119845,
+        "playerName": "Bill North",
+        "value": "75"
+      },
+      "homeRuns": {
+        "playerId": 121836,
+        "playerName": "Mike Schmidt",
+        "value": "38"
+      },
+      "battingAverage": {
+        "playerId": 118127,
+        "playerName": "Bill Madlock",
+        "value": ".339"
+      },
+      "onBasePercentage": {
+        "playerId": 119371,
+        "playerName": "Joe Morgan",
+        "value": ".444"
+      },
+      "doubles": {
+        "playerId": 121454,
+        "playerName": "Pete Rose",
+        "value": "42"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 119371,
+        "playerName": "Joe Morgan",
+        "value": "1.020"
+      },
+      "triples": {
+        "playerId": 111437,
+        "playerName": "George Brett",
+        "value": "14"
+      },
+      "runsBattedIn": {
+        "playerId": 114333,
+        "playerName": "George Foster",
+        "value": "121"
+      },
+      "runs": {
+        "playerId": 121454,
+        "playerName": "Pete Rose",
+        "value": "130"
+      },
+      "strikeouts": {
+        "playerId": 121836,
+        "playerName": "Mike Schmidt",
+        "value": "149"
+      },
+      "walks": {
+        "playerId": 124634,
+        "playerName": "Jimmy Wynn",
+        "value": "127"
+      },
+      "hits": {
+        "playerId": 111437,
+        "playerName": "George Brett",
+        "value": "215"
+      }
+    },
+    "1977": {
+      "stolenBases": {
+        "playerId": 123121,
+        "playerName": "Frank Taveras",
+        "value": "70"
+      },
+      "homeRuns": {
+        "playerId": 114333,
+        "playerName": "George Foster",
+        "value": "52"
+      },
+      "battingAverage": {
+        "playerId": 111986,
+        "playerName": "Rod Carew",
+        "value": ".388"
+      },
+      "onBasePercentage": {
+        "playerId": 111986,
+        "playerName": "Rod Carew",
+        "value": ".449"
+      },
+      "doubles": {
+        "playerId": 118872,
+        "playerName": "Hal McRae",
+        "value": "54"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 111986,
+        "playerName": "Rod Carew",
+        "value": "1.019"
+      },
+      "triples": {
+        "playerId": 123182,
+        "playerName": "Garry Templeton Sr.",
+        "value": "18"
+      },
+      "runsBattedIn": {
+        "playerId": 114333,
+        "playerName": "George Foster",
+        "value": "149"
+      },
+      "runs": {
+        "playerId": 111986,
+        "playerName": "Rod Carew",
+        "value": "128"
+      },
+      "strikeouts": {
+        "playerId": 115994,
+        "playerName": "Butch Hobson",
+        "value": "162"
+      },
+      "walks": {
+        "playerId": 123183,
+        "playerName": "Gene Tenace",
+        "value": "125"
+      },
+      "hits": {
+        "playerId": 111986,
+        "playerName": "Rod Carew",
+        "value": "239"
+      }
+    },
+    "1978": {
+      "stolenBases": {
+        "playerId": 119361,
+        "playerName": "Omar Moreno",
+        "value": "71"
+      },
+      "homeRuns": {
+        "playerId": 121140,
+        "playerName": "Jim Rice",
+        "value": "46"
+      },
+      "battingAverage": {
+        "playerId": 120225,
+        "playerName": "Dave Parker",
+        "value": ".334"
+      },
+      "onBasePercentage": {
+        "playerId": 111773,
+        "playerName": "Jeff Burroughs",
+        "value": ".432"
+      },
+      "doubles": {
+        "playerId": 121454,
+        "playerName": "Pete Rose",
+        "value": "51"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 120225,
+        "playerName": "Dave Parker",
+        "value": ".979"
+      },
+      "triples": {
+        "playerId": 121140,
+        "playerName": "Jim Rice",
+        "value": "15"
+      },
+      "runsBattedIn": {
+        "playerId": 121140,
+        "playerName": "Jim Rice",
+        "value": "139"
+      },
+      "runs": {
+        "playerId": 117630,
+        "playerName": "Ron LeFlore",
+        "value": "126"
+      },
+      "strikeouts": {
+        "playerId": 110125,
+        "playerName": "Gary Alexander",
+        "value": "166"
+      },
+      "walks": {
+        "playerId": 111773,
+        "playerName": "Jeff Burroughs",
+        "value": "117"
+      },
+      "hits": {
+        "playerId": 121140,
+        "playerName": "Jim Rice",
+        "value": "213"
+      }
+    },
+    "1979": {
+      "stolenBases": {
+        "playerId": 124435,
+        "playerName": "Willie Wilson",
+        "value": "83"
+      },
+      "homeRuns": {
+        "playerId": 117092,
+        "playerName": "Dave Kingman",
+        "value": "48"
+      },
+      "battingAverage": {
+        "playerId": 115826,
+        "playerName": "Keith Hernandez",
+        "value": ".344"
+      },
+      "doubles": {
+        "playerId": 115826,
+        "playerName": "Keith Hernandez",
+        "value": "48"
+      },
+      "onBasePercentage": {
+        "playerId": 118040,
+        "playerName": "Fred Lynn",
+        "value": ".423"
+      },
+      "onBasePlusSlugging": {
+        "playerId": 118040,
+        "playerName": "Fred Lynn",
+        "value": "1.060"
+      },
+      "runsBattedIn": {
+        "playerId": 110719,
+        "playerName": "Don Baylor",
+        "value": "139"
+      },
+      "triples": {
+        "playerId": 111437,
+        "playerName": "George Brett",
+        "value": "20"
+      },
+      "runs": {
+        "playerId": 110719,
+        "playerName": "Don Baylor",
+        "value": "120"
+      },
+      "walks": {
+        "playerId": 120678,
+        "playerName": "Darrell Porter",
+        "value": "121"
+      },
+      "strikeouts": {
+        "playerId": 123251,
+        "playerName": "Gorman Thomas",
+        "value": "175"
+      },
+      "hits": {
+        "playerId": 111437,
+        "playerName": "George Brett",
+        "value": "212"
+      }
+    },
     "1980": {
       "stolenBases": {
         "playerId": 115749,
@@ -16,15 +4926,15 @@
         "playerName": "George Brett",
         "value": ".390"
       },
-      "doubles": {
-        "playerId": 124721,
-        "playerName": "Robin Yount",
-        "value": "49"
-      },
       "onBasePercentage": {
         "playerId": 111437,
         "playerName": "George Brett",
         "value": ".454"
+      },
+      "doubles": {
+        "playerId": 124721,
+        "playerName": "Robin Yount",
+        "value": "49"
       },
       "onBasePlusSlugging": {
         "playerId": 111437,
@@ -108,15 +5018,15 @@
         "playerName": "Rickey Henderson",
         "value": "89"
       },
-      "walks": {
-        "playerId": 113936,
-        "playerName": "Dwight Evans",
-        "value": "85"
-      },
       "strikeouts": {
         "playerId": 110318,
         "playerName": "Tony Armas",
         "value": "115"
+      },
+      "walks": {
+        "playerId": 113936,
+        "playerName": "Dwight Evans",
+        "value": "85"
       },
       "hits": {
         "playerId": 121454,
@@ -279,30 +5189,30 @@
         "playerName": "Dwight Evans",
         "value": ".920"
       },
-      "triples": {
-        "playerId": 121651,
-        "playerName": "Juan Samuel",
-        "value": "19"
-      },
       "runsBattedIn": {
         "playerId": 110318,
         "playerName": "Tony Armas",
         "value": "123"
+      },
+      "triples": {
+        "playerId": 121651,
+        "playerName": "Juan Samuel",
+        "value": "19"
       },
       "runs": {
         "playerId": 113936,
         "playerName": "Dwight Evans",
         "value": "121"
       },
-      "strikeouts": {
-        "playerId": 121651,
-        "playerName": "Juan Samuel",
-        "value": "168"
-      },
       "walks": {
         "playerId": 119579,
         "playerName": "Eddie Murray",
         "value": "107"
+      },
+      "strikeouts": {
+        "playerId": 121651,
+        "playerName": "Juan Samuel",
+        "value": "168"
       },
       "hits": {
         "playerId": 115270,
@@ -341,30 +5251,30 @@
         "playerName": "George Brett",
         "value": "1.021"
       },
-      "triples": {
-        "playerId": 124435,
-        "playerName": "Willie Wilson",
-        "value": "21"
-      },
       "runsBattedIn": {
         "playerId": 118443,
         "playerName": "Don Mattingly",
         "value": "145"
+      },
+      "triples": {
+        "playerId": 124435,
+        "playerName": "Willie Wilson",
+        "value": "21"
       },
       "runs": {
         "playerId": 115749,
         "playerName": "Rickey Henderson",
         "value": "146"
       },
-      "strikeouts": {
-        "playerId": 110494,
-        "playerName": "Steve Balboni",
-        "value": "166"
-      },
       "walks": {
         "playerId": 113936,
         "playerName": "Dwight Evans",
         "value": "114"
+      },
+      "strikeouts": {
+        "playerId": 110494,
+        "playerName": "Steve Balboni",
+        "value": "166"
       },
       "hits": {
         "playerId": 111153,
@@ -418,15 +5328,15 @@
         "playerName": "Rickey Henderson",
         "value": "130"
       },
-      "walks": {
-        "playerId": 111153,
-        "playerName": "Wade Boggs",
-        "value": "105"
-      },
       "strikeouts": {
         "playerId": 116386,
         "playerName": "Pete Incaviglia",
         "value": "185"
+      },
+      "walks": {
+        "playerId": 111153,
+        "playerName": "Wade Boggs",
+        "value": "105"
       },
       "hits": {
         "playerId": 118443,
@@ -512,45 +5422,45 @@
         "playerName": "Wade Boggs",
         "value": ".366"
       },
-      "onBasePercentage": {
-        "playerId": 111153,
-        "playerName": "Wade Boggs",
-        "value": ".476"
-      },
       "doubles": {
         "playerId": 111153,
         "playerName": "Wade Boggs",
         "value": "45"
+      },
+      "onBasePercentage": {
+        "playerId": 111153,
+        "playerName": "Wade Boggs",
+        "value": ".476"
       },
       "onBasePlusSlugging": {
         "playerId": 111153,
         "playerName": "Wade Boggs",
         "value": ".966"
       },
-      "triples": {
-        "playerId": 123653,
-        "playerName": "Andy Van Slyke",
-        "value": "15"
-      },
       "runsBattedIn": {
         "playerId": 111962,
         "playerName": "José Canseco",
         "value": "124"
+      },
+      "triples": {
+        "playerId": 123653,
+        "playerName": "Andy Van Slyke",
+        "value": "15"
       },
       "runs": {
         "playerId": 111153,
         "playerName": "Wade Boggs",
         "value": "128"
       },
-      "strikeouts": {
-        "playerId": 113197,
-        "playerName": "Rob Deer",
-        "value": "153"
-      },
       "walks": {
         "playerId": 111153,
         "playerName": "Wade Boggs",
         "value": "125"
+      },
+      "strikeouts": {
+        "playerId": 113197,
+        "playerName": "Rob Deer",
+        "value": "153"
       },
       "hits": {
         "playerId": 120790,
@@ -574,15 +5484,15 @@
         "playerName": "Kirby Puckett",
         "value": ".339"
       },
-      "doubles": {
-        "playerId": 111153,
-        "playerName": "Wade Boggs",
-        "value": "51"
-      },
       "onBasePercentage": {
         "playerId": 111153,
         "playerName": "Wade Boggs",
         "value": ".430"
+      },
+      "doubles": {
+        "playerId": 111153,
+        "playerName": "Wade Boggs",
+        "value": "51"
       },
       "onBasePlusSlugging": {
         "playerId": 119195,
@@ -666,15 +5576,15 @@
         "playerName": "Rickey Henderson",
         "value": "119"
       },
-      "walks": {
-        "playerId": 118743,
-        "playerName": "Mark McGwire",
-        "value": "110"
-      },
       "strikeouts": {
         "playerId": 114106,
         "playerName": "Cecil Fielder",
         "value": "182"
+      },
+      "walks": {
+        "playerId": 118743,
+        "playerName": "Mark McGwire",
+        "value": "110"
       },
       "hits": {
         "playerId": 118694,
@@ -698,15 +5608,15 @@
         "playerName": "Julio Franco",
         "value": ".341"
       },
-      "doubles": {
-        "playerId": 120191,
-        "playerName": "Rafael Palmeiro",
-        "value": "49"
-      },
       "onBasePercentage": {
         "playerId": 123245,
         "playerName": "Frank Thomas",
         "value": ".453"
+      },
+      "doubles": {
+        "playerId": 120191,
+        "playerName": "Rafael Palmeiro",
+        "value": "49"
       },
       "onBasePlusSlugging": {
         "playerId": 123245,
@@ -790,15 +5700,15 @@
         "playerName": "Tony Phillips",
         "value": "114"
       },
-      "walks": {
-        "playerId": 111188,
-        "playerName": "Barry Bonds",
-        "value": "127"
-      },
       "strikeouts": {
         "playerId": 120194,
         "playerName": "Dean Palmer",
         "value": "154"
+      },
+      "walks": {
+        "playerId": 111188,
+        "playerName": "Barry Bonds",
+        "value": "127"
       },
       "hits": {
         "playerId": 120790,
@@ -822,15 +5732,15 @@
         "playerName": "Andres Galarraga",
         "value": ".370"
       },
-      "doubles": {
-        "playerId": 119976,
-        "playerName": "John Olerud",
-        "value": "54"
-      },
       "onBasePercentage": {
         "playerId": 119976,
         "playerName": "John Olerud",
         "value": ".473"
+      },
+      "doubles": {
+        "playerId": 119976,
+        "playerName": "John Olerud",
+        "value": "54"
       },
       "onBasePlusSlugging": {
         "playerId": 111188,
@@ -946,30 +5856,30 @@
         "playerName": "Tony Gwynn",
         "value": ".368"
       },
-      "onBasePercentage": {
-        "playerId": 118365,
-        "playerName": "Edgar Martinez",
-        "value": ".479"
-      },
       "doubles": {
         "playerId": 110839,
         "playerName": "Albert Belle",
         "value": "52"
+      },
+      "onBasePercentage": {
+        "playerId": 118365,
+        "playerName": "Edgar Martinez",
+        "value": ".479"
       },
       "onBasePlusSlugging": {
         "playerId": 118365,
         "playerName": "Edgar Martinez",
         "value": "1.107"
       },
-      "triples": {
-        "playerId": 117863,
-        "playerName": "Kenny Lofton",
-        "value": "13"
-      },
       "runsBattedIn": {
         "playerId": 110974,
         "playerName": "Dante Bichette",
         "value": "128"
+      },
+      "triples": {
+        "playerId": 117863,
+        "playerName": "Kenny Lofton",
+        "value": "13"
       },
       "runs": {
         "playerId": 110987,
@@ -1038,15 +5948,15 @@
         "playerName": "Ellis Burks",
         "value": "142"
       },
-      "walks": {
-        "playerId": 111188,
-        "playerName": "Barry Bonds",
-        "value": "151"
-      },
       "strikeouts": {
         "playerId": 121357,
         "playerName": "Henry Rodriguez",
         "value": "160"
+      },
+      "walks": {
+        "playerId": 111188,
+        "playerName": "Barry Bonds",
+        "value": "151"
       },
       "hits": {
         "playerId": 116603,
@@ -1070,15 +5980,15 @@
         "playerName": "Tony Gwynn",
         "value": ".372"
       },
-      "doubles": {
-        "playerId": 115210,
-        "playerName": "Mark Grudzielanek",
-        "value": "54"
-      },
       "onBasePercentage": {
         "playerId": 123245,
         "playerName": "Frank Thomas",
         "value": ".456"
+      },
+      "doubles": {
+        "playerId": 115210,
+        "playerName": "Mark Grudzielanek",
+        "value": "54"
       },
       "onBasePlusSlugging": {
         "playerId": 123833,
@@ -1132,15 +6042,15 @@
         "playerName": "Larry Walker",
         "value": ".363"
       },
-      "doubles": {
-        "playerId": 110987,
-        "playerName": "Craig Biggio",
-        "value": "51"
-      },
       "onBasePercentage": {
         "playerId": 118743,
         "playerName": "Mark McGwire",
         "value": ".470"
+      },
+      "doubles": {
+        "playerId": 110987,
+        "playerName": "Craig Biggio",
+        "value": "51"
       },
       "onBasePlusSlugging": {
         "playerId": 118743,
@@ -1224,15 +6134,15 @@
         "playerName": "Jeff Bagwell",
         "value": "143"
       },
-      "walks": {
-        "playerId": 110432,
-        "playerName": "Jeff Bagwell",
-        "value": "149"
-      },
       "strikeouts": {
         "playerId": 122544,
         "playerName": "Sammy Sosa",
         "value": "171"
+      },
+      "walks": {
+        "playerId": 110432,
+        "playerName": "Jeff Bagwell",
+        "value": "149"
       },
       "hits": {
         "playerId": 116539,
@@ -1286,15 +6196,15 @@
         "playerName": "Jeff Bagwell",
         "value": "152"
       },
-      "walks": {
-        "playerId": 114739,
-        "playerName": "Jason Giambi",
-        "value": "137"
-      },
       "strikeouts": {
         "playerId": 133343,
         "playerName": "Preston Wilson",
         "value": "187"
+      },
+      "walks": {
+        "playerId": 114739,
+        "playerName": "Jason Giambi",
+        "value": "137"
       },
       "hits": {
         "playerId": 113889,
@@ -1380,45 +6290,45 @@
         "playerName": "Barry Bonds",
         "value": ".370"
       },
-      "onBasePercentage": {
-        "playerId": 111188,
-        "playerName": "Barry Bonds",
-        "value": ".582"
-      },
       "doubles": {
         "playerId": 110236,
         "playerName": "Garret Anderson",
         "value": "56"
+      },
+      "onBasePercentage": {
+        "playerId": 111188,
+        "playerName": "Barry Bonds",
+        "value": ".582"
       },
       "onBasePlusSlugging": {
         "playerId": 111188,
         "playerName": "Barry Bonds",
         "value": "1.381"
       },
-      "triples": {
-        "playerId": 113028,
-        "playerName": "Johnny Damon",
-        "value": "11"
-      },
       "runsBattedIn": {
         "playerId": 121347,
         "playerName": "Alex Rodriguez",
         "value": "142"
+      },
+      "triples": {
+        "playerId": 113028,
+        "playerName": "Johnny Damon",
+        "value": "11"
       },
       "runs": {
         "playerId": 150093,
         "playerName": "Alfonso Soriano",
         "value": "128"
       },
-      "strikeouts": {
-        "playerId": 115825,
-        "playerName": "José Hernández",
-        "value": "188"
-      },
       "walks": {
         "playerId": 111188,
         "playerName": "Barry Bonds",
         "value": "198"
+      },
+      "strikeouts": {
+        "playerId": 115825,
+        "playerName": "José Hernández",
+        "value": "188"
       },
       "hits": {
         "playerId": 150093,
@@ -1472,15 +6382,15 @@
         "playerName": "Albert Pujols",
         "value": "137"
       },
-      "walks": {
-        "playerId": 111188,
-        "playerName": "Barry Bonds",
-        "value": "148"
-      },
       "strikeouts": {
         "playerId": 123272,
         "playerName": "Jim Thome",
         "value": "182"
+      },
+      "walks": {
+        "playerId": 111188,
+        "playerName": "Barry Bonds",
+        "value": "148"
       },
       "hits": {
         "playerId": 150484,
@@ -1596,15 +6506,15 @@
         "playerName": "Albert Pujols",
         "value": "129"
       },
-      "walks": {
-        "playerId": 114789,
-        "playerName": "Brian Giles",
-        "value": "119"
-      },
       "strikeouts": {
         "playerId": 276055,
         "playerName": "Adam Dunn",
         "value": "168"
+      },
+      "walks": {
+        "playerId": 114789,
+        "playerName": "Brian Giles",
+        "value": "119"
       },
       "hits": {
         "playerId": 276545,
@@ -1720,15 +6630,15 @@
         "playerName": "Alex Rodriguez",
         "value": "143"
       },
-      "walks": {
-        "playerId": 111188,
-        "playerName": "Barry Bonds",
-        "value": "132"
-      },
       "strikeouts": {
         "playerId": 429667,
         "playerName": "Ryan Howard",
         "value": "199"
+      },
+      "walks": {
+        "playerId": 111188,
+        "playerName": "Barry Bonds",
+        "value": "132"
       },
       "hits": {
         "playerId": 400085,
@@ -1752,15 +6662,15 @@
         "playerName": "Chipper Jones",
         "value": ".364"
       },
-      "doubles": {
-        "playerId": 456030,
-        "playerName": "Dustin Pedroia",
-        "value": "54"
-      },
       "onBasePercentage": {
         "playerId": 116706,
         "playerName": "Chipper Jones",
         "value": ".470"
+      },
+      "doubles": {
+        "playerId": 456030,
+        "playerName": "Dustin Pedroia",
+        "value": "54"
       },
       "onBasePlusSlugging": {
         "playerId": 405395,
@@ -1906,15 +6816,15 @@
         "playerName": "Albert Pujols",
         "value": "115"
       },
-      "walks": {
-        "playerId": 425902,
-        "playerName": "Prince Fielder",
-        "value": "114"
-      },
       "strikeouts": {
         "playerId": 448602,
         "playerName": "Mark Reynolds",
         "value": "211"
+      },
+      "walks": {
+        "playerId": 425902,
+        "playerName": "Prince Fielder",
+        "value": "114"
       },
       "hits": {
         "playerId": 400085,
@@ -2000,30 +6910,30 @@
         "playerName": "Buster Posey",
         "value": ".336"
       },
-      "onBasePercentage": {
-        "playerId": 458015,
-        "playerName": "Joey Votto",
-        "value": ".474"
-      },
       "doubles": {
         "playerId": 460086,
         "playerName": "Alex Gordon",
         "value": "51"
+      },
+      "onBasePercentage": {
+        "playerId": 458015,
+        "playerName": "Joey Votto",
+        "value": ".474"
       },
       "onBasePlusSlugging": {
         "playerId": 408234,
         "playerName": "Miguel Cabrera",
         "value": ".999"
       },
-      "triples": {
-        "playerId": 434636,
-        "playerName": "Ángel Pagán",
-        "value": "15"
-      },
       "runsBattedIn": {
         "playerId": 408234,
         "playerName": "Miguel Cabrera",
         "value": "139"
+      },
+      "triples": {
+        "playerId": 434636,
+        "playerName": "Ángel Pagán",
+        "value": "15"
       },
       "runs": {
         "playerId": 545361,
@@ -2201,30 +7111,30 @@
         "playerName": "Bryce Harper",
         "value": "1.109"
       },
-      "triples": {
-        "playerId": 592696,
-        "playerName": "Eddie Rosario",
-        "value": "15"
-      },
       "runsBattedIn": {
         "playerId": 571448,
         "playerName": "Nolan Arenado",
         "value": "130"
+      },
+      "triples": {
+        "playerId": 592696,
+        "playerName": "Eddie Rosario",
+        "value": "15"
       },
       "runs": {
         "playerId": 518626,
         "playerName": "Josh Donaldson",
         "value": "122"
       },
-      "strikeouts": {
-        "playerId": 448801,
-        "playerName": "Chris Davis",
-        "value": "208"
-      },
       "walks": {
         "playerId": 458015,
         "playerName": "Joey Votto",
         "value": "143"
+      },
+      "strikeouts": {
+        "playerId": 448801,
+        "playerName": "Chris Davis",
+        "value": "208"
       },
       "hits": {
         "playerId": 543829,
@@ -2248,30 +7158,30 @@
         "playerName": "DJ LeMahieu",
         "value": ".348"
       },
-      "onBasePercentage": {
-        "playerId": 545361,
-        "playerName": "Mike Trout",
-        "value": ".441"
-      },
       "doubles": {
         "playerId": 120074,
         "playerName": "David Ortiz",
         "value": "48"
+      },
+      "onBasePercentage": {
+        "playerId": 545361,
+        "playerName": "Mike Trout",
+        "value": ".441"
       },
       "onBasePlusSlugging": {
         "playerId": 120074,
         "playerName": "David Ortiz",
         "value": "1.021"
       },
-      "triples": {
-        "playerId": 543063,
-        "playerName": "Brandon Crawford",
-        "value": "11"
-      },
       "runsBattedIn": {
         "playerId": 571448,
         "playerName": "Nolan Arenado",
         "value": "133"
+      },
+      "triples": {
+        "playerId": 543063,
+        "playerName": "Brandon Crawford",
+        "value": "11"
       },
       "runs": {
         "playerId": 545361,
@@ -2310,15 +7220,15 @@
         "playerName": "Jose Altuve",
         "value": ".346"
       },
-      "doubles": {
-        "playerId": 608070,
-        "playerName": "José Ramírez",
-        "value": "56"
-      },
       "onBasePercentage": {
         "playerId": 458015,
         "playerName": "Joey Votto",
         "value": ".454"
+      },
+      "doubles": {
+        "playerId": 608070,
+        "playerName": "José Ramírez",
+        "value": "56"
       },
       "onBasePlusSlugging": {
         "playerId": 545361,
@@ -2449,30 +7359,30 @@
         "playerName": "Christian Yelich",
         "value": "1.100"
       },
-      "triples": {
-        "playerId": 641531,
-        "playerName": "Hunter Dozier",
-        "value": "10"
-      },
       "runsBattedIn": {
         "playerId": 543685,
         "playerName": "Anthony Rendon",
         "value": "126"
+      },
+      "triples": {
+        "playerId": 641531,
+        "playerName": "Hunter Dozier",
+        "value": "10"
       },
       "runs": {
         "playerId": 605141,
         "playerName": "Mookie Betts",
         "value": "135"
       },
-      "strikeouts": {
-        "playerId": 553993,
-        "playerName": "Eugenio Suárez",
-        "value": "189"
-      },
       "walks": {
         "playerId": 608324,
         "playerName": "Alex Bregman",
         "value": "119"
+      },
+      "strikeouts": {
+        "playerId": 553993,
+        "playerName": "Eugenio Suárez",
+        "value": "189"
       },
       "hits": {
         "playerId": 593160,
@@ -2496,30 +7406,30 @@
         "playerName": "DJ LeMahieu",
         "value": ".364"
       },
-      "onBasePercentage": {
-        "playerId": 665742,
-        "playerName": "Juan Soto",
-        "value": ".490"
-      },
       "doubles": {
         "playerId": 518692,
         "playerName": "Freddie Freeman",
         "value": "23"
+      },
+      "onBasePercentage": {
+        "playerId": 665742,
+        "playerName": "Juan Soto",
+        "value": ".490"
       },
       "onBasePlusSlugging": {
         "playerId": 665742,
         "playerName": "Juan Soto",
         "value": "1.185"
       },
-      "triples": {
-        "playerId": 663656,
-        "playerName": "Kyle Tucker",
-        "value": "6"
-      },
       "runsBattedIn": {
         "playerId": 547989,
         "playerName": "José Abreu",
         "value": "60"
+      },
+      "triples": {
+        "playerId": 663656,
+        "playerName": "Kyle Tucker",
+        "value": "6"
       },
       "runs": {
         "playerId": 518692,
@@ -2744,15 +7654,15 @@
         "playerName": "Bobby Witt Jr.",
         "value": ".332"
       },
-      "doubles": {
-        "playerId": 680776,
-        "playerName": "Jarren Duran",
-        "value": "48"
-      },
       "onBasePercentage": {
         "playerId": 592450,
         "playerName": "Aaron Judge",
         "value": ".458"
+      },
+      "doubles": {
+        "playerId": 680776,
+        "playerName": "Jarren Duran",
+        "value": "48"
       },
       "onBasePlusSlugging": {
         "playerId": 592450,
@@ -2806,15 +7716,15 @@
         "playerName": "Aaron Judge",
         "value": ".331"
       },
-      "doubles": {
-        "playerId": 677951,
-        "playerName": "Bobby Witt Jr.",
-        "value": "47"
-      },
       "onBasePercentage": {
         "playerId": 592450,
         "playerName": "Aaron Judge",
         "value": ".457"
+      },
+      "doubles": {
+        "playerId": 677951,
+        "playerName": "Bobby Witt Jr.",
+        "value": "47"
       },
       "onBasePlusSlugging": {
         "playerId": 592450,
@@ -2854,6 +7764,2166 @@
     }
   },
   "pitching": {
+    "1900": {
+      "strikeouts": {
+        "playerId": 115307,
+        "playerName": "Noodles Hahn",
+        "value": "132"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 123767,
+        "playerName": "Rube Waddell",
+        "value": "1.11"
+      },
+      "saves": {
+        "playerId": 117130,
+        "playerName": "Frank Kitson",
+        "value": "4"
+      },
+      "earnedRunAverage": {
+        "playerId": 123767,
+        "playerName": "Rube Waddell",
+        "value": "2.37"
+      },
+      "wins": {
+        "playerId": 118713,
+        "playerName": "Joe McGinnity",
+        "value": "28"
+      }
+    },
+    "1901": {
+      "strikeouts": {
+        "playerId": 115307,
+        "playerName": "Noodles Hahn",
+        "value": "239"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 124692,
+        "playerName": "Cy Young",
+        "value": "0.97"
+      },
+      "saves": {
+        "playerId": 113465,
+        "playerName": "Bill Donovan",
+        "value": "3"
+      },
+      "earnedRunAverage": {
+        "playerId": 124692,
+        "playerName": "Cy Young",
+        "value": "1.62"
+      },
+      "wins": {
+        "playerId": 124692,
+        "playerName": "Cy Young",
+        "value": "33"
+      }
+    },
+    "1902": {
+      "strikeouts": {
+        "playerId": 124364,
+        "playerName": "Vic Willis",
+        "value": "225"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 110919,
+        "playerName": "Bill Bernhard",
+        "value": "0.94"
+      },
+      "saves": {
+        "playerId": 124364,
+        "playerName": "Vic Willis",
+        "value": "3"
+      },
+      "earnedRunAverage": {
+        "playerId": 123146,
+        "playerName": "Jack Taylor",
+        "value": "1.33"
+      },
+      "wins": {
+        "playerId": 124692,
+        "playerName": "Cy Young",
+        "value": "32"
+      }
+    },
+    "1903": {
+      "strikeouts": {
+        "playerId": 123767,
+        "playerName": "Rube Waddell",
+        "value": "302"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 116772,
+        "playerName": "Addie Joss",
+        "value": "0.95"
+      },
+      "saves": {
+        "playerId": 118006,
+        "playerName": "Carl Lundgren",
+        "value": "3"
+      },
+      "earnedRunAverage": {
+        "playerId": 119293,
+        "playerName": "Earl Moore",
+        "value": "1.74"
+      },
+      "wins": {
+        "playerId": 118713,
+        "playerName": "Joe McGinnity",
+        "value": "31"
+      }
+    },
+    "1904": {
+      "strikeouts": {
+        "playerId": 123767,
+        "playerName": "Rube Waddell",
+        "value": "349"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 124692,
+        "playerName": "Cy Young",
+        "value": "0.94"
+      },
+      "saves": {
+        "playerId": 118713,
+        "playerName": "Joe McGinnity",
+        "value": "5"
+      },
+      "earnedRunAverage": {
+        "playerId": 116772,
+        "playerName": "Addie Joss",
+        "value": "1.59"
+      },
+      "wins": {
+        "playerId": 112233,
+        "playerName": "Jack Chesbro",
+        "value": "41"
+      }
+    },
+    "1905": {
+      "strikeouts": {
+        "playerId": 123767,
+        "playerName": "Rube Waddell",
+        "value": "287"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 124692,
+        "playerName": "Cy Young",
+        "value": "0.87"
+      },
+      "saves": {
+        "playerId": 113804,
+        "playerName": "Claud Elliott",
+        "value": "6"
+      },
+      "earnedRunAverage": {
+        "playerId": 118422,
+        "playerName": "Christy Mathewson",
+        "value": "1.28"
+      },
+      "wins": {
+        "playerId": 118422,
+        "playerName": "Christy Mathewson",
+        "value": "31"
+      }
+    },
+    "1906": {
+      "strikeouts": {
+        "playerId": 123767,
+        "playerName": "Rube Waddell",
+        "value": "196"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 124173,
+        "playerName": "Doc White",
+        "value": "0.90"
+      },
+      "saves": {
+        "playerId": 114065,
+        "playerName": "Cecil Ferguson",
+        "value": "7"
+      },
+      "earnedRunAverage": {
+        "playerId": 111577,
+        "playerName": "Mordecai Brown",
+        "value": "1.04"
+      },
+      "wins": {
+        "playerId": 118713,
+        "playerName": "Joe McGinnity",
+        "value": "27"
+      }
+    },
+    "1907": {
+      "strikeouts": {
+        "playerId": 123767,
+        "playerName": "Rube Waddell",
+        "value": "232"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 111577,
+        "playerName": "Mordecai Brown",
+        "value": "0.94"
+      },
+      "saves": {
+        "playerId": 113382,
+        "playerName": "Bill Dinneen",
+        "value": "4"
+      },
+      "earnedRunAverage": {
+        "playerId": 120496,
+        "playerName": "Jack Pfiester",
+        "value": "1.15"
+      },
+      "wins": {
+        "playerId": 116772,
+        "playerName": "Addie Joss",
+        "value": "27"
+      }
+    },
+    "1908": {
+      "strikeouts": {
+        "playerId": 123878,
+        "playerName": "Ed Walsh",
+        "value": "269"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 116772,
+        "playerName": "Addie Joss",
+        "value": "0.81"
+      },
+      "saves": {
+        "playerId": 123878,
+        "playerName": "Ed Walsh",
+        "value": "6"
+      },
+      "earnedRunAverage": {
+        "playerId": 116772,
+        "playerName": "Addie Joss",
+        "value": "1.16"
+      },
+      "wins": {
+        "playerId": 123878,
+        "playerName": "Ed Walsh",
+        "value": "40"
+      }
+    },
+    "1909": {
+      "strikeouts": {
+        "playerId": 120128,
+        "playerName": "Orval Overall",
+        "value": "205"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 118422,
+        "playerName": "Christy Mathewson",
+        "value": "0.83"
+      },
+      "saves": {
+        "playerId": 110310,
+        "playerName": "Frank Arellanes",
+        "value": "8"
+      },
+      "earnedRunAverage": {
+        "playerId": 118422,
+        "playerName": "Christy Mathewson",
+        "value": "1.14"
+      },
+      "wins": {
+        "playerId": 119502,
+        "playerName": "George Mullin",
+        "value": "29"
+      }
+    },
+    "1910": {
+      "strikeouts": {
+        "playerId": 116635,
+        "playerName": "Walter Johnson",
+        "value": "313"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 123878,
+        "playerName": "Ed Walsh",
+        "value": "0.82"
+      },
+      "saves": {
+        "playerId": 111577,
+        "playerName": "Mordecai Brown",
+        "value": "7"
+      },
+      "earnedRunAverage": {
+        "playerId": 123878,
+        "playerName": "Ed Walsh",
+        "value": "1.27"
+      },
+      "wins": {
+        "playerId": 112639,
+        "playerName": "Jack Coombs",
+        "value": "31"
+      }
+    },
+    "1911": {
+      "strikeouts": {
+        "playerId": 123878,
+        "playerName": "Ed Walsh",
+        "value": "255"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 110044,
+        "playerName": "Babe Adams",
+        "value": "1.01"
+      },
+      "saves": {
+        "playerId": 111577,
+        "playerName": "Mordecai Brown",
+        "value": "13"
+      },
+      "earnedRunAverage": {
+        "playerId": 115117,
+        "playerName": "Vean Gregg",
+        "value": "1.80"
+      },
+      "wins": {
+        "playerId": 110127,
+        "playerName": "Grover Alexander",
+        "value": "28"
+      }
+    },
+    "1912": {
+      "strikeouts": {
+        "playerId": 116635,
+        "playerName": "Walter Johnson",
+        "value": "303"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 116635,
+        "playerName": "Walter Johnson",
+        "value": "0.91"
+      },
+      "saves": {
+        "playerId": 123878,
+        "playerName": "Ed Walsh",
+        "value": "10"
+      },
+      "earnedRunAverage": {
+        "playerId": 116635,
+        "playerName": "Walter Johnson",
+        "value": "1.39"
+      },
+      "wins": {
+        "playerId": 124535,
+        "playerName": "Joe Wood",
+        "value": "34"
+      }
+    },
+    "1913": {
+      "strikeouts": {
+        "playerId": 116635,
+        "playerName": "Walter Johnson",
+        "value": "243"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 116635,
+        "playerName": "Walter Johnson",
+        "value": "0.78"
+      },
+      "saves": {
+        "playerId": 110850,
+        "playerName": "Chief Bender",
+        "value": "13"
+      },
+      "earnedRunAverage": {
+        "playerId": 116635,
+        "playerName": "Walter Johnson",
+        "value": "1.14"
+      },
+      "wins": {
+        "playerId": 116635,
+        "playerName": "Walter Johnson",
+        "value": "36"
+      }
+    },
+    "1914": {
+      "strikeouts": {
+        "playerId": 113990,
+        "playerName": "Cy Falkenberg",
+        "value": "236"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 117690,
+        "playerName": "Dutch Leonard",
+        "value": "0.89"
+      },
+      "saves": {
+        "playerId": 110219,
+        "playerName": "Red Ames",
+        "value": "6"
+      },
+      "earnedRunAverage": {
+        "playerId": 117690,
+        "playerName": "Dutch Leonard",
+        "value": "0.96"
+      },
+      "wins": {
+        "playerId": 115760,
+        "playerName": "Claude Hendrix",
+        "value": "29"
+      }
+    },
+    "1915": {
+      "strikeouts": {
+        "playerId": 110127,
+        "playerName": "Grover Alexander",
+        "value": "241"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 110127,
+        "playerName": "Grover Alexander",
+        "value": "0.84"
+      },
+      "saves": {
+        "playerId": 110784,
+        "playerName": "Hugh Bedient",
+        "value": "10"
+      },
+      "earnedRunAverage": {
+        "playerId": 110127,
+        "playerName": "Grover Alexander",
+        "value": "1.22"
+      },
+      "wins": {
+        "playerId": 110127,
+        "playerName": "Grover Alexander",
+        "value": "31"
+      }
+    },
+    "1916": {
+      "strikeouts": {
+        "playerId": 116635,
+        "playerName": "Walter Johnson",
+        "value": "228"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 121564,
+        "playerName": "Reb Russell",
+        "value": "0.94"
+      },
+      "saves": {
+        "playerId": 110219,
+        "playerName": "Red Ames",
+        "value": "8"
+      },
+      "earnedRunAverage": {
+        "playerId": 110127,
+        "playerName": "Grover Alexander",
+        "value": "1.55"
+      },
+      "wins": {
+        "playerId": 110127,
+        "playerName": "Grover Alexander",
+        "value": "33"
+      }
+    },
+    "1917": {
+      "strikeouts": {
+        "playerId": 110127,
+        "playerName": "Grover Alexander",
+        "value": "200"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 112288,
+        "playerName": "Eddie Cicotte",
+        "value": "0.91"
+      },
+      "saves": {
+        "playerId": 113031,
+        "playerName": "Dave Danforth",
+        "value": "9"
+      },
+      "earnedRunAverage": {
+        "playerId": 110243,
+        "playerName": "Fred Anderson",
+        "value": "1.44"
+      },
+      "wins": {
+        "playerId": 110127,
+        "playerName": "Grover Alexander",
+        "value": "30"
+      }
+    },
+    "1918": {
+      "strikeouts": {
+        "playerId": 116635,
+        "playerName": "Walter Johnson",
+        "value": "162"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 116635,
+        "playerName": "Walter Johnson",
+        "value": "0.95"
+      },
+      "saves": {
+        "playerId": 119224,
+        "playerName": "George Mogridge",
+        "value": "7"
+      },
+      "earnedRunAverage": {
+        "playerId": 116635,
+        "playerName": "Walter Johnson",
+        "value": "1.27"
+      },
+      "wins": {
+        "playerId": 116635,
+        "playerName": "Walter Johnson",
+        "value": "23"
+      }
+    },
+    "1919": {
+      "strikeouts": {
+        "playerId": 116635,
+        "playerName": "Walter Johnson",
+        "value": "147"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 110044,
+        "playerName": "Babe Adams",
+        "value": "0.90"
+      },
+      "saves": {
+        "playerId": 121562,
+        "playerName": "Allen Russell",
+        "value": "5"
+      },
+      "earnedRunAverage": {
+        "playerId": 116635,
+        "playerName": "Walter Johnson",
+        "value": "1.49"
+      },
+      "wins": {
+        "playerId": 112288,
+        "playerName": "Eddie Cicotte",
+        "value": "29"
+      }
+    },
+    "1920": {
+      "strikeouts": {
+        "playerId": 110127,
+        "playerName": "Grover Alexander",
+        "value": "173"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 820337,
+        "playerName": "Dave Brown",
+        "value": "0.89"
+      },
+      "saves": {
+        "playerId": 122128,
+        "playerName": "Bill Sherdel",
+        "value": "6"
+      },
+      "earnedRunAverage": {
+        "playerId": 820337,
+        "playerName": "Dave Brown",
+        "value": "1.72"
+      },
+      "wins": {
+        "playerId": 110431,
+        "playerName": "Jim Bagby Sr.",
+        "value": "31"
+      }
+    },
+    "1921": {
+      "strikeouts": {
+        "playerId": 116635,
+        "playerName": "Walter Johnson",
+        "value": "143"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 820337,
+        "playerName": "Dave Brown",
+        "value": "0.92"
+      },
+      "saves": {
+        "playerId": 118494,
+        "playerName": "Carl Mays",
+        "value": "7"
+      },
+      "earnedRunAverage": {
+        "playerId": 492581,
+        "playerName": "Bullet Rogan",
+        "value": "1.82"
+      },
+      "wins": {
+        "playerId": 118494,
+        "playerName": "Carl Mays",
+        "value": "27"
+      }
+    },
+    "1922": {
+      "strikeouts": {
+        "playerId": 122176,
+        "playerName": "Urban Shocker",
+        "value": "149"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 818988,
+        "playerName": "Bill Holland",
+        "value": "1.02"
+      },
+      "saves": {
+        "playerId": 116726,
+        "playerName": "Sad Sam Jones",
+        "value": "8"
+      },
+      "earnedRunAverage": {
+        "playerId": 113500,
+        "playerName": "Phil Douglas",
+        "value": "2.63"
+      },
+      "wins": {
+        "playerId": 121426,
+        "playerName": "Eddie Rommel",
+        "value": "27"
+      }
+    },
+    "1923": {
+      "strikeouts": {
+        "playerId": 123630,
+        "playerName": "Dazzy Vance",
+        "value": "197"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 818463,
+        "playerName": "Hubert Lockhart",
+        "value": "1.08"
+      },
+      "saves": {
+        "playerId": 121562,
+        "playerName": "Allen Russell",
+        "value": "9"
+      },
+      "earnedRunAverage": {
+        "playerId": 118012,
+        "playerName": "Dolf Luque",
+        "value": "1.93"
+      },
+      "wins": {
+        "playerId": 118012,
+        "playerName": "Dolf Luque",
+        "value": "27"
+      }
+    },
+    "1924": {
+      "strikeouts": {
+        "playerId": 123630,
+        "playerName": "Dazzy Vance",
+        "value": "262"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 123630,
+        "playerName": "Dazzy Vance",
+        "value": "1.02"
+      },
+      "saves": {
+        "playerId": 118277,
+        "playerName": "Firpo Marberry",
+        "value": "15"
+      },
+      "earnedRunAverage": {
+        "playerId": 817895,
+        "playerName": "Juan Padron",
+        "value": "2.04"
+      },
+      "wins": {
+        "playerId": 123630,
+        "playerName": "Dazzy Vance",
+        "value": "28"
+      }
+    },
+    "1925": {
+      "strikeouts": {
+        "playerId": 123630,
+        "playerName": "Dazzy Vance",
+        "value": "221"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 492581,
+        "playerName": "Bullet Rogan",
+        "value": "1.02"
+      },
+      "saves": {
+        "playerId": 118277,
+        "playerName": "Firpo Marberry",
+        "value": "15"
+      },
+      "earnedRunAverage": {
+        "playerId": 492581,
+        "playerName": "Bullet Rogan",
+        "value": "1.74"
+      },
+      "wins": {
+        "playerId": 123630,
+        "playerName": "Dazzy Vance",
+        "value": "22"
+      }
+    },
+    "1926": {
+      "strikeouts": {
+        "playerId": 115201,
+        "playerName": "Lefty Grove",
+        "value": "194"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 819488,
+        "playerName": "Bill Foster",
+        "value": "0.98"
+      },
+      "saves": {
+        "playerId": 118277,
+        "playerName": "Firpo Marberry",
+        "value": "22"
+      },
+      "earnedRunAverage": {
+        "playerId": 819488,
+        "playerName": "Bill Foster",
+        "value": "1.80"
+      },
+      "wins": {
+        "playerId": 123550,
+        "playerName": "George Uhle",
+        "value": "27"
+      }
+    },
+    "1927": {
+      "strikeouts": {
+        "playerId": 123630,
+        "playerName": "Dazzy Vance",
+        "value": "184"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 818238,
+        "playerName": "Webster McDonald",
+        "value": "1.02"
+      },
+      "saves": {
+        "playerId": 111406,
+        "playerName": "Garland Braxton",
+        "value": "13"
+      },
+      "earnedRunAverage": {
+        "playerId": 819488,
+        "playerName": "Bill Foster",
+        "value": "2.21"
+      },
+      "wins": {
+        "playerId": 121440,
+        "playerName": "Charlie Root",
+        "value": "26"
+      }
+    },
+    "1928": {
+      "strikeouts": {
+        "playerId": 123630,
+        "playerName": "Dazzy Vance",
+        "value": "200"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 111406,
+        "playerName": "Garland Braxton",
+        "value": "1.01"
+      },
+      "saves": {
+        "playerId": 116241,
+        "playerName": "Waite Hoyt",
+        "value": "8"
+      },
+      "earnedRunAverage": {
+        "playerId": 817277,
+        "playerName": "Jimmy Shields",
+        "value": "1.67"
+      },
+      "wins": {
+        "playerId": 110883,
+        "playerName": "Larry Benton",
+        "value": "25"
+      }
+    },
+    "1929": {
+      "strikeouts": {
+        "playerId": 120181,
+        "playerName": "Satchel Paige",
+        "value": "195"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 820392,
+        "playerName": "Chet Brewer",
+        "value": "0.98"
+      },
+      "saves": {
+        "playerId": 118277,
+        "playerName": "Firpo Marberry",
+        "value": "11"
+      },
+      "earnedRunAverage": {
+        "playerId": 820392,
+        "playerName": "Chet Brewer",
+        "value": "2.12"
+      },
+      "wins": {
+        "playerId": 113700,
+        "playerName": "George Earnshaw",
+        "value": "24"
+      }
+    },
+    "1930": {
+      "strikeouts": {
+        "playerId": 115201,
+        "playerName": "Lefty Grove",
+        "value": "209"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 819817,
+        "playerName": "Nelson Dean",
+        "value": "1.10"
+      },
+      "saves": {
+        "playerId": 115201,
+        "playerName": "Lefty Grove",
+        "value": "9"
+      },
+      "earnedRunAverage": {
+        "playerId": 115201,
+        "playerName": "Lefty Grove",
+        "value": "2.54"
+      },
+      "wins": {
+        "playerId": 115201,
+        "playerName": "Lefty Grove",
+        "value": "28"
+      }
+    },
+    "1931": {
+      "strikeouts": {
+        "playerId": 115201,
+        "playerName": "Lefty Grove",
+        "value": "175"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 818118,
+        "playerName": "George Mitchell",
+        "value": "0.97"
+      },
+      "saves": {
+        "playerId": 120843,
+        "playerName": "Jack Quinn",
+        "value": "15"
+      },
+      "earnedRunAverage": {
+        "playerId": 819068,
+        "playerName": "Logan Hensley",
+        "value": "1.63"
+      },
+      "wins": {
+        "playerId": 115201,
+        "playerName": "Lefty Grove",
+        "value": "31"
+      }
+    },
+    "1932": {
+      "strikeouts": {
+        "playerId": 113168,
+        "playerName": "Dizzy Dean",
+        "value": "191"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 817852,
+        "playerName": "Roy Parnell",
+        "value": "0.91"
+      },
+      "saves": {
+        "playerId": 118277,
+        "playerName": "Firpo Marberry",
+        "value": "13"
+      },
+      "earnedRunAverage": {
+        "playerId": 817852,
+        "playerName": "Roy Parnell",
+        "value": "1.26"
+      },
+      "wins": {
+        "playerId": 112879,
+        "playerName": "Alvin Crowder",
+        "value": "26"
+      }
+    },
+    "1933": {
+      "strikeouts": {
+        "playerId": 113168,
+        "playerName": "Dizzy Dean",
+        "value": "199"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 120181,
+        "playerName": "Satchel Paige",
+        "value": "0.83"
+      },
+      "saves": {
+        "playerId": 121567,
+        "playerName": "Jack Russell",
+        "value": "13"
+      },
+      "earnedRunAverage": {
+        "playerId": 116249,
+        "playerName": "Carl Hubbell",
+        "value": "1.66"
+      },
+      "wins": {
+        "playerId": 112879,
+        "playerName": "Alvin Crowder",
+        "value": "24"
+      }
+    },
+    "1934": {
+      "strikeouts": {
+        "playerId": 113168,
+        "playerName": "Dizzy Dean",
+        "value": "195"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 120181,
+        "playerName": "Satchel Paige",
+        "value": "0.87"
+      },
+      "saves": {
+        "playerId": 116249,
+        "playerName": "Carl Hubbell",
+        "value": "8"
+      },
+      "earnedRunAverage": {
+        "playerId": 818673,
+        "playerName": "Slim Jones",
+        "value": "1.60"
+      },
+      "wins": {
+        "playerId": 113168,
+        "playerName": "Dizzy Dean",
+        "value": "30"
+      }
+    },
+    "1935": {
+      "strikeouts": {
+        "playerId": 113168,
+        "playerName": "Dizzy Dean",
+        "value": "190"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 818295,
+        "playerName": "Leroy Matlock",
+        "value": "1.01"
+      },
+      "saves": {
+        "playerId": 117689,
+        "playerName": "Dutch Leonard",
+        "value": "8"
+      },
+      "earnedRunAverage": {
+        "playerId": 818295,
+        "playerName": "Leroy Matlock",
+        "value": "1.73"
+      },
+      "wins": {
+        "playerId": 113168,
+        "playerName": "Dizzy Dean",
+        "value": "28"
+      }
+    },
+    "1936": {
+      "strikeouts": {
+        "playerId": 119518,
+        "playerName": "Van Mungo",
+        "value": "238"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 116249,
+        "playerName": "Carl Hubbell",
+        "value": "1.06"
+      },
+      "saves": {
+        "playerId": 113168,
+        "playerName": "Dizzy Dean",
+        "value": "11"
+      },
+      "earnedRunAverage": {
+        "playerId": 116249,
+        "playerName": "Carl Hubbell",
+        "value": "2.31"
+      },
+      "wins": {
+        "playerId": 116249,
+        "playerName": "Carl Hubbell",
+        "value": "26"
+      }
+    },
+    "1937": {
+      "strikeouts": {
+        "playerId": 114917,
+        "playerName": "Lefty Gomez",
+        "value": "194"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 817188,
+        "playerName": "Hilton Smith",
+        "value": "0.86"
+      },
+      "saves": {
+        "playerId": 111538,
+        "playerName": "Clint Brown",
+        "value": "18"
+      },
+      "earnedRunAverage": {
+        "playerId": 820397,
+        "playerName": "Eugene Bremer",
+        "value": "1.47"
+      },
+      "wins": {
+        "playerId": 116249,
+        "playerName": "Carl Hubbell",
+        "value": "22"
+      }
+    },
+    "1938": {
+      "strikeouts": {
+        "playerId": 114055,
+        "playerName": "Bob Feller",
+        "value": "240"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 817188,
+        "playerName": "Hilton Smith",
+        "value": "1.01"
+      },
+      "saves": {
+        "playerId": 112445,
+        "playerName": "Dick Coffman",
+        "value": "12"
+      },
+      "earnedRunAverage": {
+        "playerId": 817188,
+        "playerName": "Hilton Smith",
+        "value": "2.08"
+      },
+      "wins": {
+        "playerId": 117616,
+        "playerName": "Bill Lee",
+        "value": "22"
+      }
+    },
+    "1939": {
+      "strikeouts": {
+        "playerId": 114055,
+        "playerName": "Bob Feller",
+        "value": "246"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 817188,
+        "playerName": "Hilton Smith",
+        "value": "0.96"
+      },
+      "saves": {
+        "playerId": 119560,
+        "playerName": "Johnny Murphy",
+        "value": "19"
+      },
+      "earnedRunAverage": {
+        "playerId": 817903,
+        "playerName": "Smoky Owens",
+        "value": "1.90"
+      },
+      "wins": {
+        "playerId": 123898,
+        "playerName": "Bucky Walters",
+        "value": "27"
+      }
+    },
+    "1940": {
+      "strikeouts": {
+        "playerId": 114055,
+        "playerName": "Bob Feller",
+        "value": "261"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 816766,
+        "playerName": "George Walker",
+        "value": "0.73"
+      },
+      "saves": {
+        "playerId": 110881,
+        "playerName": "Al Benton",
+        "value": "17"
+      },
+      "earnedRunAverage": {
+        "playerId": 816766,
+        "playerName": "George Walker",
+        "value": "1.21"
+      },
+      "wins": {
+        "playerId": 114055,
+        "playerName": "Bob Feller",
+        "value": "27"
+      }
+    },
+    "1941": {
+      "strikeouts": {
+        "playerId": 114055,
+        "playerName": "Bob Feller",
+        "value": "260"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 110530,
+        "playerName": "Dan Bankhead",
+        "value": "0.84"
+      },
+      "saves": {
+        "playerId": 119560,
+        "playerName": "Johnny Murphy",
+        "value": "15"
+      },
+      "earnedRunAverage": {
+        "playerId": 817188,
+        "playerName": "Hilton Smith",
+        "value": "1.65"
+      },
+      "wins": {
+        "playerId": 114055,
+        "playerName": "Bob Feller",
+        "value": "25"
+      }
+    },
+    "1942": {
+      "strikeouts": {
+        "playerId": 123638,
+        "playerName": "Johnny Vander Meer",
+        "value": "186"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 818356,
+        "playerName": "Johnny Markham",
+        "value": "0.92"
+      },
+      "saves": {
+        "playerId": 112083,
+        "playerName": "Hugh Casey",
+        "value": "13"
+      },
+      "earnedRunAverage": {
+        "playerId": 819459,
+        "playerName": "Jonas Gaines",
+        "value": "1.70"
+      },
+      "wins": {
+        "playerId": 112657,
+        "playerName": "Mort Cooper",
+        "value": "22"
+      }
+    },
+    "1943": {
+      "strikeouts": {
+        "playerId": 123638,
+        "playerName": "Johnny Vander Meer",
+        "value": "174"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 112187,
+        "playerName": "Spud Chandler",
+        "value": "0.99"
+      },
+      "saves": {
+        "playerId": 118222,
+        "playerName": "Gordon Maltzberger",
+        "value": "14"
+      },
+      "earnedRunAverage": {
+        "playerId": 112187,
+        "playerName": "Spud Chandler",
+        "value": "1.64"
+      },
+      "wins": {
+        "playerId": 112657,
+        "playerName": "Mort Cooper",
+        "value": "21"
+      }
+    },
+    "1944": {
+      "strikeouts": {
+        "playerId": 119739,
+        "playerName": "Hal Newhouser",
+        "value": "187"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 120181,
+        "playerName": "Satchel Paige",
+        "value": "0.91"
+      },
+      "saves": {
+        "playerId": 110043,
+        "playerName": "Ace Adams",
+        "value": "13"
+      },
+      "earnedRunAverage": {
+        "playerId": 120181,
+        "playerName": "Satchel Paige",
+        "value": "1.01"
+      },
+      "wins": {
+        "playerId": 119739,
+        "playerName": "Hal Newhouser",
+        "value": "29"
+      }
+    },
+    "1945": {
+      "strikeouts": {
+        "playerId": 119739,
+        "playerName": "Hal Newhouser",
+        "value": "212"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 120769,
+        "playerName": "Ray Prim",
+        "value": "1.00"
+      },
+      "saves": {
+        "playerId": 110043,
+        "playerName": "Ace Adams",
+        "value": "15"
+      },
+      "earnedRunAverage": {
+        "playerId": 119739,
+        "playerName": "Hal Newhouser",
+        "value": "1.81"
+      },
+      "wins": {
+        "playerId": 119739,
+        "playerName": "Hal Newhouser",
+        "value": "25"
+      }
+    },
+    "1946": {
+      "strikeouts": {
+        "playerId": 114055,
+        "playerName": "Bob Feller",
+        "value": "348"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 119739,
+        "playerName": "Hal Newhouser",
+        "value": "1.07"
+      },
+      "saves": {
+        "playerId": 117163,
+        "playerName": "Bob Klinger",
+        "value": "9"
+      },
+      "earnedRunAverage": {
+        "playerId": 119739,
+        "playerName": "Hal Newhouser",
+        "value": "1.94"
+      },
+      "wins": {
+        "playerId": 114055,
+        "playerName": "Bob Feller",
+        "value": "26"
+      }
+    },
+    "1947": {
+      "strikeouts": {
+        "playerId": 114055,
+        "playerName": "Bob Feller",
+        "value": "196"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 816955,
+        "playerName": "Frank Thompson",
+        "value": "1.09"
+      },
+      "saves": {
+        "playerId": 112083,
+        "playerName": "Hugh Casey",
+        "value": "18"
+      },
+      "earnedRunAverage": {
+        "playerId": 122557,
+        "playerName": "Warren Spahn",
+        "value": "2.36"
+      },
+      "wins": {
+        "playerId": 111048,
+        "playerName": "Ewell Blackwell",
+        "value": "22"
+      }
+    },
+    "1948": {
+      "strikeouts": {
+        "playerId": 114055,
+        "playerName": "Bob Feller",
+        "value": "164"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 820247,
+        "playerName": "Bill Byrd",
+        "value": "1.02"
+      },
+      "saves": {
+        "playerId": 112276,
+        "playerName": "Russ Christopher",
+        "value": "17"
+      },
+      "earnedRunAverage": {
+        "playerId": 818363,
+        "playerName": "Max Manning",
+        "value": "1.75"
+      },
+      "wins": {
+        "playerId": 121623,
+        "playerName": "Johnny Sain",
+        "value": "24"
+      }
+    },
+    "1949": {
+      "strikeouts": {
+        "playerId": 123486,
+        "playerName": "Virgil Trucks",
+        "value": "153"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 117270,
+        "playerName": "Dave Koslo",
+        "value": "1.11"
+      },
+      "saves": {
+        "playerId": 120170,
+        "playerName": "Joe Page",
+        "value": "27"
+      },
+      "earnedRunAverage": {
+        "playerId": 114586,
+        "playerName": "Mike Garcia",
+        "value": "2.36"
+      },
+      "wins": {
+        "playerId": 120242,
+        "playerName": "Mel Parnell",
+        "value": "25"
+      }
+    },
+    "1950": {
+      "strikeouts": {
+        "playerId": 122557,
+        "playerName": "Warren Spahn",
+        "value": "191"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 116491,
+        "playerName": "Larry Jansen",
+        "value": "1.07"
+      },
+      "saves": {
+        "playerId": 117250,
+        "playerName": "Jim Konstanty",
+        "value": "22"
+      },
+      "earnedRunAverage": {
+        "playerId": 118140,
+        "playerName": "Sal Maglie",
+        "value": "2.71"
+      },
+      "wins": {
+        "playerId": 117671,
+        "playerName": "Bob Lemon",
+        "value": "23"
+      }
+    },
+    "1951": {
+      "strikeouts": {
+        "playerId": 119733,
+        "playerName": "Don Newcombe",
+        "value": "164"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 120881,
+        "playerName": "Ken Raffensberger",
+        "value": "1.09"
+      },
+      "saves": {
+        "playerId": 117071,
+        "playerName": "Ellis Kinder",
+        "value": "14"
+      },
+      "earnedRunAverage": {
+        "playerId": 121395,
+        "playerName": "Saul Rogovin",
+        "value": "2.78"
+      },
+      "wins": {
+        "playerId": 116491,
+        "playerName": "Larry Jansen",
+        "value": "23"
+      }
+    },
+    "1952": {
+      "strikeouts": {
+        "playerId": 122557,
+        "playerName": "Warren Spahn",
+        "value": "183"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 115285,
+        "playerName": "Warren Hacker",
+        "value": "0.95"
+      },
+      "saves": {
+        "playerId": 111409,
+        "playerName": "Al Brazle",
+        "value": "16"
+      },
+      "earnedRunAverage": {
+        "playerId": 121100,
+        "playerName": "Allie Reynolds",
+        "value": "2.06"
+      },
+      "wins": {
+        "playerId": 121283,
+        "playerName": "Robin Roberts",
+        "value": "28"
+      }
+    },
+    "1953": {
+      "strikeouts": {
+        "playerId": 121283,
+        "playerName": "Robin Roberts",
+        "value": "198"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 122557,
+        "playerName": "Warren Spahn",
+        "value": "1.06"
+      },
+      "saves": {
+        "playerId": 117071,
+        "playerName": "Ellis Kinder",
+        "value": "27"
+      },
+      "earnedRunAverage": {
+        "playerId": 122557,
+        "playerName": "Warren Spahn",
+        "value": "2.10"
+      },
+      "wins": {
+        "playerId": 121283,
+        "playerName": "Robin Roberts",
+        "value": "23"
+      }
+    },
+    "1954": {
+      "strikeouts": {
+        "playerId": 121283,
+        "playerName": "Robin Roberts",
+        "value": "185"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 121283,
+        "playerName": "Robin Roberts",
+        "value": "1.02"
+      },
+      "saves": {
+        "playerId": 116279,
+        "playerName": "Jim Hughes",
+        "value": "24"
+      },
+      "earnedRunAverage": {
+        "playerId": 110287,
+        "playerName": "Johnny Antonelli",
+        "value": "2.30"
+      },
+      "wins": {
+        "playerId": 117671,
+        "playerName": "Bob Lemon",
+        "value": "23"
+      }
+    },
+    "1955": {
+      "strikeouts": {
+        "playerId": 121923,
+        "playerName": "Herb Score",
+        "value": "245"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 120562,
+        "playerName": "Billy Pierce",
+        "value": "1.10"
+      },
+      "saves": {
+        "playerId": 119653,
+        "playerName": "Ray Narleski",
+        "value": "19"
+      },
+      "earnedRunAverage": {
+        "playerId": 120562,
+        "playerName": "Billy Pierce",
+        "value": "1.97"
+      },
+      "wins": {
+        "playerId": 121283,
+        "playerName": "Robin Roberts",
+        "value": "23"
+      }
+    },
+    "1956": {
+      "strikeouts": {
+        "playerId": 121923,
+        "playerName": "Herb Score",
+        "value": "263"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 119733,
+        "playerName": "Don Newcombe",
+        "value": "0.99"
+      },
+      "saves": {
+        "playerId": 117384,
+        "playerName": "Clem Labine",
+        "value": "19"
+      },
+      "earnedRunAverage": {
+        "playerId": 114299,
+        "playerName": "Whitey Ford",
+        "value": "2.47"
+      },
+      "wins": {
+        "playerId": 119733,
+        "playerName": "Don Newcombe",
+        "value": "27"
+      }
+    },
+    "1957": {
+      "strikeouts": {
+        "playerId": 121684,
+        "playerName": "Jack Sanford",
+        "value": "188"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 122945,
+        "playerName": "Frank Sullivan",
+        "value": "1.06"
+      },
+      "saves": {
+        "playerId": 115160,
+        "playerName": "Bob Grim",
+        "value": "19"
+      },
+      "earnedRunAverage": {
+        "playerId": 122060,
+        "playerName": "Bobby Shantz",
+        "value": "2.45"
+      },
+      "wins": {
+        "playerId": 122557,
+        "playerName": "Warren Spahn",
+        "value": "21"
+      }
+    },
+    "1958": {
+      "strikeouts": {
+        "playerId": 116725,
+        "playerName": "Sam Jones",
+        "value": "225"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 114299,
+        "playerName": "Whitey Ford",
+        "value": "1.08"
+      },
+      "saves": {
+        "playerId": 113653,
+        "playerName": "Ryne Duren",
+        "value": "20"
+      },
+      "earnedRunAverage": {
+        "playerId": 114299,
+        "playerName": "Whitey Ford",
+        "value": "2.01"
+      },
+      "wins": {
+        "playerId": 114442,
+        "playerName": "Bob Friend",
+        "value": "22"
+      }
+    },
+    "1959": {
+      "strikeouts": {
+        "playerId": 113581,
+        "playerName": "Don Drysdale",
+        "value": "242"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 113393,
+        "playerName": "Art Ditmar",
+        "value": "1.03"
+      },
+      "saves": {
+        "playerId": 117962,
+        "playerName": "Turk Lown",
+        "value": "15"
+      },
+      "earnedRunAverage": {
+        "playerId": 124261,
+        "playerName": "Hoyt Wilhelm",
+        "value": "2.19"
+      },
+      "wins": {
+        "playerId": 124633,
+        "playerName": "Early Wynn",
+        "value": "22"
+      }
+    },
+    "1960": {
+      "strikeouts": {
+        "playerId": 113581,
+        "playerName": "Don Drysdale",
+        "value": "246"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 113581,
+        "playerName": "Don Drysdale",
+        "value": "1.06"
+      },
+      "saves": {
+        "playerId": 118624,
+        "playerName": "Lindy McDaniel",
+        "value": "26"
+      },
+      "earnedRunAverage": {
+        "playerId": 110702,
+        "playerName": "Frank Baumann",
+        "value": "2.67"
+      },
+      "wins": {
+        "playerId": 111501,
+        "playerName": "Ernie Broglio",
+        "value": "21"
+      }
+    },
+    "1961": {
+      "strikeouts": {
+        "playerId": 117277,
+        "playerName": "Sandy Koufax",
+        "value": "269"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 113462,
+        "playerName": "Dick Donovan",
+        "value": "1.03"
+      },
+      "saves": {
+        "playerId": 110341,
+        "playerName": "Luis Arroyo",
+        "value": "29"
+      },
+      "earnedRunAverage": {
+        "playerId": 113462,
+        "playerName": "Dick Donovan",
+        "value": "2.40"
+      },
+      "wins": {
+        "playerId": 114299,
+        "playerName": "Whitey Ford",
+        "value": "25"
+      }
+    },
+    "1962": {
+      "strikeouts": {
+        "playerId": 113581,
+        "playerName": "Don Drysdale",
+        "value": "232"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 117277,
+        "playerName": "Sandy Koufax",
+        "value": "1.04"
+      },
+      "saves": {
+        "playerId": 113968,
+        "playerName": "Roy Face",
+        "value": "28"
+      },
+      "earnedRunAverage": {
+        "playerId": 110091,
+        "playerName": "Hank Aguirre",
+        "value": "2.21"
+      },
+      "wins": {
+        "playerId": 113581,
+        "playerName": "Don Drysdale",
+        "value": "25"
+      }
+    },
+    "1963": {
+      "strikeouts": {
+        "playerId": 117277,
+        "playerName": "Sandy Koufax",
+        "value": "306"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 117277,
+        "playerName": "Sandy Koufax",
+        "value": "0.87"
+      },
+      "saves": {
+        "playerId": 119121,
+        "playerName": "Stu Miller",
+        "value": "27"
+      },
+      "earnedRunAverage": {
+        "playerId": 117277,
+        "playerName": "Sandy Koufax",
+        "value": "1.88"
+      },
+      "wins": {
+        "playerId": 117277,
+        "playerName": "Sandy Koufax",
+        "value": "25"
+      }
+    },
+    "1964": {
+      "strikeouts": {
+        "playerId": 123684,
+        "playerName": "Bob Veale",
+        "value": "250"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 117277,
+        "playerName": "Sandy Koufax",
+        "value": "0.93"
+      },
+      "saves": {
+        "playerId": 120866,
+        "playerName": "Dick Radatz",
+        "value": "29"
+      },
+      "earnedRunAverage": {
+        "playerId": 112185,
+        "playerName": "Dean Chance",
+        "value": "1.65"
+      },
+      "wins": {
+        "playerId": 116434,
+        "playerName": "Larry Jackson",
+        "value": "24"
+      }
+    },
+    "1965": {
+      "strikeouts": {
+        "playerId": 117277,
+        "playerName": "Sandy Koufax",
+        "value": "382"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 117277,
+        "playerName": "Sandy Koufax",
+        "value": "0.86"
+      },
+      "saves": {
+        "playerId": 110021,
+        "playerName": "Ted Abernathy",
+        "value": "31"
+      },
+      "earnedRunAverage": {
+        "playerId": 117277,
+        "playerName": "Sandy Koufax",
+        "value": "2.04"
+      },
+      "wins": {
+        "playerId": 117277,
+        "playerName": "Sandy Koufax",
+        "value": "26"
+      }
+    },
+    "1966": {
+      "strikeouts": {
+        "playerId": 117277,
+        "playerName": "Sandy Koufax",
+        "value": "317"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 118283,
+        "playerName": "Juan Marichal",
+        "value": "0.86"
+      },
+      "saves": {
+        "playerId": 110100,
+        "playerName": "Jack Aker",
+        "value": "32"
+      },
+      "earnedRunAverage": {
+        "playerId": 117277,
+        "playerName": "Sandy Koufax",
+        "value": "1.73"
+      },
+      "wins": {
+        "playerId": 117277,
+        "playerName": "Sandy Koufax",
+        "value": "27"
+      }
+    },
+    "1967": {
+      "strikeouts": {
+        "playerId": 111691,
+        "playerName": "Jim Bunning",
+        "value": "253"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 116151,
+        "playerName": "Joe Horlen",
+        "value": "0.95"
+      },
+      "saves": {
+        "playerId": 110021,
+        "playerName": "Ted Abernathy",
+        "value": "28"
+      },
+      "earnedRunAverage": {
+        "playerId": 119786,
+        "playerName": "Phil Niekro",
+        "value": "1.87"
+      },
+      "wins": {
+        "playerId": 117886,
+        "playerName": "Jim Lonborg",
+        "value": "22"
+      }
+    },
+    "1968": {
+      "strikeouts": {
+        "playerId": 118659,
+        "playerName": "Sam McDowell",
+        "value": "283"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 118841,
+        "playerName": "Dave McNally",
+        "value": "0.84"
+      },
+      "saves": {
+        "playerId": 121017,
+        "playerName": "Phil Regan",
+        "value": "25"
+      },
+      "earnedRunAverage": {
+        "playerId": 114756,
+        "playerName": "Bob Gibson",
+        "value": "1.12"
+      },
+      "wins": {
+        "playerId": 118787,
+        "playerName": "Denny McLain",
+        "value": "31"
+      }
+    },
+    "1969": {
+      "strikeouts": {
+        "playerId": 118659,
+        "playerName": "Sam McDowell",
+        "value": "279"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 118283,
+        "playerName": "Juan Marichal",
+        "value": "0.99"
+      },
+      "saves": {
+        "playerId": 120430,
+        "playerName": "Ron Perranoski",
+        "value": "31"
+      },
+      "earnedRunAverage": {
+        "playerId": 118283,
+        "playerName": "Juan Marichal",
+        "value": "2.10"
+      },
+      "wins": {
+        "playerId": 121961,
+        "playerName": "Tom Seaver",
+        "value": "25"
+      }
+    },
+    "1970": {
+      "strikeouts": {
+        "playerId": 118659,
+        "playerName": "Sam McDowell",
+        "value": "304"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 116522,
+        "playerName": "Fergie Jenkins",
+        "value": "1.04"
+      },
+      "saves": {
+        "playerId": 115041,
+        "playerName": "Wayne Granger",
+        "value": "35"
+      },
+      "earnedRunAverage": {
+        "playerId": 121978,
+        "playerName": "Diego Segui",
+        "value": "2.56"
+      },
+      "wins": {
+        "playerId": 112915,
+        "playerName": "Mike Cuellar",
+        "value": "24"
+      }
+    },
+    "1971": {
+      "strikeouts": {
+        "playerId": 117875,
+        "playerName": "Mickey Lolich",
+        "value": "308"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 121961,
+        "playerName": "Tom Seaver",
+        "value": "0.95"
+      },
+      "saves": {
+        "playerId": 121670,
+        "playerName": "Ken Sanders",
+        "value": "31"
+      },
+      "earnedRunAverage": {
+        "playerId": 121961,
+        "playerName": "Tom Seaver",
+        "value": "1.76"
+      },
+      "wins": {
+        "playerId": 117875,
+        "playerName": "Mickey Lolich",
+        "value": "25"
+      }
+    },
+    "1972": {
+      "strikeouts": {
+        "playerId": 121597,
+        "playerName": "Nolan Ryan Jr.",
+        "value": "329"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 119713,
+        "playerName": "Roger Nelson",
+        "value": "0.87"
+      },
+      "saves": {
+        "playerId": 112041,
+        "playerName": "Clay Carroll",
+        "value": "37"
+      },
+      "earnedRunAverage": {
+        "playerId": 123331,
+        "playerName": "Luis Tiant",
+        "value": "1.91"
+      },
+      "wins": {
+        "playerId": 112008,
+        "playerName": "Steve Carlton",
+        "value": "27"
+      }
+    },
+    "1973": {
+      "strikeouts": {
+        "playerId": 121597,
+        "playerName": "Nolan Ryan Jr.",
+        "value": "383"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 121961,
+        "playerName": "Tom Seaver",
+        "value": "0.98"
+      },
+      "saves": {
+        "playerId": 115951,
+        "playerName": "John Hiller",
+        "value": "38"
+      },
+      "earnedRunAverage": {
+        "playerId": 121961,
+        "playerName": "Tom Seaver",
+        "value": "2.08"
+      },
+      "wins": {
+        "playerId": 111646,
+        "playerName": "Ron Bryant",
+        "value": "24"
+      }
+    },
+    "1974": {
+      "strikeouts": {
+        "playerId": 121597,
+        "playerName": "Nolan Ryan Jr.",
+        "value": "367"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 116334,
+        "playerName": "Catfish Hunter",
+        "value": "0.99"
+      },
+      "saves": {
+        "playerId": 114317,
+        "playerName": "Terry Forster",
+        "value": "24"
+      },
+      "earnedRunAverage": {
+        "playerId": 111972,
+        "playerName": "Buzz Capra",
+        "value": "2.28"
+      },
+      "wins": {
+        "playerId": 116334,
+        "playerName": "Catfish Hunter",
+        "value": "25"
+      }
+    },
+    "1975": {
+      "strikeouts": {
+        "playerId": 123084,
+        "playerName": "Frank Tanana",
+        "value": "269"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 116334,
+        "playerName": "Catfish Hunter",
+        "value": "1.01"
+      },
+      "saves": {
+        "playerId": 114989,
+        "playerName": "Rich Gossage",
+        "value": "26"
+      },
+      "earnedRunAverage": {
+        "playerId": 120196,
+        "playerName": "Jim Palmer",
+        "value": "2.09"
+      },
+      "wins": {
+        "playerId": 116334,
+        "playerName": "Catfish Hunter",
+        "value": "23"
+      }
+    },
+    "1976": {
+      "strikeouts": {
+        "playerId": 121597,
+        "playerName": "Nolan Ryan Jr.",
+        "value": "327"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 123084,
+        "playerName": "Frank Tanana",
+        "value": "0.99"
+      },
+      "saves": {
+        "playerId": 113716,
+        "playerName": "Rawly Eastwick",
+        "value": "26"
+      },
+      "earnedRunAverage": {
+        "playerId": 114102,
+        "playerName": "Mark Fidrych",
+        "value": "2.34"
+      },
+      "wins": {
+        "playerId": 116715,
+        "playerName": "Randy Jones",
+        "value": "22"
+      }
+    },
+    "1977": {
+      "strikeouts": {
+        "playerId": 121597,
+        "playerName": "Nolan Ryan Jr.",
+        "value": "341"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 121961,
+        "playerName": "Tom Seaver",
+        "value": "1.01"
+      },
+      "saves": {
+        "playerId": 114129,
+        "playerName": "Rollie Fingers",
+        "value": "35"
+      },
+      "earnedRunAverage": {
+        "playerId": 111952,
+        "playerName": "John Candelaria",
+        "value": "2.34"
+      },
+      "wins": {
+        "playerId": 112008,
+        "playerName": "Steve Carlton",
+        "value": "23"
+      }
+    },
+    "1978": {
+      "strikeouts": {
+        "playerId": 121145,
+        "playerName": "J.R. Richard",
+        "value": "303"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 115228,
+        "playerName": "Ron Guidry",
+        "value": "0.95"
+      },
+      "saves": {
+        "playerId": 114129,
+        "playerName": "Rollie Fingers",
+        "value": "37"
+      },
+      "earnedRunAverage": {
+        "playerId": 115228,
+        "playerName": "Ron Guidry",
+        "value": "1.74"
+      },
+      "wins": {
+        "playerId": 115228,
+        "playerName": "Ron Guidry",
+        "value": "25"
+      }
+    },
+    "1979": {
+      "strikeouts": {
+        "playerId": 121145,
+        "playerName": "J.R. Richard",
+        "value": "313"
+      },
+      "walksAndHitsPerInningPitched": {
+        "playerId": 114315,
+        "playerName": "Ken Forsch",
+        "value": "1.07"
+      },
+      "saves": {
+        "playerId": 123004,
+        "playerName": "Bruce Sutter",
+        "value": "37"
+      },
+      "earnedRunAverage": {
+        "playerId": 121145,
+        "playerName": "J.R. Richard",
+        "value": "2.71"
+      },
+      "wins": {
+        "playerId": 114216,
+        "playerName": "Mike Flanagan",
+        "value": "23"
+      }
+    },
     "1980": {
       "strikeouts": {
         "playerId": 112008,
