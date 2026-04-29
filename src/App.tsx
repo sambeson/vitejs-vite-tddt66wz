@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { unstable_batchedUpdates } from 'react-dom';
 import './styles.css';
 import { fetchFromFirebase, saveToFirebase } from './firebase';
 import { historical2025 } from './historical2025';
@@ -68,7 +69,7 @@ function parseHrId(hrId: string) {
 interface HomerEntryProps {
   player: any; // Replace `any` with a more specific type if possible
   getLastName: (person: any) => string;
-  onAdd: (player: any, hr: any, teamName: any) => void;
+  onAdd: (player: any, hr: any, teamName: any) => Promise<void>;
   onRemove: (playerId: string, hrId: string) => void; // Add the correct type for `onRemove`
   mentaculous: any;
 }
@@ -122,9 +123,13 @@ function HomerEntry({
               canAdd && (
                 <button
                   className={`mentaculous-button ${fadingIndex === index ? 'fade-out' : ''}`}
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.stopPropagation();
-                    onAdd(player, hr, player.team?.name ?? 'Unknown');
+                    try {
+                      await onAdd(player, hr, player.team?.name ?? 'Unknown');
+                    } catch (err) {
+                      console.error('Failed to add to Mentaculous', err);
+                    }
                     setFadingIndex(index);
                   }}
                 >
@@ -2081,56 +2086,62 @@ function App() {
         : `vs ${matchingGame.teams.away.team.name}`;
     }
 
-    setMentaculous(prev => {
-      // first grab whatever was there
-      const existing = prev[playerId];
+    unstable_batchedUpdates(() => {
+      setMentaculous(prev => {
+        // first grab whatever was there
+        const existing = prev[playerId];
 
-      // determine the base entry (either the old one, or a brand‐new one)
-      const base = existing ?? {
-        playerName: player.person.fullName,
-        teamName: teamName || "Unknown",
-        teamId,
-        homeRuns: [],
-        // only stamp here when there is no existing entry
-        addedAt: Date.now(),
-      };
+        // determine the base entry (either the old one, or a brand‐new one)
+        const base = existing ?? {
+          playerName: player.person.fullName,
+          teamName: teamName || "Unknown",
+          teamId,
+          homeRuns: [],
+          // only stamp here when there is no existing entry
+          addedAt: Date.now(),
+        };
 
-      // prevent duplicates
-      if (base.homeRuns.some((h: any) => h.hrId === hr.hrId)) {
-        return prev;
-      }
-
-      // now return a new object, preserving base.addedAt
-      return {
-        ...prev,
-        [playerId]: {
-          ...base,
-          teamId: base.teamId ?? teamId,
-          homeRuns: [...base.homeRuns, { hrId: hr.hrId, opponent }],
-          addedAt: base.addedAt,        // <-- keep the original
+        // prevent duplicates
+        if (base.homeRuns.some((h: any) => h.hrId === hr.hrId)) {
+          return prev;
         }
-      };
-    });
 
-    setOrder(prev => {
-      const strId = String(playerId);
-      return prev.includes(strId)
-        ? prev
-        : [...prev, strId];
+        // now return a new object, preserving base.addedAt
+        return {
+          ...prev,
+          [playerId]: {
+            ...base,
+            teamId: base.teamId ?? teamId,
+            homeRuns: [...base.homeRuns, { hrId: hr.hrId, opponent }],
+            addedAt: base.addedAt,        // <-- keep the original
+          }
+        };
+      });
+
+      setOrder(prev => {
+        const strId = String(playerId);
+        return prev.includes(strId)
+          ? prev
+          : [...prev, strId];
+      });
     });
     // Calculate the new page for the player
     setTimeout(() => {
       setActiveTab('mentaculous');
       setUpdatedPlayerId(playerId);
 
-      // Find the index of the player in the order
-      const strId = String(playerId);
-      const idx = order.includes(strId)
-        ? order.indexOf(strId)
-        : order.length; // If just added, will be at the end
+      // Find the index of the player in the order using functional setOrder to avoid stale closure
+      setOrder(currentOrder => {
+        const strId = String(playerId);
+        const idx = currentOrder.includes(strId)
+          ? currentOrder.indexOf(strId)
+          : currentOrder.length - 1; // just added, so it's the last entry
 
-      const page = Math.floor(idx / 32);
-      setMentaculousPage(page);
+        const page = Math.floor(idx / 32);
+        setMentaculousPage(page);
+
+        return currentOrder; // no change to order, just reading it
+      });
 
       setTimeout(() => setUpdatedPlayerId(null), 1000);
     }, 0);
