@@ -826,6 +826,7 @@ function App() {
   const [mentaculous, setMentaculous] = React.useState<Record<string, MentaculousPlayer>>({});
   const lastViewedGamePkRef = useRef<number | null>(null);
   const touchStartXRef = useRef<number | null>(null);
+  const isDraggingRef = useRef<boolean>(false);
   const swipeStartYRef = useRef<number | null>(null);
   const pullStartYRef = useRef<number | null>(null);
   const mentaculousRef = useRef<Record<string, MentaculousPlayer>>({});
