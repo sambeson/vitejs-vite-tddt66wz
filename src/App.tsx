@@ -4570,8 +4570,8 @@ function App() {
                   </div>
                 </div>
               )}
-              </div>{/* end inner content wrapper */}
-            </div>{/* end outer pull wrapper */}
+              </div>
+            </div>
           )}
           {activeTab === 'backend' && manualOverride && (
             <div className="backend-tab">
