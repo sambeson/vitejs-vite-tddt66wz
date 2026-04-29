@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './styles.css';
 import { fetchFromFirebase, saveToFirebase, fetchStealaculousFromFirebase, saveStealaculousToFirebase } from './firebase';
 import { historical2025 } from './historical2025';
+import leagueLeadersData from './leagueLeaders.json';
 
 // Function to remove accents from text for custom font compatibility
 function removeAccents(str: string): string {
@@ -182,6 +183,29 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState<boolean>(false);
   const [rankings, setRankings] = useState<Record<string, { rank: number; value: string }>>({});
+  const [leaders2026, setLeaders2026] = useState<{ hitting: Record<string, number>; pitching: Record<string, number> }>({ hitting: {}, pitching: {} });
+
+  // Fetch 2026 league leaders live (historical years come from static JSON)
+  useEffect(() => {
+    const HITTING_CATS = 'homeRuns,runsBattedIn,hits,runs,baseOnBalls,stolenBases,battingAverage,onBasePercentage,onBasePlusSlugging,doubles,triples,strikeouts';
+    const PITCHING_CATS = 'wins,earnedRunAverage,strikeouts,saves,walksAndHitsPerInningPitched';
+    Promise.all([
+      fetch(`https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${HITTING_CATS}&season=2026&limit=1&statGroup=hitting`).then(r => r.json()),
+      fetch(`https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${PITCHING_CATS}&season=2026&limit=1&statGroup=pitching`).then(r => r.json()),
+    ]).then(([hData, pData]) => {
+      const hitting: Record<string, number> = {};
+      for (const entry of (hData.leagueLeaders ?? [])) {
+        const top = entry.leaders?.[0];
+        if (top) hitting[entry.leaderCategory] = top.person.id;
+      }
+      const pitching: Record<string, number> = {};
+      for (const entry of (pData.leagueLeaders ?? [])) {
+        const top = entry.leaders?.[0];
+        if (top) pitching[entry.leaderCategory] = top.person.id;
+      }
+      setLeaders2026({ hitting, pitching });
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -366,6 +390,29 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
     return () => { cancelled = true; };
   }, [playerId]);
 
+  // Map from table stat key → leaderCategory key returned by the MLB API
+  const HITTING_KEY_MAP: Record<string, string> = {
+    homeRuns: 'homeRuns', rbi: 'runsBattedIn', hits: 'hits', runs: 'runs',
+    baseOnBalls: 'walks', stolenBases: 'stolenBases', avg: 'battingAverage',
+    obp: 'onBasePercentage', ops: 'onBasePlusSlugging', doubles: 'doubles',
+    triples: 'triples', strikeOuts: 'strikeouts',
+  };
+  const PITCHING_KEY_MAP: Record<string, string> = {
+    wins: 'wins', era: 'earnedRunAverage', strikeOuts: 'strikeouts',
+    saves: 'saves', whip: 'walksAndHitsPerInningPitched',
+  };
+
+  const isLeader = (group: 'hitting' | 'pitching', season: string, statKey: string): boolean => {
+    const map = group === 'hitting' ? HITTING_KEY_MAP : PITCHING_KEY_MAP;
+    const cat = map[statKey];
+    if (!cat) return false;
+    const data = leagueLeadersData as any;
+    if (season === '2026') {
+      return leaders2026[group][cat] === playerId;
+    }
+    return data[group]?.[season]?.[cat]?.playerId === playerId;
+  };
+
   const SC = (label: string, value: any, rankKey?: string) => (
     <p className="career-stat-row">
       <span className="career-stat-row-label">{label}</span>
@@ -463,21 +510,30 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
                         {seasonStats.pitching
                           .filter((s: any) => s?.season && (s?.stat?.gamesPlayed > 0 || s?.stat?.games > 0))
                           .sort((a: any, b: any) => parseInt(a.season) - parseInt(b.season))
-                          .map((s: any, index: number) => (
-                            <tr key={index}>
-                              <td>{s.season}</td>
-                              <td>{s.team?.name || '—'}</td>
-                              <td>{s.stat?.wins ?? '-'}</td>
-                              <td>{s.stat?.losses ?? '-'}</td>
-                              <td>{s.stat?.era ?? '-'}</td>
-                              <td>{s.stat?.inningsPitched ?? '-'}</td>
-                              <td>{s.stat?.strikeOuts ?? '-'}</td>
-                              <td>{s.stat?.qualityStarts ?? '-'}</td>
-                              <td>{s.stat?.saves ?? '-'}</td>
-                              <td>{s.stat?.holds ?? '-'}</td>
-                              <td>{s.stat?.whip ?? '-'}</td>
-                            </tr>
-                          ))}
+                          .map((s: any, index: number) => {
+                            const yr = s.season;
+                            const L = (key: string, val: any) => {
+                              const v = val ?? '-';
+                              return isLeader('pitching', yr, key)
+                                ? <td key={key} className="stat-leader"><strong><em>{v}</em></strong></td>
+                                : <td key={key}>{v}</td>;
+                            };
+                            return (
+                              <tr key={index}>
+                                <td>{yr}</td>
+                                <td>{s.team?.name || '—'}</td>
+                                {L('wins', s.stat?.wins)}
+                                <td>{s.stat?.losses ?? '-'}</td>
+                                {L('era', s.stat?.era)}
+                                <td>{s.stat?.inningsPitched ?? '-'}</td>
+                                {L('strikeOuts', s.stat?.strikeOuts)}
+                                <td>{s.stat?.qualityStarts ?? '-'}</td>
+                                {L('saves', s.stat?.saves)}
+                                <td>{s.stat?.holds ?? '-'}</td>
+                                {L('whip', s.stat?.whip)}
+                              </tr>
+                            );
+                          })}
                       </tbody>
                     </table>
                     </div>
@@ -508,23 +564,32 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
                         {seasonStats.hitting
                           .filter((s: any) => s?.season && (s?.stat?.gamesPlayed > 0 || s?.stat?.games > 0))
                           .sort((a: any, b: any) => parseInt(a.season) - parseInt(b.season))
-                          .map((s: any, index: number) => (
-                            <tr key={index}>
-                              <td>{s.season}</td>
-                              <td>{s.team?.name || '—'}</td>
-                              <td>{s.stat?.gamesPlayed ?? s.stat?.games ?? '-'}</td>
-                              <td>{s.stat?.atBats ?? '-'}</td>
-                              <td>{s.stat?.runs ?? '-'}</td>
-                              <td>{s.stat?.hits ?? '-'}</td>
-                              <td>{s.stat?.homeRuns ?? '-'}</td>
-                              <td>{s.stat?.rbi ?? '-'}</td>
-                              <td>{s.stat?.baseOnBalls ?? '-'}</td>
-                              <td>{s.stat?.stolenBases ?? '-'}</td>
-                              <td>{s.stat?.avg ?? '-'}</td>
-                              <td>{s.stat?.obp ?? '-'}</td>
-                              <td>{s.stat?.ops ?? '-'}</td>
-                            </tr>
-                          ))}
+                          .map((s: any, index: number) => {
+                            const yr = s.season;
+                            const L = (key: string, val: any) => {
+                              const v = val ?? '-';
+                              return isLeader('hitting', yr, key)
+                                ? <td key={key} className="stat-leader"><strong><em>{v}</em></strong></td>
+                                : <td key={key}>{v}</td>;
+                            };
+                            return (
+                              <tr key={index}>
+                                <td>{yr}</td>
+                                <td>{s.team?.name || '—'}</td>
+                                <td>{s.stat?.gamesPlayed ?? s.stat?.games ?? '-'}</td>
+                                <td>{s.stat?.atBats ?? '-'}</td>
+                                {L('runs', s.stat?.runs)}
+                                {L('hits', s.stat?.hits)}
+                                {L('homeRuns', s.stat?.homeRuns)}
+                                {L('rbi', s.stat?.rbi)}
+                                {L('baseOnBalls', s.stat?.baseOnBalls)}
+                                {L('stolenBases', s.stat?.stolenBases)}
+                                {L('avg', s.stat?.avg)}
+                                {L('obp', s.stat?.obp)}
+                                {L('ops', s.stat?.ops)}
+                              </tr>
+                            );
+                          })}
                       </tbody>
                     </table>
                     </div>

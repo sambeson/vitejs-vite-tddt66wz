@@ -1002,6 +1002,13 @@ button:focus {
   -webkit-overflow-scrolling: touch;
 }
 
+.stat-leader {
+  color: #b45309;
+}
+.app.dark .stat-leader {
+  color: #fbbf24;
+}
+
 /* ========================================
    TRANSACTION HISTORY SECTION
    Player transaction history in modals
