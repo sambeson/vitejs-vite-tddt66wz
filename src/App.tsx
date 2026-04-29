@@ -366,17 +366,17 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
     return () => { cancelled = true; };
   }, [playerId]);
 
-  const SC = (label: string, value: any, rankKey?: string, rate?: boolean) => (
-    <div className={`career-stat-card${rate ? ' career-stat-card--rate' : ''}`}>
-      <span className="career-stat-label">{label}</span>
-      <span className="career-stat-value">{value ?? '—'}</span>
-      {rankKey && rankings[rankKey] && <span className="career-stat-rank">#{rankings[rankKey].rank}</span>}
-    </div>
+  const SC = (label: string, value: any, rankKey?: string) => (
+    <p className="career-stat-row">
+      <span className="career-stat-row-label">{label}</span>
+      <span className="career-stat-row-value">{value ?? '—'}</span>
+      {rankKey && rankings[rankKey] && <span className="career-stat-row-rank">#{rankings[rankKey].rank}</span>}
+    </p>
   );
 
   return (
-    <div className="modal" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
+    <div className="modal" onClick={onClose} onTouchMove={e => e.stopPropagation()}>
+      <div className="modal-content" onClick={e => e.stopPropagation()} onTouchMove={e => e.stopPropagation()}>
         <button className="close-button" onClick={onClose}>×</button>
         <div className="modal-body">
         {profile ? (
@@ -400,13 +400,13 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
                 {isPitcher && careerStats.pitching ? (
                   <>
                     <div className="career-stats-heading">Career Pitching</div>
-                    <div className="career-stats-grid">
+                    <div className="career-stats-list">
                       {SC('W',    careerStats.pitching.wins,              'W')}
                       {SC('L',    careerStats.pitching.losses)}
-                      {SC('ERA',  careerStats.pitching.era,               undefined, true)}
+                      {SC('ERA',  careerStats.pitching.era)}
                       {SC('SO',   careerStats.pitching.strikeOuts,        'SO')}
                       {SC('IP',   careerStats.pitching.inningsPitched)}
-                      {SC('WHIP', careerStats.pitching.whip,              undefined, true)}
+                      {SC('WHIP', careerStats.pitching.whip)}
                       {SC('SV',   careerStats.pitching.saves,             'SV')}
                       {SC('QS',   careerStats.pitching.qualityStarts || 0)}
                     </div>
@@ -414,7 +414,7 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
                 ) : careerStats.hitting ? (
                   <>
                     <div className="career-stats-heading">Career Hitting</div>
-                    <div className="career-stats-grid">
+                    <div className="career-stats-list">
                       {SC('G',   careerStats.hitting.gamesPlayed,      'G')}
                       {SC('PA',  careerStats.hitting.plateAppearances,  'PA')}
                       {SC('AB',  careerStats.hitting.atBats)}
@@ -427,9 +427,9 @@ function PlayerProfile({ playerId, onClose }: { playerId: number; onClose: () =>
                       {SC('2B',  careerStats.hitting.doubles,           '2B')}
                       {SC('3B',  careerStats.hitting.triples,           '3B')}
                       {SC('K',   careerStats.hitting.strikeOuts,        'K')}
-                      {SC('AVG', careerStats.hitting.avg,               undefined, true)}
-                      {SC('OBP', careerStats.hitting.obp,               undefined, true)}
-                      {SC('OPS', careerStats.hitting.ops,               undefined, true)}
+                      {SC('AVG', careerStats.hitting.avg)}
+                      {SC('OBP', careerStats.hitting.obp)}
+                      {SC('OPS', careerStats.hitting.ops)}
                     </div>
                   </>
                 ) : null}
@@ -1163,6 +1163,21 @@ function App() {
       .catch((error) => console.error('Error fetching schedule:', error))
       .finally(() => setIsRefreshing(false));
   }, [date, refreshKey]);
+
+  // Snap content back after pull-to-refresh completes
+  useEffect(() => {
+    if (!isRefreshing) setPullDistance(0);
+  }, [isRefreshing]);
+
+  // Lock body scroll when player modal is open
+  useEffect(() => {
+    if (selectedPlayerId !== null) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [selectedPlayerId]);
 
   // Auto-refresh games every 60s when on the games tab with no game selected
   useEffect(() => {
@@ -4176,28 +4191,46 @@ function App() {
 
           {activeTab === 'games' && (
             <div
+              style={{ position: 'relative', overflowX: 'hidden' }}
               onTouchStart={e => {
-                if (window.scrollY === 0) pullStartYRef.current = e.touches[0].clientY;
+                if (selectedGame || window.scrollY > 4) return;
+                isDraggingRef.current = true;
+                pullStartYRef.current = e.touches[0].clientY;
               }}
               onTouchMove={e => {
-                if (pullStartYRef.current === null) return;
+                if (!isDraggingRef.current || pullStartYRef.current === null) return;
                 const dy = e.touches[0].clientY - pullStartYRef.current;
-                if (dy > 0) setPullDistance(Math.min(dy * 0.4, 72));
+                if (dy <= 0) { isDraggingRef.current = false; pullStartYRef.current = null; return; }
+                // rubber-band: 1:1 up to 44px, then 0.28:1
+                const d = dy <= 44 ? dy : 44 + (dy - 44) * 0.28;
+                setPullDistance(Math.min(d, 80));
               }}
               onTouchEnd={() => {
-                if (pullDistance >= 60) {
-                  setRefreshKey(k => k + 1);
-                }
-                setPullDistance(0);
+                isDraggingRef.current = false;
                 pullStartYRef.current = null;
+                if (pullDistance >= 54) {
+                  setPullDistance(52);        // hold open while loading
+                  setRefreshKey(k => k + 1);
+                } else {
+                  setPullDistance(0);
+                }
               }}
             >
-              {(pullDistance > 0 || isRefreshing) && (
-                <div className="pull-indicator" style={{ height: isRefreshing ? 44 : pullDistance * 0.6 }}>
-                  <span className={`pull-spinner${isRefreshing ? ' spinning' : ''}`}>↻</span>
-                  <span className="pull-label">{isRefreshing ? 'Refreshing…' : pullDistance >= 60 ? 'Release to refresh' : 'Pull to refresh'}</span>
-                </div>
-              )}
+              {/* Absolute indicator — never touches document flow */}
+              <div className="pull-indicator" style={{
+                position: 'absolute', top: 0, left: 0, right: 0, height: 52,
+                opacity: isRefreshing ? 1 : Math.min(pullDistance / 54, 1),
+                pointerEvents: 'none',
+              }}>
+                <span className={`pull-spinner${(isRefreshing || pullDistance >= 54) ? ' spinning' : ''}`}>↻</span>
+                <span className="pull-label">{isRefreshing ? 'Refreshing…' : pullDistance >= 54 ? 'Release to refresh' : 'Pull to refresh'}</span>
+              </div>
+
+              {/* Content translates down to reveal indicator */}
+              <div style={{
+                transform: `translateY(${pullDistance}px)`,
+                transition: isDraggingRef.current ? 'none' : 'transform 0.26s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+              }}>
               {!selectedGame && (
                 <>
                   <div className="date-selector">
@@ -4472,7 +4505,8 @@ function App() {
                   </div>
                 </div>
               )}
-            </div>
+              </div>{/* end inner content wrapper */}
+            </div>{/* end outer pull wrapper */}
           )}
           {activeTab === 'backend' && manualOverride && (
             <div className="backend-tab">
