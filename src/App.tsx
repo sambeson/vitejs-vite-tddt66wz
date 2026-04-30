@@ -1,8 +1,28 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Component } from 'react';
 import './styles.css';
 import { fetchFromFirebase, saveToFirebase, fetchStealaculousFromFirebase, saveStealaculousToFirebase } from './firebase';
 import { historical2025 } from './historical2025';
 import leagueLeadersData from './leagueLeaders.json';
+
+class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: Error | null }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
+          <h2>Something went wrong.</h2>
+          <pre style={{ whiteSpace: 'pre-wrap', fontSize: '0.8em', color: '#c00' }}>{this.state.error.message}</pre>
+          <button onClick={() => { this.setState({ error: null }); window.location.reload(); }}>Reload</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Function to remove accents from text for custom font compatibility
 function removeAccents(str: string): string {
@@ -1235,14 +1255,20 @@ function App() {
     if (!isRefreshing) setPullDistance(0);
   }, [isRefreshing]);
 
-  // Lock body scroll when player modal is open
+  // Lock body scroll when player modal is open (position:fixed preserves scroll on iOS)
   useEffect(() => {
     if (selectedPlayerId !== null) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+      const y = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${y}px`;
+      document.body.style.width = '100%';
+      return () => {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, y);
+      };
     }
-    return () => { document.body.style.overflow = ''; };
   }, [selectedPlayerId]);
 
   // Auto-refresh games every 60s when on the games tab with no game selected
@@ -4752,4 +4778,5 @@ function App() {
   );
 }
 
+export { ErrorBoundary };
 export default App;
