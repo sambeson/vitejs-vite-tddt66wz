@@ -1912,8 +1912,8 @@ function App() {
     if (bustTopListCache) {
       MILESTONE_STATS.forEach(stat => {
         const apiKey = stat.leaderKey ?? stat.key;
-        localStorage.removeItem(`milestone_top500_${apiKey}`);
-        localStorage.removeItem(`milestone_season100_${apiKey}_${new Date().getFullYear()}`);
+        localStorage.removeItem(`milestone_top500_${stat.group}_${apiKey}`);
+        localStorage.removeItem(`milestone_season100_${stat.group}_${apiKey}_${new Date().getFullYear()}`);
       });
       // Also clear game log caches so crossing dates are always re-computed from fresh data
       Object.keys(localStorage)
@@ -1936,11 +1936,12 @@ function App() {
       await Promise.all(MILESTONE_STATS.map(async (stat) => {
         const apiKey = stat.leaderKey ?? stat.key;
 
-        // Career top-500 (paginated, cached 24h)
-        const careerCacheKey = `milestone_top500_${apiKey}`;
+        // Career top-500 (paginated, cached 24h) — key includes group to avoid hitting/pitching SO collision
+        const sk = `${stat.group}_${stat.key}`;
+        const careerCacheKey = `milestone_top500_${stat.group}_${apiKey}`;
         const cachedCareer = getCached<LeaderEntry[]>(careerCacheKey, 24);
         if (cachedCareer) {
-          top500[stat.key] = cachedCareer;
+          top500[sk] = cachedCareer;
         } else {
           try {
             const allLeaders: LeaderEntry[] = [];
@@ -1964,16 +1965,16 @@ function App() {
               seen.add(e.personId);
               return true;
             });
-            top500[stat.key] = dedupedLeaders;
+            top500[sk] = dedupedLeaders;
             setCached(careerCacheKey, dedupedLeaders);
-          } catch { top500[stat.key] = []; }
+          } catch { top500[sk] = []; }
         }
 
         // Season top-100 (cached 1h)
-        const seasonCacheKey = `milestone_season100_${apiKey}_${currentSeason}`;
+        const seasonCacheKey = `milestone_season100_${stat.group}_${apiKey}_${currentSeason}`;
         const cachedSeason = getCached<LeaderEntry[]>(seasonCacheKey, 1);
         if (cachedSeason) {
-          seasonLeaders[stat.key] = cachedSeason;
+          seasonLeaders[sk] = cachedSeason;
         } else {
           try {
             // Paginate until empty to catch everyone with even 1 of this stat (1 AB / 1 BF equivalent)
@@ -1990,9 +1991,9 @@ function App() {
               allSeason.push(...page);
               if (page.length < pageSize) break;
             }
-            seasonLeaders[stat.key] = allSeason;
+            seasonLeaders[sk] = allSeason;
             setCached(seasonCacheKey, allSeason);
-          } catch { seasonLeaders[stat.key] = []; }
+          } catch { seasonLeaders[sk] = []; }
         }
       }));
 
@@ -2034,9 +2035,10 @@ function App() {
       const needLogs: NeedLog[] = [];
 
       for (const stat of MILESTONE_STATS) {
-        const careerList = top500[stat.key] ?? [];
+        const sk = `${stat.group}_${stat.key}`;
+        const careerList = top500[sk] ?? [];
         const seasonMap = new Map<number, number>();
-        for (const s of seasonLeaders[stat.key] ?? []) seasonMap.set(s.personId, s.value);
+        for (const s of seasonLeaders[sk] ?? []) seasonMap.set(s.personId, s.value);
 
         for (const player of careerList) {
           const season = seasonMap.get(player.personId) ?? 0;
@@ -2057,9 +2059,10 @@ function App() {
 
       // Step 3: compute crossing events
       for (const stat of MILESTONE_STATS) {
-        const careerList = top500[stat.key] ?? [];
+        const sk = `${stat.group}_${stat.key}`;
+        const careerList = top500[sk] ?? [];
         const seasonMap = new Map<number, number>();
-        for (const s of seasonLeaders[stat.key] ?? []) seasonMap.set(s.personId, s.value);
+        for (const s of seasonLeaders[sk] ?? []) seasonMap.set(s.personId, s.value);
 
         for (const player of careerList) {
           const season = seasonMap.get(player.personId) ?? 0;
@@ -2170,7 +2173,7 @@ function App() {
       MILESTONE_STATS.forEach(stat => {
         const apiKey = stat.leaderKey ?? stat.key;
         localStorage.removeItem(`displaced_career600_${stat.group}_${apiKey}`);
-        localStorage.removeItem(`milestone_season100_${apiKey}_${new Date().getFullYear()}`);
+        localStorage.removeItem(`milestone_season100_${stat.group}_${apiKey}_${new Date().getFullYear()}`);
       });
     }
 
@@ -2209,7 +2212,7 @@ function App() {
         }
 
         // 2026 season leaders — reuse milestone cache if available
-        const seasonCacheKey = `milestone_season100_${apiKey}_${currentSeason}`;
+        const seasonCacheKey = `milestone_season100_${stat.group}_${apiKey}_${currentSeason}`;
         let seasonList = getCached<LeaderEntry[]>(seasonCacheKey, 1);
         if (!seasonList) {
           const all: LeaderEntry[] = [];
