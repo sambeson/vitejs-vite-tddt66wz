@@ -2224,7 +2224,7 @@ function App() {
   };
 
   const fetchDisplaced = async (bust = false) => {
-    const CACHE_KEY = 'displaced_2026_results_v3';
+    const CACHE_KEY = 'displaced_2026_results_v4';
     const TTL_HOURS = 4;
     if (!bust) {
       const cached = getCached<DisplacedResult[]>(CACHE_KEY, TTL_HOURS);
@@ -2335,12 +2335,20 @@ function App() {
           e.gained2026 > 0
         );
 
+        const buildDisplacedBy = (e: typeof enriched[0], pool: typeof enriched) =>
+          pool.filter(n =>
+            n.personId !== e.personId &&
+            n.gained2026 > 0 &&
+            (
+              // Came from behind and passed
+              (n.pre2026Value < e.pre2026Value && n.value >= e.pre2026Value) ||
+              // Was tied and broke the tie
+              (n.pre2026Value === e.pre2026Value && n.value > e.value)
+            )
+          ).map(n => ({ personId: n.personId, fullName: n.fullName, gained: n.gained2026, currentRank: n.rank }));
+
         const displacedEntries: DisplacedEntry[] = displaced.map(pid => {
           const e = enriched.find(x => x.personId === pid)!;
-          // Which newcomers specifically passed this player's pre-2026 value this year?
-          const by = newcomers
-            .filter(n => n.pre2026Value <= e.pre2026Value && n.value >= e.pre2026Value)
-            .map(n => ({ personId: n.personId, fullName: n.fullName, gained: n.gained2026, currentRank: n.rank }));
           return {
             personId: e.personId,
             fullName: e.fullName,
@@ -2348,12 +2356,8 @@ function App() {
             currentRank: e.rank,
             pre2026Value: e.pre2026Value,
             currentValue: e.value,
-            displacedBy: by,
+            displacedBy: buildDisplacedBy(e, enriched),
           };
-        // Only keep displaced entries where we can identify who passed them — this
-        // filters out tie-boundary artifacts where the API groups tied players at
-        // the same rank number, making some appear displaced when nobody actually
-        // gained enough stats to pass them.
         }).filter(d => d.displacedBy.length > 0).sort((a, b) => a.pre2026Rank - b.pre2026Rank);
 
         // Top-100 view (uses same enriched list)
@@ -2368,9 +2372,6 @@ function App() {
         );
         const displacedEntries100: DisplacedEntry[] = displaced100pids.map(pid => {
           const e = enriched.find(x => x.personId === pid)!;
-          const by = newcomers100
-            .filter(n => n.pre2026Value <= e.pre2026Value && n.value >= e.pre2026Value)
-            .map(n => ({ personId: n.personId, fullName: n.fullName, gained: n.gained2026, currentRank: n.rank }));
           return {
             personId: e.personId,
             fullName: e.fullName,
@@ -2378,7 +2379,7 @@ function App() {
             currentRank: e.rank,
             pre2026Value: e.pre2026Value,
             currentValue: e.value,
-            displacedBy: by,
+            displacedBy: buildDisplacedBy(e, enriched),
           };
         }).filter(d => d.displacedBy.length > 0).sort((a, b) => a.pre2026Rank - b.pre2026Rank);
 
