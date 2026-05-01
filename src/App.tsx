@@ -1916,9 +1916,11 @@ function App() {
         localStorage.removeItem(`milestone_top500_${stat.group}_${apiKey}`);
         localStorage.removeItem(`milestone_season100_${stat.group}_${apiKey}_${new Date().getFullYear()}`);
       });
-      // Also clear game log caches so crossing dates are always re-computed from fresh data
+      // Only clear today's game log caches — past days are final and clearing them
+      // causes non-determinism when re-fetching (same completed games, potentially different API ordering)
+      const todayStr = new Date().toISOString().slice(0, 10);
       Object.keys(localStorage)
-        .filter(k => k.startsWith('milestone_gamelog_'))
+        .filter(k => k.startsWith(`milestone_gamelog_`) && k.endsWith(`_${todayStr}`))
         .forEach(k => localStorage.removeItem(k));
     }
     setMilestonesLoading(true);
@@ -1947,7 +1949,9 @@ function App() {
           try {
             const allLeaders: LeaderEntry[] = [];
             const pageSize = 100;
-            for (let offset = 0; offset < 500; offset += pageSize) {
+            // Fetch 600 instead of 500 — buffer for tied-rank boundary effects where
+            // the API may return different players at position ~500 on different calls
+            for (let offset = 0; offset < 600; offset += pageSize) {
               const res = await fetch(
                 `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${apiKey}&statType=career&limit=${pageSize}&offset=${offset}&statGroup=${stat.group}`
               );
@@ -1958,14 +1962,12 @@ function App() {
               allLeaders.push(...page);
               if (page.length < pageSize) break;
             }
-            // Deduplicate by personId — page boundaries on tied ranks can cause
-            // the same player to appear on two consecutive pages, inflating counts.
+            // Deduplicate by personId, then sort deterministically so tied-rank players
+            // always appear in the same order regardless of API response ordering
             const seen = new Set<number>();
-            const dedupedLeaders = allLeaders.filter(e => {
-              if (seen.has(e.personId)) return false;
-              seen.add(e.personId);
-              return true;
-            });
+            const dedupedLeaders = allLeaders
+              .filter(e => { if (seen.has(e.personId)) return false; seen.add(e.personId); return true; })
+              .sort((a, b) => b.value - a.value || a.personId - b.personId);
             top500[sk] = dedupedLeaders;
             setCached(careerCacheKey, dedupedLeaders);
           } catch { top500[sk] = []; }
