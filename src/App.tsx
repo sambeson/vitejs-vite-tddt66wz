@@ -895,6 +895,9 @@ function App() {
   const [transactionsTeamFilter, setTransactionsTeamFilter] = useState<number | 'all'>('all');
   // minorToMlb: maps minor league teamId → parent MLB teamId
   const [minorToMlb, setMinorToMlb] = useState<Map<number, number>>(new Map());
+  const [injuryData, setInjuryData] = useState<{ teamId: number; teamName: string; players: any[] }[]>([]);
+  const [injuryLoading, setInjuryLoading] = useState(false);
+  const [injuryTeamFilter, setInjuryTeamFilter] = useState<number | 'all'>('all');
 
   // Keep refs in sync for beforeunload handler (closures can't capture latest state)
   useEffect(() => { mentaculousRef.current = mentaculous; }, [mentaculous]);
@@ -990,6 +993,104 @@ function App() {
       .catch(() => { setTransactionsData([]); setMinorToMlb(new Map()); })
       .finally(() => setTransactionsLoading(false));
   }, [activeTab, transactionsDate]);
+
+  useEffect(() => {
+    if (activeTab !== 'injuries') return;
+    if (injuryData.length > 0) return;
+    const CACHE_KEY = 'injury_report_2026';
+    const cached = getCached<typeof injuryData>(CACHE_KEY, 1);
+    if (cached) { setInjuryData(cached); return; }
+    setInjuryLoading(true);
+    const MLB_TEAMS = [
+      { id: 108, name: 'Los Angeles Angels' }, { id: 109, name: 'Arizona Diamondbacks' },
+      { id: 110, name: 'Baltimore Orioles' }, { id: 111, name: 'Boston Red Sox' },
+      { id: 112, name: 'Chicago Cubs' }, { id: 113, name: 'Cincinnati Reds' },
+      { id: 114, name: 'Cleveland Guardians' }, { id: 115, name: 'Colorado Rockies' },
+      { id: 116, name: 'Detroit Tigers' }, { id: 117, name: 'Houston Astros' },
+      { id: 118, name: 'Kansas City Royals' }, { id: 119, name: 'Los Angeles Dodgers' },
+      { id: 120, name: 'Washington Nationals' }, { id: 121, name: 'New York Mets' },
+      { id: 133, name: 'Athletics' }, { id: 134, name: 'Pittsburgh Pirates' },
+      { id: 135, name: 'San Diego Padres' }, { id: 136, name: 'Seattle Mariners' },
+      { id: 137, name: 'San Francisco Giants' }, { id: 138, name: 'St. Louis Cardinals' },
+      { id: 139, name: 'Tampa Bay Rays' }, { id: 140, name: 'Texas Rangers' },
+      { id: 141, name: 'Toronto Blue Jays' }, { id: 142, name: 'Minnesota Twins' },
+      { id: 143, name: 'Philadelphia Phillies' }, { id: 144, name: 'Atlanta Braves' },
+      { id: 145, name: 'Chicago White Sox' }, { id: 146, name: 'Miami Marlins' },
+      { id: 147, name: 'New York Yankees' }, { id: 158, name: 'Milwaukee Brewers' },
+    ];
+    const season = new Date().getFullYear();
+    const today = new Date().toISOString().slice(0, 10);
+    const seasonStart = `${season}-03-01`;
+    Promise.all([
+      // 30 team rosters
+      ...MLB_TEAMS.map(t =>
+        fetch(`https://statsapi.mlb.com/api/v1/teams/${t.id}/roster?rosterType=40Man&season=${season}`)
+          .then(r => r.json())
+          .then(d => ({ teamId: t.id, teamName: t.name, roster: d.roster ?? [] }))
+          .catch(() => ({ teamId: t.id, teamName: t.name, roster: [] }))
+      ),
+      // Transactions for IL placement dates
+      fetch(`https://statsapi.mlb.com/api/v1/transactions?startDate=${seasonStart}&endDate=${today}&sportId=1`)
+        .then(r => r.json()).catch(() => ({ transactions: [] })),
+    ]).then(results => {
+      const txnData = results[results.length - 1] as any;
+      const ilTxns: any[] = (txnData.transactions ?? []).filter((t: any) =>
+        t.typeCode === 'SC' && t.description?.toLowerCase().includes('injured list')
+      );
+      // earliest IL placement date per player (for activation eligibility)
+      const playerILDate = new Map<number, string>();
+      // most recent rehab assignment date per player
+      const playerRehabDate = new Map<number, string>();
+      const allTxns: any[] = txnData.transactions ?? [];
+      for (const t of allTxns) {
+        const pid = t.person?.id;
+        if (!pid) continue;
+        const date = t.effectiveDate ?? t.date ?? '';
+        if (!date) continue;
+        if (t.typeCode === 'SC' && t.description?.toLowerCase().includes('injured list') && t.description?.toLowerCase().includes('placed')) {
+          const existing = playerILDate.get(pid);
+          if (!existing || date < existing) playerILDate.set(pid, date);
+        }
+        if (t.typeCode === 'ASG' && t.description?.toLowerCase().includes('rehab')) {
+          const existing = playerRehabDate.get(pid);
+          if (!existing || date > existing) playerRehabDate.set(pid, date);
+        }
+      }
+
+      const addDays = (dateStr: string, days: number) => {
+        const d = new Date(dateStr + 'T12:00:00');
+        d.setDate(d.getDate() + days);
+        return d.toISOString().slice(0, 10);
+      };
+
+      const IL_DAYS: Record<string, number> = { D10: 10, D15: 15, D60: 60 };
+
+      const teamResults = (results.slice(0, MLB_TEAMS.length) as any[]).map(({ teamId, teamName, roster }) => ({
+        teamId,
+        teamName,
+        players: (roster as any[])
+          .filter((p: any) => ['D10', 'D15', 'D60'].includes(p.status?.code))
+          .map((p: any) => {
+            const ilDate = playerILDate.get(p.person.id) ?? null;
+            const days = IL_DAYS[p.status?.code] ?? 10;
+            const earliestReturn = ilDate ? addDays(ilDate, days) : null;
+            return {
+              personId: p.person.id,
+              fullName: p.person.fullName,
+              position: p.position?.abbreviation ?? '—',
+              ilType: p.status?.description?.replace('Injured ', '') ?? p.status?.code,
+              note: p.note ?? null,
+              ilDate,
+              earliestReturn,
+              rehabDate: playerRehabDate.get(p.person.id) ?? null,
+            };
+          })
+          .sort((a: any, b: any) => a.fullName.localeCompare(b.fullName)),
+      })).filter(t => t.players.length > 0).sort((a, b) => a.teamName.localeCompare(b.teamName));
+      setInjuryData(teamResults);
+      setCached(CACHE_KEY, teamResults);
+    }).finally(() => setInjuryLoading(false));
+  }, [activeTab, injuryData.length]);
 
   // beforeunload: flush latest state to localStorage immediately on force close
   useEffect(() => {
@@ -2025,7 +2126,8 @@ function App() {
             const seen = new Set<number>();
             const dedupedLeaders = allLeaders
               .filter(e => { if (seen.has(e.personId)) return false; seen.add(e.personId); return true; })
-              .sort((a, b) => b.value - a.value || a.personId - b.personId);
+              .sort((a, b) => b.value - a.value || a.personId - b.personId)
+              .filter(e => e.rank <= 500);
             top500[sk] = dedupedLeaders;
             setCached(careerCacheKey, dedupedLeaders);
           } catch { top500[sk] = []; }
@@ -4094,6 +4196,90 @@ function App() {
     );
   };
 
+  const renderInjuries = () => {
+    if (injuryLoading) return <div className="loading">Loading injury report…</div>;
+
+    const IL_COLOR: Record<string, { color: string; bg: string }> = {
+      '10-Day': { color: '#b45309', bg: '#fef3c7' },
+      '15-Day': { color: '#c2410c', bg: '#ffedd5' },
+      '60-Day': { color: '#dc2626', bg: '#fee2e2' },
+    };
+
+    const filtered = injuryTeamFilter === 'all'
+      ? injuryData
+      : injuryData.filter(t => t.teamId === injuryTeamFilter);
+
+    const totalIL = filtered.reduce((s, t) => s + t.players.length, 0);
+
+    const formatDate = (d: string | null) => {
+      if (!d) return null;
+      return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
+
+    return (
+      <div className="injuries-container">
+        <div className="injuries-header">
+          <div className="injuries-title-row">
+            <span className="injuries-total">{totalIL} players on IL</span>
+            <button className="leaders-show-all" onClick={() => {
+              localStorage.removeItem('injury_report_2026');
+              setInjuryData([]);
+            }}>Refresh</button>
+          </div>
+          <select
+            className="txn-team-select"
+            value={injuryTeamFilter === 'all' ? 'all' : String(injuryTeamFilter)}
+            onChange={e => setInjuryTeamFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+          >
+            <option value="all">All Teams</option>
+            {injuryData.map(t => (
+              <option key={t.teamId} value={t.teamId}>{t.teamName} ({t.players.length})</option>
+            ))}
+          </select>
+        </div>
+
+        {filtered.length === 0 ? (
+          <p style={{ textAlign: 'center', color: '#6b7280', padding: '2rem' }}>No injury data available.</p>
+        ) : filtered.map(team => (
+          <div key={team.teamId} className="injury-team-section">
+            <div className="injury-team-header">
+              <span className="injury-team-name">{team.teamName}</span>
+              <span className="injury-team-count">{team.players.length} on IL</span>
+            </div>
+            <div className="injury-player-list">
+              {team.players.map((p: any) => {
+                const ilMeta = IL_COLOR[p.ilType] ?? { color: '#374151', bg: '#f3f4f6' };
+                return (
+                  <div key={p.personId} className="injury-player-row">
+                    <div className="injury-player-left">
+                      <span
+                        className="injury-player-name"
+                        onClick={() => setSelectedPlayerId(p.personId)}
+                      >{p.fullName}</span>
+                      <span className="injury-player-pos">{p.position}</span>
+                    </div>
+                    <div className="injury-player-right">
+                      <span className="injury-il-badge" style={{ color: ilMeta.color, background: ilMeta.bg }}>
+                        {p.ilType}
+                      </span>
+                      {p.note && <span className="injury-note">{p.note}</span>}
+                      {p.rehabDate && (
+                        <span className="injury-rehab">On rehab since {formatDate(p.rehabDate)}</span>
+                      )}
+                      {p.earliestReturn && (
+                        <span className="injury-return">Eligible {formatDate(p.earliestReturn)}</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const renderHistorical = () => {
     const { mentaculous: hist, mentorder: histOrder } = historical2025;
     const entries = histOrder
@@ -4508,6 +4694,15 @@ function App() {
                     Transactions
                   </button>
                   <button
+                    className={activeTab === 'injuries' ? 'active' : ''}
+                    onClick={() => {
+                      setActiveTab('injuries');
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Injury Report
+                  </button>
+                  <button
                     className="menu-dark-toggle"
                     onClick={() => setDarkMode(d => !d)}
                   >
@@ -4553,7 +4748,7 @@ function App() {
               standings: 'Standings', leaders: 'Leaders', records: 'Records',
               milestones: 'Milestones', roster: 'Roster', stealaculous: 'Stealaculous',
               historical: 'Historical Mentaculi', backend: 'Mentaculous Backend',
-              transactions: 'Transactions',
+              transactions: 'Transactions', injuries: 'Injury Report',
             };
             return <div className="active-tab-crumb">{tabLabels[activeTab] ?? activeTab}</div>;
           })()}
@@ -5044,6 +5239,8 @@ function App() {
           {activeTab === 'historical' && renderHistorical()}
 
           {activeTab === 'transactions' && renderTransactions()}
+
+          {activeTab === 'injuries' && renderInjuries()}
 
           {selectedPlayerId !== null && (
             <PlayerProfile
