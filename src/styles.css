@@ -2633,6 +2633,36 @@ button:focus {
   text-align: center;
 }
 
+.txn-team-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+}
+
+.txn-team-select {
+  flex: 1;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: #f9fafb;
+  color: #111827;
+  cursor: pointer;
+}
+
+.txn-clear-team {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.78rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #f3f4f6;
+  color: #374151;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.txn-clear-team:hover { background: #e5e7eb; }
+
 .transactions-filters {
   display: flex;
   flex-wrap: wrap;
@@ -2726,6 +2756,8 @@ button:focus {
 .app.dark .txn-nav-btn { border-color: #374151; color: #d1d5db; background: #1f2937; }
 .app.dark .txn-filter-btn { background: #1f2937; border-color: #374151; color: #d1d5db; }
 .app.dark .txn-filter-btn.active { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+.app.dark .txn-team-select { background: #1f2937; border-color: #374151; color: #e5e7eb; }
+.app.dark .txn-clear-team { background: #374151; border-color: #4b5563; color: #d1d5db; }
 .app.dark .txn-row { background: #1f2937; border-color: #374151; }
 .app.dark .txn-player-name { color: #60a5fa; }
 .app.dark .txn-desc { color: #d1d5db; }

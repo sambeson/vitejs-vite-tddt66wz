@@ -892,6 +892,7 @@ function App() {
   const [transactionsData, setTransactionsData] = useState<any[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [transactionsTypeFilter, setTransactionsTypeFilter] = useState<string>('all');
+  const [transactionsTeamFilter, setTransactionsTeamFilter] = useState<number | 'all'>('all');
 
   // Keep refs in sync for beforeunload handler (closures can't capture latest state)
   useEffect(() => { mentaculousRef.current = mentaculous; }, [mentaculous]);
@@ -942,6 +943,7 @@ function App() {
 
   useEffect(() => {
     if (activeTab !== 'transactions') return;
+    setTransactionsTeamFilter('all');
     setTransactionsLoading(true);
     fetch(`https://statsapi.mlb.com/api/v1/transactions?startDate=${transactionsDate}&endDate=${transactionsDate}&sportId=1`)
       .then(r => r.json())
@@ -3942,9 +3944,20 @@ function App() {
       { value: 'ASG', label: 'Rehab Assignments' },
     ];
 
-    const filtered = transactionsTypeFilter === 'all'
-      ? transactionsData
-      : transactionsData.filter(t => t.typeCode === transactionsTypeFilter);
+    // Build sorted team list from loaded transactions
+    const teamMap = new Map<number, string>();
+    for (const t of transactionsData) {
+      if (t.toTeam?.id && t.toTeam?.name) teamMap.set(t.toTeam.id, t.toTeam.name);
+      if (t.fromTeam?.id && t.fromTeam?.name) teamMap.set(t.fromTeam.id, t.fromTeam.name);
+    }
+    const teamOptions = [...teamMap.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+
+    const filtered = transactionsData.filter(t => {
+      const typeMatch = transactionsTypeFilter === 'all' || t.typeCode === transactionsTypeFilter;
+      const teamMatch = transactionsTeamFilter === 'all' ||
+        t.toTeam?.id === transactionsTeamFilter || t.fromTeam?.id === transactionsTeamFilter;
+      return typeMatch && teamMatch;
+    });
 
     const prevDate = (d: string) => {
       const dt = new Date(d + 'T12:00:00');
@@ -3965,6 +3978,22 @@ function App() {
           <button className="txn-nav-btn" onClick={() => setTransactionsDate(prevDate(transactionsDate))}>‹</button>
           <div className="txn-date-label">{displayDate}</div>
           <button className="txn-nav-btn" onClick={() => setTransactionsDate(nextDate(transactionsDate))} disabled={transactionsDate >= today}>›</button>
+        </div>
+
+        <div className="txn-team-row">
+          <select
+            className="txn-team-select"
+            value={transactionsTeamFilter === 'all' ? 'all' : String(transactionsTeamFilter)}
+            onChange={e => setTransactionsTeamFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+          >
+            <option value="all">All Teams</option>
+            {teamOptions.map(([id, name]) => (
+              <option key={id} value={id}>{name}</option>
+            ))}
+          </select>
+          {transactionsTeamFilter !== 'all' && (
+            <button className="txn-clear-team" onClick={() => setTransactionsTeamFilter('all')}>✕ Clear</button>
+          )}
         </div>
 
         <div className="transactions-filters">
