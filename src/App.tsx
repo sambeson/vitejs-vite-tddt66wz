@@ -2224,7 +2224,7 @@ function App() {
   };
 
   const fetchDisplaced = async (bust = false) => {
-    const CACHE_KEY = 'displaced_2026_results_v2';
+    const CACHE_KEY = 'displaced_2026_results_v3';
     const TTL_HOURS = 4;
     if (!bust) {
       const cached = getCached<DisplacedResult[]>(CACHE_KEY, TTL_HOURS);
@@ -2350,7 +2350,11 @@ function App() {
             currentValue: e.value,
             displacedBy: by,
           };
-        }).sort((a, b) => a.pre2026Rank - b.pre2026Rank);
+        // Only keep displaced entries where we can identify who passed them — this
+        // filters out tie-boundary artifacts where the API groups tied players at
+        // the same rank number, making some appear displaced when nobody actually
+        // gained enough stats to pass them.
+        }).filter(d => d.displacedBy.length > 0).sort((a, b) => a.pre2026Rank - b.pre2026Rank);
 
         // Top-100 view (uses same enriched list)
         const currentTop100Set = new Set(enriched.filter(e => e.rank <= 100).map(e => e.personId));
@@ -2376,7 +2380,7 @@ function App() {
             currentValue: e.value,
             displacedBy: by,
           };
-        }).sort((a, b) => a.pre2026Rank - b.pre2026Rank);
+        }).filter(d => d.displacedBy.length > 0).sort((a, b) => a.pre2026Rank - b.pre2026Rank);
 
         results.push({
           statKey: stat.key,
