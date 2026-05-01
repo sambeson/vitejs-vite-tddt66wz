@@ -766,6 +766,7 @@ const MILESTONE_STATS: { key: string; label: string; group: 'hitting' | 'pitchin
   { key: 'baseOnBalls',      label: 'BB', group: 'hitting' },
   // game-log stat key is 'strikeOuts' (camelCase); leaders API uses 'strikeouts'
   { key: 'strikeOuts',       label: 'K',  group: 'hitting',  leaderKey: 'strikeouts' },
+  { key: 'hitByPitch',        label: 'HBP', group: 'hitting', leaderKey: 'hitByPitches' },
   { key: 'plateAppearances', label: 'PA', group: 'hitting' },
   { key: 'gamesPlayed',      label: 'G',  group: 'hitting' },
   { key: 'strikeOuts',       label: 'SO', group: 'pitching', leaderKey: 'strikeouts' },
@@ -2656,6 +2657,7 @@ function App() {
     { key: 'doubles', label: '2B' },
     { key: 'triples', label: '3B' },
     { key: 'strikeOuts', label: 'K' },
+    { key: 'hitByPitch', label: 'HBP' },
     { key: 'plateAppearances', label: 'PA' },
     { key: 'gamesPlayed', label: 'G' },
   ];
