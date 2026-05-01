@@ -3529,7 +3529,7 @@ function App() {
         shownDisplaced: displacedRankView === '100' ? result.displaced100 : result.displaced,
         shownNewcomers: displacedRankView === '100' ? result.newcomers100 : result.newcomers,
       }))
-      .filter(r => r.shownDisplaced.length > 0 || r.shownNewcomers.length > 0)
+      .filter(r => r.shownDisplaced.length > 0)
       .sort((a, b) => b.shownDisplaced.length - a.shownDisplaced.length);
 
     return (
