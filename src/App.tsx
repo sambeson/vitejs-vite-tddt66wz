@@ -752,6 +752,8 @@ type DisplacedResult = {
   statLabel: string;
   displaced: DisplacedEntry[];
   newcomers: Array<{ personId: number; fullName: string; gained: number; currentRank: number; currentValue: number }>;
+  displaced100: DisplacedEntry[];
+  newcomers100: Array<{ personId: number; fullName: string; gained: number; currentRank: number; currentValue: number }>;
 };
 
 
@@ -841,6 +843,7 @@ function App() {
   const [displacedData, setDisplacedData] = useState<DisplacedResult[]>([]);
   const [displacedLoading, setDisplacedLoading] = useState(false);
   const [displacedError, setDisplacedError] = useState(false);
+  const [displacedRankView, setDisplacedRankView] = useState<'500' | '100'>('500');
   const [selectedTeam, setSelectedTeam] = useState('away');
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('games');
@@ -2195,7 +2198,7 @@ function App() {
   };
 
   const fetchDisplaced = async (bust = false) => {
-    const CACHE_KEY = 'displaced_2026_results';
+    const CACHE_KEY = 'displaced_2026_results_v2';
     const TTL_HOURS = 4;
     if (!bust) {
       const cached = getCached<DisplacedResult[]>(CACHE_KEY, TTL_HOURS);
@@ -2299,8 +2302,6 @@ function App() {
           .filter(e => (pre2026RankMap.get(e.personId) ?? 9999) <= 500 && !currentTop500Set.has(e.personId))
           .map(e => e.personId);
 
-        if (displaced.length === 0) return;
-
         // Newcomers: are in current top 500, were NOT in pre-2026 top 500
         const newcomers = enriched.filter(e =>
           currentTop500Set.has(e.personId) &&
@@ -2325,6 +2326,32 @@ function App() {
           };
         }).sort((a, b) => a.pre2026Rank - b.pre2026Rank);
 
+        // Top-100 view (uses same enriched list)
+        const currentTop100Set = new Set(enriched.filter(e => e.rank <= 100).map(e => e.personId));
+        const displaced100pids = enriched
+          .filter(e => (pre2026RankMap.get(e.personId) ?? 9999) <= 100 && !currentTop100Set.has(e.personId))
+          .map(e => e.personId);
+        const newcomers100 = enriched.filter(e =>
+          currentTop100Set.has(e.personId) &&
+          (pre2026RankMap.get(e.personId) ?? 9999) > 100 &&
+          e.gained2026 > 0
+        );
+        const displacedEntries100: DisplacedEntry[] = displaced100pids.map(pid => {
+          const e = enriched.find(x => x.personId === pid)!;
+          const by = newcomers100
+            .filter(n => n.pre2026Value <= e.pre2026Value && n.value >= e.pre2026Value)
+            .map(n => ({ personId: n.personId, fullName: n.fullName, gained: n.gained2026, currentRank: n.rank }));
+          return {
+            personId: e.personId,
+            fullName: e.fullName,
+            pre2026Rank: pre2026RankMap.get(e.personId)!,
+            currentRank: e.rank,
+            pre2026Value: e.pre2026Value,
+            currentValue: e.value,
+            displacedBy: by,
+          };
+        }).sort((a, b) => a.pre2026Rank - b.pre2026Rank);
+
         results.push({
           statKey: stat.key,
           statLabel: stat.label,
@@ -2332,10 +2359,14 @@ function App() {
           newcomers: newcomers
             .map(n => ({ personId: n.personId, fullName: n.fullName, gained: n.gained2026, currentRank: n.rank, currentValue: n.value }))
             .sort((a, b) => a.currentRank - b.currentRank),
+          displaced100: displacedEntries100,
+          newcomers100: newcomers100
+            .map(n => ({ personId: n.personId, fullName: n.fullName, gained: n.gained2026, currentRank: n.rank, currentValue: n.value }))
+            .sort((a, b) => a.currentRank - b.currentRank),
         });
       }));
 
-      // Sort stats by number of displaced players desc
+      // Sort stats by number of displaced-500 players desc
       results.sort((a, b) => b.displaced.length - a.displaced.length);
       setDisplacedData(results);
       setCached(CACHE_KEY, results);
@@ -3464,35 +3495,56 @@ function App() {
     if (displacedError) return <div className="loading">Failed to load displaced data.</div>;
 
     const year = new Date().getFullYear();
+    const threshold = displacedRankView === '100' ? 100 : 500;
+
+    const visibleData = displacedData
+      .map(result => ({
+        ...result,
+        shownDisplaced: displacedRankView === '100' ? result.displaced100 : result.displaced,
+        shownNewcomers: displacedRankView === '100' ? result.newcomers100 : result.newcomers,
+      }))
+      .filter(r => r.shownDisplaced.length > 0 || r.shownNewcomers.length > 0)
+      .sort((a, b) => b.shownDisplaced.length - a.shownDisplaced.length);
 
     return (
       <div className="leaders-container">
-        <h2 style={{ textAlign: 'center', marginBottom: '0.25rem' }}>Displaced from Top 500</h2>
-        <p style={{ textAlign: 'center', fontSize: '0.85em', color: '#888', marginBottom: '1.25rem' }}>
-          Players who started {year} in the all-time top 500 but have since been passed out of it
+        <h2 style={{ textAlign: 'center', marginBottom: '0.25rem' }}>Displaced from Top {threshold}</h2>
+        <p style={{ textAlign: 'center', fontSize: '0.85em', color: '#888', marginBottom: '0.75rem' }}>
+          Players who started {year} in the all-time top {threshold} but have since been passed out of it
         </p>
+
+        <div className="leaders-subtabs" style={{ marginBottom: '1rem' }}>
+          <button
+            className={displacedRankView === '500' ? 'active' : ''}
+            onClick={() => setDisplacedRankView('500')}
+          >Top 500</button>
+          <button
+            className={displacedRankView === '100' ? 'active' : ''}
+            onClick={() => setDisplacedRankView('100')}
+          >Top 100</button>
+        </div>
 
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <button className="leaders-show-all" onClick={() => fetchDisplaced(true)}>Refresh</button>
         </div>
 
-        {displacedData.length === 0 ? (
+        {visibleData.length === 0 ? (
           <p style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>
             {displacedLoading ? '' : 'No displacements detected yet — check back as the season progresses.'}
           </p>
-        ) : displacedData.map(result => (
+        ) : visibleData.map(result => (
           <div key={result.statKey} className="displaced-stat-section">
             <div className="displaced-stat-header">
               <span className="milestone-stat-badge">{result.statLabel}</span>
               <span className="displaced-count">
-                {result.displaced.length} {result.displaced.length === 1 ? 'player' : 'players'} displaced
+                {result.shownDisplaced.length} {result.shownDisplaced.length === 1 ? 'player' : 'players'} displaced
               </span>
             </div>
 
             <div className="displaced-columns">
               <div className="displaced-col">
                 <div className="displaced-col-label">Displaced out</div>
-                {result.displaced.map(d => (
+                {result.shownDisplaced.map(d => (
                   <div key={d.personId} className="displaced-player-row">
                     <span
                       className="displaced-player-name"
@@ -3525,8 +3577,8 @@ function App() {
               </div>
 
               <div className="displaced-col">
-                <div className="displaced-col-label">Entered top 500</div>
-                {result.newcomers.map(n => (
+                <div className="displaced-col-label">Entered top {threshold}</div>
+                {result.shownNewcomers.map(n => (
                   <div key={n.personId} className="displaced-player-row displaced-newcomer">
                     <span
                       className="displaced-player-name"
