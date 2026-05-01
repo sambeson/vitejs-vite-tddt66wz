@@ -2597,3 +2597,136 @@ button:focus {
 /* season-stats section heading */
 .app.dark .season-stats h3 { color: #e5e7eb; }
 .app.dark .career-stats h3 { color: #e5e7eb; }
+
+/* ── Transactions ──────────────────────────────────────── */
+.transactions-container {
+  padding: 0.75rem 0.75rem 2rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.transactions-date-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.txn-nav-btn {
+  background: none;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 0.25rem 0.7rem;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #374151;
+  line-height: 1;
+}
+.txn-nav-btn:disabled { opacity: 0.35; cursor: default; }
+
+.txn-date-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  min-width: 12rem;
+  text-align: center;
+}
+
+.transactions-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.txn-filter-btn {
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: #f9fafb;
+  color: #374151;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+.txn-filter-btn.active {
+  background: #1d4ed8;
+  color: #fff;
+  border-color: #1d4ed8;
+}
+.txn-filter-count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  opacity: 0.7;
+}
+
+.transactions-loading {
+  text-align: center;
+  color: #6b7280;
+  padding: 2rem 0;
+  font-size: 0.9rem;
+}
+
+.transactions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.txn-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+}
+
+.txn-badge {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.18rem 0.5rem;
+  border-radius: 5px;
+  margin-top: 0.1rem;
+  white-space: nowrap;
+}
+
+.txn-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.txn-player-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1a56db;
+  cursor: pointer;
+}
+.txn-player-name:hover { text-decoration: underline; }
+
+.txn-desc {
+  font-size: 0.83rem;
+  color: #374151;
+  line-height: 1.4;
+}
+
+/* Dark mode */
+.app.dark .txn-date-label { color: #f3f4f6; }
+.app.dark .txn-nav-btn { border-color: #374151; color: #d1d5db; background: #1f2937; }
+.app.dark .txn-filter-btn { background: #1f2937; border-color: #374151; color: #d1d5db; }
+.app.dark .txn-filter-btn.active { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+.app.dark .txn-row { background: #1f2937; border-color: #374151; }
+.app.dark .txn-player-name { color: #60a5fa; }
+.app.dark .txn-desc { color: #d1d5db; }
+.app.dark .transactions-loading { color: #9ca3af; }

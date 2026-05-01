@@ -885,6 +885,10 @@ function App() {
   const [selectedTeamRoster, setSelectedTeamRoster] = useState<any>(null);
   const [teamRoster, setTeamRoster] = useState<any[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [transactionsDate, setTransactionsDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [transactionsData, setTransactionsData] = useState<any[]>([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const [transactionsTypeFilter, setTransactionsTypeFilter] = useState<string>('all');
 
   // Keep refs in sync for beforeunload handler (closures can't capture latest state)
   useEffect(() => { mentaculousRef.current = mentaculous; }, [mentaculous]);
@@ -932,6 +936,31 @@ function App() {
     fetchDisplaced();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, milestoneSubTab]);
+
+  useEffect(() => {
+    if (activeTab !== 'transactions') return;
+    setTransactionsLoading(true);
+    fetch(`https://statsapi.mlb.com/api/v1/transactions?startDate=${transactionsDate}&endDate=${transactionsDate}&sportId=1`)
+      .then(r => r.json())
+      .then(data => {
+        const MLB_TEAM_IDS = new Set([108,109,110,111,112,113,114,115,116,117,118,119,120,121,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,158]);
+        const txns = (data.transactions ?? []).filter((t: any) => {
+          const toMlb = t.toTeam && MLB_TEAM_IDS.has(t.toTeam.id);
+          const fromMlb = t.fromTeam && MLB_TEAM_IDS.has(t.fromTeam.id);
+          return toMlb || fromMlb;
+        });
+        // Deduplicate by id (trades appear twice)
+        const seen = new Set<number>();
+        const deduped = txns.filter((t: any) => {
+          if (seen.has(t.id)) return false;
+          seen.add(t.id);
+          return true;
+        });
+        setTransactionsData(deduped);
+      })
+      .catch(() => setTransactionsData([]))
+      .finally(() => setTransactionsLoading(false));
+  }, [activeTab, transactionsDate]);
 
   // beforeunload: flush latest state to localStorage immediately on force close
   useEffect(() => {
@@ -3834,6 +3863,106 @@ function App() {
   const [historicalPage, setHistoricalPage] = useState(0);
   const [historicalTooltipId, setHistoricalTooltipId] = useState<string | null>(null);
 
+  const renderTransactions = () => {
+    const TYPE_META: Record<string, { label: string; color: string; bg: string }> = {
+      SC:  { label: 'IL / Status', color: '#b45309', bg: '#fef3c7' },
+      ASG: { label: 'Rehab',       color: '#6d28d9', bg: '#ede9fe' },
+      CU:  { label: 'Recalled',    color: '#15803d', bg: '#dcfce7' },
+      OPT: { label: 'Optioned',    color: '#1d4ed8', bg: '#dbeafe' },
+      DES: { label: 'DFA',         color: '#dc2626', bg: '#fee2e2' },
+      DFA: { label: 'Free Agent',  color: '#9f1239', bg: '#ffe4e6' },
+      SFA: { label: 'Signed',      color: '#0e7490', bg: '#cffafe' },
+      SE:  { label: 'Selected',    color: '#065f46', bg: '#d1fae5' },
+      CLW: { label: 'Waiver Claim',color: '#7c3aed', bg: '#f5f3ff' },
+      TR:  { label: 'Trade',       color: '#0f172a', bg: '#f1f5f9' },
+    };
+
+    const typeOptions = [
+      { value: 'all', label: 'All Transactions' },
+      { value: 'SC',  label: 'IL / Status Changes' },
+      { value: 'CU',  label: 'Recalled' },
+      { value: 'OPT', label: 'Optioned' },
+      { value: 'DES', label: 'DFA' },
+      { value: 'TR',  label: 'Trades' },
+      { value: 'SFA', label: 'Signings' },
+      { value: 'SE',  label: 'Selected' },
+      { value: 'CLW', label: 'Waiver Claims' },
+      { value: 'ASG', label: 'Rehab Assignments' },
+    ];
+
+    const filtered = transactionsTypeFilter === 'all'
+      ? transactionsData
+      : transactionsData.filter(t => t.typeCode === transactionsTypeFilter);
+
+    const prevDate = (d: string) => {
+      const dt = new Date(d + 'T12:00:00');
+      dt.setDate(dt.getDate() - 1);
+      return dt.toISOString().slice(0, 10);
+    };
+    const nextDate = (d: string) => {
+      const dt = new Date(d + 'T12:00:00');
+      dt.setDate(dt.getDate() + 1);
+      return dt.toISOString().slice(0, 10);
+    };
+    const today = new Date().toISOString().slice(0, 10);
+    const displayDate = new Date(transactionsDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+    return (
+      <div className="transactions-container">
+        <div className="transactions-date-nav">
+          <button className="txn-nav-btn" onClick={() => setTransactionsDate(prevDate(transactionsDate))}>‹</button>
+          <div className="txn-date-label">{displayDate}</div>
+          <button className="txn-nav-btn" onClick={() => setTransactionsDate(nextDate(transactionsDate))} disabled={transactionsDate >= today}>›</button>
+        </div>
+
+        <div className="transactions-filters">
+          {typeOptions.map(opt => (
+            <button
+              key={opt.value}
+              className={`txn-filter-btn${transactionsTypeFilter === opt.value ? ' active' : ''}`}
+              onClick={() => setTransactionsTypeFilter(opt.value)}
+            >
+              {opt.label}
+              {opt.value !== 'all' && (
+                <span className="txn-filter-count">
+                  {transactionsData.filter(t => t.typeCode === opt.value).length || ''}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {transactionsLoading ? (
+          <p className="transactions-loading">Loading transactions…</p>
+        ) : filtered.length === 0 ? (
+          <p className="transactions-loading">No transactions found.</p>
+        ) : (
+          <div className="transactions-list">
+            {filtered.map((t: any) => {
+              const meta = TYPE_META[t.typeCode] ?? { label: t.typeDesc, color: '#374151', bg: '#f3f4f6' };
+              return (
+                <div key={t.id} className="txn-row">
+                  <span className="txn-badge" style={{ color: meta.color, background: meta.bg }}>{meta.label}</span>
+                  <div className="txn-body">
+                    {t.person && (
+                      <span
+                        className="txn-player-name"
+                        onClick={() => setSelectedPlayerId(t.person.id)}
+                      >
+                        {t.person.fullName}
+                      </span>
+                    )}
+                    <span className="txn-desc">{t.description}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderHistorical = () => {
     const { mentaculous: hist, mentorder: histOrder } = historical2025;
     const entries = histOrder
@@ -4239,6 +4368,15 @@ function App() {
                     Historical Mentaculi
                   </button>
                   <button
+                    className={activeTab === 'transactions' ? 'active' : ''}
+                    onClick={() => {
+                      setActiveTab('transactions');
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Transactions
+                  </button>
+                  <button
                     className="menu-dark-toggle"
                     onClick={() => setDarkMode(d => !d)}
                   >
@@ -4284,6 +4422,7 @@ function App() {
               standings: 'Standings', leaders: 'Leaders', records: 'Records',
               milestones: 'Milestones', roster: 'Roster', stealaculous: 'Stealaculous',
               historical: 'Historical Mentaculi', backend: 'Mentaculous Backend',
+              transactions: 'Transactions',
             };
             return <div className="active-tab-crumb">{tabLabels[activeTab] ?? activeTab}</div>;
           })()}
@@ -4772,6 +4911,8 @@ function App() {
           {activeTab === 'stealaculous' && renderStealaculous()}
 
           {activeTab === 'historical' && renderHistorical()}
+
+          {activeTab === 'transactions' && renderTransactions()}
 
           {selectedPlayerId !== null && (
             <PlayerProfile
