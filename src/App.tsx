@@ -893,6 +893,8 @@ function App() {
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [transactionsTypeFilter, setTransactionsTypeFilter] = useState<string>('all');
   const [transactionsTeamFilter, setTransactionsTeamFilter] = useState<number | 'all'>('all');
+  // minorToMlb: maps minor league teamId → parent MLB teamId
+  const [minorToMlb, setMinorToMlb] = useState<Map<number, number>>(new Map());
 
   // Keep refs in sync for beforeunload handler (closures can't capture latest state)
   useEffect(() => { mentaculousRef.current = mentaculous; }, [mentaculous]);
@@ -943,18 +945,16 @@ function App() {
 
   useEffect(() => {
     if (activeTab !== 'transactions') return;
-    setTransactionsTeamFilter('all');
     setTransactionsLoading(true);
+    const MLB_TEAM_IDS = new Set([108,109,110,111,112,113,114,115,116,117,118,119,120,121,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,158]);
     fetch(`https://statsapi.mlb.com/api/v1/transactions?startDate=${transactionsDate}&endDate=${transactionsDate}&sportId=1`)
       .then(r => r.json())
-      .then(data => {
-        const MLB_TEAM_IDS = new Set([108,109,110,111,112,113,114,115,116,117,118,119,120,121,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,158]);
+      .then(async data => {
         const txns = (data.transactions ?? []).filter((t: any) => {
           const toMlb = t.toTeam && MLB_TEAM_IDS.has(t.toTeam.id);
           const fromMlb = t.fromTeam && MLB_TEAM_IDS.has(t.fromTeam.id);
           return toMlb || fromMlb;
         });
-        // Deduplicate by id (trades appear twice)
         const seen = new Set<number>();
         const deduped = txns.filter((t: any) => {
           if (seen.has(t.id)) return false;
@@ -962,8 +962,32 @@ function App() {
           return true;
         });
         setTransactionsData(deduped);
+
+        // Resolve minor league team → parent MLB team
+        const minorIds = new Set<number>();
+        for (const t of deduped) {
+          if (t.toTeam?.id && !MLB_TEAM_IDS.has(t.toTeam.id)) minorIds.add(t.toTeam.id);
+          if (t.fromTeam?.id && !MLB_TEAM_IDS.has(t.fromTeam.id)) minorIds.add(t.fromTeam.id);
+        }
+        if (minorIds.size > 0) {
+          try {
+            const res = await fetch(
+              `https://statsapi.mlb.com/api/v1/teams?teamIds=${[...minorIds].join(',')}&season=${new Date().getFullYear()}`
+            );
+            const td = await res.json();
+            const map = new Map<number, number>();
+            for (const team of (td.teams ?? [])) {
+              if (team.parentOrgId && MLB_TEAM_IDS.has(team.parentOrgId)) {
+                map.set(team.id, team.parentOrgId);
+              }
+            }
+            setMinorToMlb(map);
+          } catch { setMinorToMlb(new Map()); }
+        } else {
+          setMinorToMlb(new Map());
+        }
       })
-      .catch(() => setTransactionsData([]))
+      .catch(() => { setTransactionsData([]); setMinorToMlb(new Map()); })
       .finally(() => setTransactionsLoading(false));
   }, [activeTab, transactionsDate]);
 
@@ -3944,18 +3968,39 @@ function App() {
       { value: 'ASG', label: 'Rehab Assignments' },
     ];
 
-    // Build sorted team list from loaded transactions
-    const teamMap = new Map<number, string>();
+    const MLB_TEAM_IDS = new Set([108,109,110,111,112,113,114,115,116,117,118,119,120,121,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,158]);
+
+    // Build MLB-only team list from transactions (minor league teams are merged into parent)
+    const mlbTeamMap = new Map<number, string>();
     for (const t of transactionsData) {
-      if (t.toTeam?.id && t.toTeam?.name) teamMap.set(t.toTeam.id, t.toTeam.name);
-      if (t.fromTeam?.id && t.fromTeam?.name) teamMap.set(t.fromTeam.id, t.fromTeam.name);
+      for (const side of [t.toTeam, t.fromTeam]) {
+        if (!side) continue;
+        const id = MLB_TEAM_IDS.has(side.id) ? side.id : (minorToMlb.get(side.id) ?? null);
+        if (id && !mlbTeamMap.has(id)) {
+          // Use the MLB team name, not the affiliate name
+          const mlbName = MLB_TEAM_IDS.has(side.id) ? side.name : null;
+          if (mlbName) mlbTeamMap.set(id, mlbName);
+        }
+      }
     }
-    const teamOptions = [...teamMap.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+    // Fill in any MLB team names we only saw via minor league side
+    for (const t of transactionsData) {
+      for (const side of [t.toTeam, t.fromTeam]) {
+        if (side && MLB_TEAM_IDS.has(side.id) && !mlbTeamMap.has(side.id)) {
+          mlbTeamMap.set(side.id, side.name);
+        }
+      }
+    }
+    const teamOptions = [...mlbTeamMap.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+
+    const resolveToMlb = (teamId: number) =>
+      MLB_TEAM_IDS.has(teamId) ? teamId : (minorToMlb.get(teamId) ?? teamId);
 
     const filtered = transactionsData.filter(t => {
       const typeMatch = transactionsTypeFilter === 'all' || t.typeCode === transactionsTypeFilter;
       const teamMatch = transactionsTeamFilter === 'all' ||
-        t.toTeam?.id === transactionsTeamFilter || t.fromTeam?.id === transactionsTeamFilter;
+        resolveToMlb(t.toTeam?.id) === transactionsTeamFilter ||
+        resolveToMlb(t.fromTeam?.id) === transactionsTeamFilter;
       return typeMatch && teamMatch;
     });
 
