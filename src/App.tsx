@@ -2224,7 +2224,7 @@ function App() {
   };
 
   const fetchDisplaced = async (bust = false) => {
-    const CACHE_KEY = 'displaced_2026_results_v3';
+    const CACHE_KEY = 'displaced_2026_results_v2';
     const TTL_HOURS = 4;
     if (!bust) {
       const cached = getCached<DisplacedResult[]>(CACHE_KEY, TTL_HOURS);
@@ -2303,22 +2303,27 @@ function App() {
           gained2026: seasonMap.get(e.personId) ?? 0,
         }));
 
-        // Use positional ranking with deterministic tiebreaker (personId) for both pre-2026
-        // and current, so ties at the boundary don't create ghost displaced/newcomers.
-        // The API's rank field groups all ties at the same rank number, which causes
-        // players at the boundary to all appear "inside" the top 500 even when some
-        // should logically be outside it.
-        const sortedPre = [...enriched].sort((a, b) => b.pre2026Value - a.pre2026Value || a.personId - b.personId);
-        const pre2026RankMap = new Map(sortedPre.map((e, i) => [e.personId, i + 1]));
+        // Assign pre-2026 ranks using standard competition ranking (ties get lowest rank)
+        const sortedPre = [...enriched].sort((a, b) => b.pre2026Value - a.pre2026Value);
+        // Map personId → pre2026Rank
+        const pre2026RankMap = new Map<number, number>();
+        for (let i = 0; i < sortedPre.length; i++) {
+          const val = sortedPre[i].pre2026Value;
+          // Rank = position of first occurrence of this value + 1
+          if (!pre2026RankMap.has(sortedPre[i].personId)) {
+            const firstIdx = sortedPre.findIndex(x => x.pre2026Value === val);
+            pre2026RankMap.set(sortedPre[i].personId, firstIdx + 1);
+          }
+        }
 
-        const sortedCurrent = [...enriched].sort((a, b) => b.value - a.value || a.personId - b.personId);
-        const currentRankMap = new Map(sortedCurrent.map((e, i) => [e.personId, i + 1]));
-        const currentTop500Set = new Set([...currentRankMap.entries()].filter(([, r]) => r <= 500).map(([id]) => id));
+        // Current top 500: career rank ≤ 500 per the API (ties at boundary are all included)
+        const currentTop500Set = new Set(enriched.filter(e => e.rank <= 500).map(e => e.personId));
 
+        // Pre-2026 top 500: pre2026Rank ≤ 500
         const inPre500 = enriched.filter(e => (pre2026RankMap.get(e.personId) ?? 9999) <= 500);
         if (inPre500.length === 0) return;
 
-        // Displaced: were in positional pre-2026 top 500, are NOT in positional current top 500
+        // Displaced: were in pre-2026 top 500, are NOT in current top 500
         const displaced = enriched
           .filter(e => (pre2026RankMap.get(e.personId) ?? 9999) <= 500 && !currentTop500Set.has(e.personId))
           .map(e => e.personId);
@@ -2332,22 +2337,23 @@ function App() {
 
         const displacedEntries: DisplacedEntry[] = displaced.map(pid => {
           const e = enriched.find(x => x.personId === pid)!;
+          // Which newcomers specifically passed this player's pre-2026 value this year?
           const by = newcomers
             .filter(n => n.pre2026Value <= e.pre2026Value && n.value >= e.pre2026Value)
-            .map(n => ({ personId: n.personId, fullName: n.fullName, gained: n.gained2026, currentRank: currentRankMap.get(n.personId) ?? n.rank }));
+            .map(n => ({ personId: n.personId, fullName: n.fullName, gained: n.gained2026, currentRank: n.rank }));
           return {
             personId: e.personId,
             fullName: e.fullName,
             pre2026Rank: pre2026RankMap.get(e.personId)!,
-            currentRank: currentRankMap.get(e.personId) ?? e.rank,
+            currentRank: e.rank,
             pre2026Value: e.pre2026Value,
             currentValue: e.value,
             displacedBy: by,
           };
         }).sort((a, b) => a.pre2026Rank - b.pre2026Rank);
 
-        // Top-100 view — reuse same positional currentRankMap
-        const currentTop100Set = new Set([...currentRankMap.entries()].filter(([, r]) => r <= 100).map(([id]) => id));
+        // Top-100 view (uses same enriched list)
+        const currentTop100Set = new Set(enriched.filter(e => e.rank <= 100).map(e => e.personId));
         const displaced100pids = enriched
           .filter(e => (pre2026RankMap.get(e.personId) ?? 9999) <= 100 && !currentTop100Set.has(e.personId))
           .map(e => e.personId);
@@ -2360,12 +2366,12 @@ function App() {
           const e = enriched.find(x => x.personId === pid)!;
           const by = newcomers100
             .filter(n => n.pre2026Value <= e.pre2026Value && n.value >= e.pre2026Value)
-            .map(n => ({ personId: n.personId, fullName: n.fullName, gained: n.gained2026, currentRank: currentRankMap.get(n.personId) ?? n.rank }));
+            .map(n => ({ personId: n.personId, fullName: n.fullName, gained: n.gained2026, currentRank: n.rank }));
           return {
             personId: e.personId,
             fullName: e.fullName,
             pre2026Rank: pre2026RankMap.get(e.personId)!,
-            currentRank: currentRankMap.get(e.personId) ?? e.rank,
+            currentRank: e.rank,
             pre2026Value: e.pre2026Value,
             currentValue: e.value,
             displacedBy: by,
@@ -2377,11 +2383,11 @@ function App() {
           statLabel: stat.label,
           displaced: displacedEntries,
           newcomers: newcomers
-            .map(n => ({ personId: n.personId, fullName: n.fullName, gained: n.gained2026, currentRank: currentRankMap.get(n.personId) ?? n.rank, currentValue: n.value }))
+            .map(n => ({ personId: n.personId, fullName: n.fullName, gained: n.gained2026, currentRank: n.rank, currentValue: n.value }))
             .sort((a, b) => a.currentRank - b.currentRank),
           displaced100: displacedEntries100,
           newcomers100: newcomers100
-            .map(n => ({ personId: n.personId, fullName: n.fullName, gained: n.gained2026, currentRank: currentRankMap.get(n.personId) ?? n.rank, currentValue: n.value }))
+            .map(n => ({ personId: n.personId, fullName: n.fullName, gained: n.gained2026, currentRank: n.rank, currentValue: n.value }))
             .sort((a, b) => a.currentRank - b.currentRank),
         });
       }));
