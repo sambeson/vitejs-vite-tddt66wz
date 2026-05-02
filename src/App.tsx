@@ -793,6 +793,34 @@ function setCached<T>(key: string, data: T): void {
   } catch { /* storage full — skip cache */ }
 }
 
+// Cache key prefixes that are safe to evict when localStorage is full
+const EVICTABLE_PREFIXES = [
+  'milestone_top500',
+  'milestone_season100',
+  'displaced_career600',
+  'displaced_2026_results',
+  'records_500_',
+  'leaders_',
+  'injury_cache',
+  'records_active_',
+];
+
+function lsSet(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Quota exceeded — evict cache entries and retry once
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && EVICTABLE_PREFIXES.some(p => k.startsWith(p))) {
+        localStorage.removeItem(k);
+        i--;
+      }
+    }
+    try { localStorage.setItem(key, value); } catch { /* still full — skip */ }
+  }
+}
+
 
 function App() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
@@ -1100,15 +1128,15 @@ function App() {
       if (loadedForUserRef.current !== user) return;
       if (Object.keys(mentaculousRef.current).length === 0 && loadedDataHadEntriesRef.current) return;
       const now = new Date().toISOString();
-      localStorage.setItem(`mentaculous_${user}`, JSON.stringify(mentaculousRef.current));
-      localStorage.setItem(`mentaculousOrder_${user}`, JSON.stringify(orderRef.current));
-      localStorage.setItem(`mentaculousUpdatedAt_${user}`, now);
+      lsSet(`mentaculous_${user}`, JSON.stringify(mentaculousRef.current));
+      lsSet(`mentaculousOrder_${user}`, JSON.stringify(orderRef.current));
+      lsSet(`mentaculousUpdatedAt_${user}`, now);
       if (
         stealLoadedForUserRef.current === user &&
         !(Object.keys(stealaculousRef.current).length === 0 && stealLoadedHadEntriesRef.current)
       ) {
-        localStorage.setItem(`stealaculous_${user}`, JSON.stringify(stealaculousRef.current));
-        localStorage.setItem(`stealaculousOrder_${user}`, JSON.stringify(stealOrderRef.current));
+        lsSet(`stealaculous_${user}`, JSON.stringify(stealaculousRef.current));
+        lsSet(`stealaculousOrder_${user}`, JSON.stringify(stealOrderRef.current));
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -1339,9 +1367,9 @@ function App() {
       return;
     }
     const now = new Date().toISOString();
-    localStorage.setItem(`mentaculous_${user}`, JSON.stringify(mentaculous));
-    localStorage.setItem(`mentaculousOrder_${user}`, JSON.stringify(order));
-    localStorage.setItem(`mentaculousUpdatedAt_${user}`, now);
+    lsSet(`mentaculous_${user}`, JSON.stringify(mentaculous));
+    lsSet(`mentaculousOrder_${user}`, JSON.stringify(order));
+    lsSet(`mentaculousUpdatedAt_${user}`, now);
     saveToFirebase(user, mentaculous, order).catch(e => console.error('[Autosave] Firebase save failed:', e));
   }, [mentaculous, order, dataLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1354,8 +1382,8 @@ function App() {
       console.warn('[Autosave] Refusing to save empty stealaculous when loaded data was non-empty');
       return;
     }
-    localStorage.setItem(`stealaculous_${user}`, JSON.stringify(stealaculous));
-    localStorage.setItem(`stealaculousOrder_${user}`, JSON.stringify(stealOrder));
+    lsSet(`stealaculous_${user}`, JSON.stringify(stealaculous));
+    lsSet(`stealaculousOrder_${user}`, JSON.stringify(stealOrder));
     saveStealaculousToFirebase(user, stealaculous, stealOrder).catch(e => console.error('[Autosave] Stealaculous Firebase save failed:', e));
   }, [stealaculous, stealOrder, stealDataLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
