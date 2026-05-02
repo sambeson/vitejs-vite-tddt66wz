@@ -2100,7 +2100,7 @@ function App() {
 
         // Career top-500 (paginated, cached 24h) — key includes group to avoid hitting/pitching SO collision
         const sk = `${stat.group}_${stat.key}`;
-        const careerCacheKey = `milestone_top500_${stat.group}_${apiKey}`;
+        const careerCacheKey = `milestone_top500v2_${stat.group}_${apiKey}`;
         const cachedCareer = getCached<LeaderEntry[]>(careerCacheKey, 24);
         if (cachedCareer) {
           top500[sk] = cachedCareer;
